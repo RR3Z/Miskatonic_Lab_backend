@@ -53,21 +53,3 @@ type Finances struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
-
-type Backstory struct {
-	Id string `json:"-"`
-
-	PersonalDescription  string   `json:"personalDescription,omitempty"`
-	IdeologyBeliefs      string   `json:"ideologyBeliefs,omitempty"`
-	SignificantPeople    []string `json:"significantPeople,omitempty"`
-	MeaningfulLocations  []string `json:"meaningfulLocations,omitempty"`
-	TreasuredPossessions []string `json:"treasuredPossessions,omitempty"`
-	Traits               []string `json:"traits,omitempty"`
-	InjuriesScars        string   `json:"injuriesScars,omitempty"`
-	PhobiasManias        string   `json:"phobiasManias,omitempty"`
-	ArcaneTomesSpells    string   `json:"arcaneTomesSpells,omitempty"`
-	Encounters           string   `json:"encounters,omitempty"`
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
