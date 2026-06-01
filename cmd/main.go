@@ -35,7 +35,14 @@ func main() {
 		AllowedOrigins: allowedOrigins,
 	}
 	server := new(MiskatonicLab.Server)
-	if err := server.Run("8000", handlers.InitRoutes()); err != nil {
+
+	serverPort := os.Getenv("PORT")
+	if serverPort == "" {
+		log.Fatal("[HTTP_SERVER] ERROR because PORT is not set (the default port will be used - 8000)")
+		serverPort = "8000"
+	}
+
+	if err := server.Run(serverPort, handlers.InitRoutes()); err != nil {
 		log.Fatalf("[HTTP_SERVER] ERROR while running http server: %v", err)
 	}
 }
