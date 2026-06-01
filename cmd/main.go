@@ -6,7 +6,7 @@ import (
 
 	MiskatonicLab "github.com/RR3Z/Miskatonic_Lab_backend"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/utils"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/joho/godotenv"
 )
