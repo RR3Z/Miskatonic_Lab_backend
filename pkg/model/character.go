@@ -5,13 +5,13 @@ import "time"
 type Character struct {
 	Id string `json:"-"`
 
-	Name       string `json:"name"`
-	PlayerName string `json:"playerName,omitempty"`
-	Occupation string `json:"occupation,omitempty"`
-	Age        int    `json:"age,omitempty"`
-	Sex        string `json:"sex,omitempty"`
-	Residence  string `json:"residence,omitempty"`
-	Birthplace string `json:"birthplace,omitempty"`
+	Name       string  `json:"name"`
+	PlayerName *string `json:"playerName,omitempty"`
+	Occupation *string `json:"occupation,omitempty"`
+	Age        *string `json:"age,omitempty"`
+	Sex        *string `json:"sex,omitempty"`
+	Residence  *string `json:"residence,omitempty"`
+	Birthplace *string `json:"birthplace,omitempty"`
 
 	Characteristics Characteristics `json:"characteristics"`
 	DerivedStats    DerivedStats    `json:"derivedStats"`
@@ -44,11 +44,11 @@ type Note struct {
 type Finances struct {
 	Id string `json:"-"`
 
-	SpendingLimit string `json:"spendingLevel,omitempty"`
-	Cash          string `json:"cash,omitempty"`
-	Assets        string `json:"assets,omitempty"`
+	SpendingLimit *string `json:"spendingLevel,omitempty"`
+	Cash          *string `json:"cash,omitempty"`
+	Assets        *string `json:"assets,omitempty"`
 
-	CreditRating Skill `json:"creditRating,omitempty"` // Credit Rating, Средства
+	CreditRating *Skill `json:"creditRating,omitempty"` // Credit Rating, Средства
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

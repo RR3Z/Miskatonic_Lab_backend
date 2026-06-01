@@ -3,11 +3,12 @@ package MiskatonicLab
 import "time"
 
 type User struct {
-	Id int `json:"-"`
+	Id          string `json:"-"`
+	ClerkUserId string `json:"-"`
 
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Username  string  `json:"username"`
+	Email     string  `json:"email"`
+	AvatarURL *string `json:"avatarUrl,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

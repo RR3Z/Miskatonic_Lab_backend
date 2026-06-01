@@ -3,24 +3,28 @@ package MiskatonicLab
 import "time"
 
 type Characteristics struct {
-	STR int `json:"str"` // Strength, Сила
-	CON int `json:"con"` // Constitution, Выносливость
-	SIZ int `json:"siz"` // Size, Телосложение
-	DEX int `json:"dex"` // Dexterity, Ловкость
-	APP int `json:"app"` // Appearance, Наружность
-	INT int `json:"int"` // Intelligence, Интеллект
-	POW int `json:"pow"` // Power, Мощь
-	EDU int `json:"edu"` // Education, Образование
+	Id string `json:"-"`
+
+	Strength     *int `json:"str,omitempty"` // Strength, Сила
+	Constitution *int `json:"con,omitempty"` // Constitution, Выносливость
+	Size         *int `json:"siz,omitempty"` // Size, Телосложение
+	Dexterity    *int `json:"dex,omitempty"` // Dexterity, Ловкость
+	Appearance   *int `json:"app,omitempty"` // Appearance, Наружность
+	Intelligence *int `json:"int,omitempty"` // Intelligence, Интеллект
+	Power        *int `json:"pow,omitempty"` // Power, Мощь
+	Education    *int `json:"edu,omitempty"` // Education, Образование
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type DerivedStats struct {
-	Speed       int    `json:"speed"`
-	Build       int    `json:"build"` // Physique, Комплекция
-	DamageBonus string `json:"damageBonus"`
-	DodgeBase   int    `json:"dodgeBase"`
+	Id string `json:"-"`
+
+	Speed       *int `json:"speed,omitempty"`
+	Physique    *int `json:"physique,omitempty"` // Physique, Комплекция
+	DamageBonus *int `json:"damageBonus,omitempty"`
+	DodgeValue  *int `json:"dodgeValue,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

@@ -3,8 +3,10 @@ package MiskatonicLab
 import "time"
 
 type HealthState struct {
-	CurrentHitPoints int `json:"currentHitPoints"`
-	MaxHitPoints     int `json:"maxHitPoints"`
+	Id string `json:"-"`
+
+	MaxHP     int `json:"maxHP"`
+	CurrentHP int `json:"currentHP"`
 
 	MajorWound bool `json:"majorWound"`
 
@@ -17,9 +19,12 @@ type HealthState struct {
 }
 
 type SanityState struct {
-	CurrentSanity int  `json:"currentSanity"`
-	MaxSanity     int  `json:"maxSanity"`
-	TempInsanity  bool `json:"tempInsanity"`
+	Id string `json:"-"`
+
+	MaxSanity     int `json:"maxSanity"`
+	CurrentSanity int `json:"currentSanity"`
+
+	TempInsanity  bool `json:"tempInsanity"`  // Temporary Insanity, Временное безумие
 	IndefInsanity bool `json:"indefInsanity"` // Indefinite Insanity, Продолжительное безумие
 
 	CreatedAt time.Time `json:"createdAt"`
@@ -27,16 +32,20 @@ type SanityState struct {
 }
 
 type MagicState struct {
-	CurrentMagicPoints int `json:"currentMagicPoints"`
-	MaxMagicPoints     int `json:"maxMagicPoints"`
+	Id string `json:"-"`
+
+	MaxMP     int `json:"maxMP"`
+	CurrentMP int `json:"currentMP"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type LuckState struct {
-	CurrentLuck  int `json:"currentLuck"`
+	Id string `json:"-"`
+
 	StartingLuck int `json:"startingLuck"`
+	CurrentLuck  int `json:"currentLuck"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

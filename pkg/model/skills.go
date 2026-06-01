@@ -12,22 +12,23 @@ type Skill struct {
 	Value     int  `json:"value"`
 	Checked   bool `json:"checked"`
 
-	Specialized bool       `json:"specialized,omitempty"`
-	Specialty   *Specialty `json:"specialty,omitempty"`
+	Specialized bool            `json:"specialized"`
+	Specialty   *SkillSpecialty `json:"specialty,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type SkillCategory struct {
-	Id   string `json:"-"`
+	Id string `json:"-"`
+
 	Name string `json:"name"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-type Specialty struct {
+type SkillSpecialty struct {
 	Id string `json:"-"`
 
 	Name        string `json:"name"`

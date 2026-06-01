@@ -5,18 +5,17 @@ import "time"
 type Backstory struct {
 	Id string `json:"-"`
 
-	PersonalDescription string `json:"personalDescription,omitempty"`
+	PersonalDescription *string `json:"personalDescription,omitempty"`
 
-	IdeologyBeliefs      []BackstoryItem `json:"ideologyBeliefs,omitempty"`
-	SignificantPeople    []BackstoryItem `json:"significantPeople,omitempty"`
-	MeaningfulLocations  []BackstoryItem `json:"meaningfulLocations,omitempty"`
-	TreasuredPossessions []BackstoryItem `json:"treasuredPossessions,omitempty"`
-	Traits               []BackstoryItem `json:"traits,omitempty"`
-
-	InjuriesScars     string `json:"injuriesScars,omitempty"`
-	PhobiasManias     string `json:"phobiasManias,omitempty"`
-	ArcaneTomesSpells string `json:"arcaneTomesSpells,omitempty"`
-	Encounters        string `json:"encounters,omitempty"`
+	InjuriesScars        []BackstoryItem `json:"injuriesScars"`
+	PhobiasManias        []BackstoryItem `json:"phobiasManias"`
+	ArcaneTomesSpells    []BackstoryItem `json:"arcaneTomesSpells"`
+	Encounters           []BackstoryItem `json:"encounters"`
+	IdeologyBeliefs      []BackstoryItem `json:"ideologyBeliefs"`
+	SignificantPeople    []BackstoryItem `json:"significantPeople"`
+	MeaningfulLocations  []BackstoryItem `json:"meaningfulLocations"`
+	TreasuredPossessions []BackstoryItem `json:"treasuredPossessions"`
+	Traits               []BackstoryItem `json:"traits"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -25,7 +24,7 @@ type Backstory struct {
 type BackstoryItem struct {
 	Id string `json:"-"`
 
-	Title bool   `json:"title"`
+	Title string `json:"title"`
 	Text  string `json:"text"`
 
 	CreatedAt time.Time `json:"createdAt"`
