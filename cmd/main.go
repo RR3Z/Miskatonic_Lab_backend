@@ -13,15 +13,15 @@ import (
 )
 
 func main() {
-	// Load ENVs
+	// Load ENV
 	if err := godotenv.Load(); err != nil {
-		log.Println("[ENV] ERROR .env file was not loaded, using system environment variables")
+		log.Fatalf("[main -> ENV] ERROR .env file was not loaded, using system environment variables")
 	}
 
 	// Connect Clerk SDK
 	clerkSecretKey := os.Getenv("CLERK_SECRET_KEY")
 	if clerkSecretKey == "" {
-		log.Fatal("[CLERK] ERROR because CLERK_SECRET_KEY is not set")
+		log.Fatalf("[main -> CLERK_SDK] ERROR because CLERK_SECRET_KEY is not set in .env")
 	}
 	clerk.SetKey(clerkSecretKey)
 
@@ -39,7 +39,7 @@ func main() {
 
 	serverPort := os.Getenv("PORT")
 	if serverPort == "" {
-		log.Fatal("[HTTP_SERVER] ERROR because PORT is not set (the default port will be used - 8000)")
+		log.Println("[main -> HTTP_SERVER] PORT is not set in .env, using default port 8000")
 		serverPort = "8000"
 	}
 
