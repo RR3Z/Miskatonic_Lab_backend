@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -15,6 +16,8 @@ func (h *Handler) InitRoutes() *chi.Mux {
 	})
 
 	router.Route("/api", func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware)
+
 		r.Route("/characters", func(r chi.Router) {
 			r.Post("/", h.createCharacter)
 			r.Get("/", h.getAllCharacters)
