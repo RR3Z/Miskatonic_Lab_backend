@@ -127,6 +127,30 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request, data ClerkW
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request, clerkUserId string) {
+	if strings.TrimSpace(clerkUserId) == "" {
+		slog.Error(
+			"failed to delete user from clerk webhook: missing clerk user id",
+			"component", "clerk_webhook",
+		)
+		http.Error(w, "missing clerk user id", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.services.User.DeleteUserFromClerk(r.Context(), clerkUserId); err != nil {
+		slog.Error(
+			"failed to delete user from clerk webhook",
+			"component", "clerk_webhook",
+			"clerk_user_id", clerkUserId,
+			"error", err,
+		)
+		http.Error(w, "failed to delete user", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func verifyClerkWebhook(payload []byte, headers http.Header) error {
 	signingSecret := os.Getenv("CLERK_WEBHOOK_SIGNING_SECRET")
 	if signingSecret == "" {
