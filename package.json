@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "migrate:down": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 down",
+    "migrate:up": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 up",
+    "migrate:up:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 up-all",
+    "migrate:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 version"
+  }
+}
