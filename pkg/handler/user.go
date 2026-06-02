@@ -45,7 +45,7 @@ func (h *Handler) getUserByClerkID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clerkUserID := claims.Subject
-	if clerkUserID == "" || strings.TrimSpace(clerkUserId) == "" {
+	if clerkUserID == "" || strings.TrimSpace(clerkUserID) == "" {
 		slog.Error(
 			"failed to read clerk user webhook request body",
 			"component", "clerk_webhook")
