@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	"github.com/clerk/clerk-sdk-go/v2"
 	svix "github.com/svix/svix-webhooks/go"
 )
 
@@ -31,6 +32,39 @@ type ClerkWebhookUserData struct {
 type ClerkWebhookUserEmail struct {
 	ID           string `json:"id"`
 	EmailAddress string `json:"email_address"`
+}
+
+func (h *Handler) getUserByClerkID(w http.ResponseWriter, r *http.Request) {
+	claims, ok := clerk.SessionClaimsFromContext(r.Context())
+	if !ok {
+		slog.Error(
+			"failed to read clerk user webhook request body",
+			"component", "clerk_webhook")
+		http.Error(w, "failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	clerkUserID := claims.Subject
+	if clerkUserID == "" || strings.TrimSpace(clerkUserId) == "" {
+		slog.Error(
+			"failed to read clerk user webhook request body",
+			"component", "clerk_webhook")
+		http.Error(w, "failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.services.User.GetUserByClerkID(r.Context(), clerkUserID); err != nil {
+		slog.Error(
+			"failed to get user from clerk",
+			"component", "clerk_webhook",
+			"clerk_user_id", clerkUserID,
+			"error", err,
+		)
+		http.Error(w, "failed to create user", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) handleUserClerkWebhook(w http.ResponseWriter, r *http.Request) {

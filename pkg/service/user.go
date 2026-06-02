@@ -10,6 +10,7 @@ import (
 type IUser interface {
 	UpsertUserFromClerk(ctx context.Context, input db.UpsertUserParams) error
 	DeleteUserFromClerk(ctx context.Context, clerkUserID string) error
+	GetUserByClerkID(ctx context.Context, clerkUserID string) error
 }
 
 type UserService struct {
@@ -33,4 +34,10 @@ func (s *UserService) UpsertUserFromClerk(ctx context.Context, input db.UpsertUs
 
 func (s *UserService) DeleteUserFromClerk(ctx context.Context, clerkUserID string) error {
 	return s.repos.Queries.DeleteUserByClerkID(ctx, clerkUserID)
+}
+
+func (s *UserService) GetUserByClerkID(ctx context.Context, clerkUserID string) error {
+	_, err := s.repos.Queries.GetUserByClerkID(ctx, clerkUserID)
+
+	return err
 }
