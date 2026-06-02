@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/joho/godotenv"
 )
@@ -17,6 +19,22 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("[main -> ENV] ERROR .env file was not loaded, using system environment variables")
 	}
+
+	// Connect Postgres
+	ctx := context.Background()
+	postgresConfig := config.PostgresDBConfig{
+		Host:     os.Getenv("POSTGRES_HOST"),
+		Port:     os.Getenv("POSTGRES_PORT"),
+		Username: os.Getenv("POSTGRES_USER"),
+		Password: os.Getenv("POSTGRES_PASSWORD"),
+		DBName:   os.Getenv("POSTGRES_DB"),
+		SSLMode:  os.Getenv("POSTGRES_SSLMODE"),
+	}
+	dbConnection, err := repository.NewPostgresDB(ctx, postgresConfig)
+	if err != nil {
+		log.Fatalf("[main -> POSTGRES] ERROR while connecting to database: %v", err)
+	}
+	defer dbConnection.Close()
 
 	// Connect Clerk SDK
 	clerkSecretKey := os.Getenv("CLERK_SECRET_KEY")
@@ -36,6 +54,7 @@ func main() {
 
 	// Launch Server
 	handlers := handler.NewHandler(corsConfig)
+	repos := repository.NewRepository(dbConnection)
 
 	serverPort := os.Getenv("PORT")
 	if serverPort == "" {
