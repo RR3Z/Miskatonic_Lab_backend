@@ -22,15 +22,14 @@ func main() {
 
 	// Connect Postgres
 	ctx := context.Background()
-	postgresConfig := config.PostgresDBConfig{
+	dbConnection, err := repository.NewPostgresDB(ctx, config.PostgresDBConfig{
 		Host:     os.Getenv("POSTGRES_HOST"),
 		Port:     os.Getenv("POSTGRES_PORT"),
 		Username: os.Getenv("POSTGRES_USER"),
 		Password: os.Getenv("POSTGRES_PASSWORD"),
 		DBName:   os.Getenv("POSTGRES_DB"),
 		SSLMode:  os.Getenv("POSTGRES_SSLMODE"),
-	}
-	dbConnection, err := repository.NewPostgresDB(ctx, postgresConfig)
+	})
 	if err != nil {
 		log.Fatalf("[main -> POSTGRES] ERROR while connecting to database: %v", err)
 	}
