@@ -1,0 +1,19 @@
+-- name: UpsertUser :one
+INSERT INTO users (
+    clerk_user_id,
+    username,
+    email,
+    avatar_url
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4
+)
+ON CONFLICT (clerk_user_id)
+DO UPDATE SET
+    username = EXCLUDED.username,
+    email = EXCLUDED.email,
+    avatar_url = EXCLUDED.avatar_url,
+    updated_at = NOW()
+RETURNING *;
