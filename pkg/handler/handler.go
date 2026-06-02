@@ -20,10 +20,6 @@ func (h *Handler) InitRoutes() *chi.Mux {
 
 	router.Use(middleware.CORSMiddleware(h.corsConfig))
 
-	router.Route("/health", func(r chi.Router) {
-		r.Get("/", h.health)
-	})
-
 	router.Route("/api", func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
 
