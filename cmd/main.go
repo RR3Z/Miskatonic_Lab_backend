@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 
 	MiskatonicLab "github.com/RR3Z/Miskatonic_Lab_backend"
@@ -15,9 +15,28 @@ import (
 )
 
 func main() {
+	setupLogger()
+	os.Exit(run())
+}
+
+func setupLogger() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
+	slog.SetDefault(logger)
+}
+
+func run() int {
 	// Load ENV
 	if err := godotenv.Load(); err != nil {
-		log.Fatalf("[main -> ENV] ERROR .env file was not loaded, using system environment variables")
+		slog.Warn(
+			"env file was not loaded",
+			"component", "main",
+			"file", ".env",
+			"fallback", "system environment variables",
+			"error", err,
+		)
 	}
 
 	// Connect Postgres
@@ -31,21 +50,37 @@ func main() {
 		SSLMode:  os.Getenv("POSTGRES_SSLMODE"),
 	})
 	if err != nil {
-		log.Fatalf("[main -> POSTGRES] ERROR while connecting to database: %v", err)
+		slog.Error(
+			"database connection failed",
+			"component", "main",
+			"database", "postgres",
+			"error", err,
+		)
+		return 1
 	}
 	defer dbConnection.Close()
 
 	// Connect Clerk SDK
 	clerkSecretKey := os.Getenv("CLERK_SECRET_KEY")
 	if clerkSecretKey == "" {
-		log.Fatalf("[main -> CLERK_SDK] ERROR because CLERK_SECRET_KEY is not set in .env")
+		slog.Error(
+			"clerk secret key is not set",
+			"component", "main",
+			"env", "CLERK_SECRET_KEY",
+		)
+		return 1
 	}
 	clerk.SetKey(clerkSecretKey)
 
 	// Configure CORS
 	allowedOrigins := config.ParseAllowedOrigins(os.Getenv("CORS_ALLOWED_ORIGINS"))
 	if len(allowedOrigins) == 0 {
-		log.Fatalf("[main -> CORS] ERROR because CORS_ALLOWED_ORIGINS is not set in .env")
+		slog.Error(
+			"cors allowed origins are not set",
+			"component", "main",
+			"env", "CORS_ALLOWED_ORIGINS",
+		)
+		return 1
 	}
 	corsConfig := middleware.CORSConfig{
 		AllowedOrigins: allowedOrigins,
@@ -57,13 +92,32 @@ func main() {
 
 	serverPort := os.Getenv("PORT")
 	if serverPort == "" {
-		log.Println("[main -> HTTP_SERVER] PORT is not set in .env, using default port 8000")
+		slog.Warn(
+			"server port is not set",
+			"component", "main",
+			"env", "PORT",
+			"default", "8000",
+		)
 		serverPort = "8000"
 	}
 
 	server := new(MiskatonicLab.Server)
 
+	slog.Info(
+		"http server starting",
+		"component", "http_server",
+		"port", serverPort,
+	)
+
 	if err := server.Run(serverPort, handlers.InitRoutes()); err != nil {
-		log.Fatalf("[HTTP_SERVER] ERROR while running http server: %v", err)
+		slog.Error(
+			"http server stopped with error",
+			"component", "http_server",
+			"port", serverPort,
+			"error", err,
+		)
+		return 1
 	}
+
+	return 0
 }
