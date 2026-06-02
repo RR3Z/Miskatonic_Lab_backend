@@ -20,6 +20,8 @@ func (h *Handler) InitRoutes() *chi.Mux {
 
 	router.Use(middleware.CORSMiddleware(h.corsConfig))
 
+	router.Post("/webhooks/clerk/user", h.handleUserClerkWebhook)
+
 	router.Route("/api", func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
 
