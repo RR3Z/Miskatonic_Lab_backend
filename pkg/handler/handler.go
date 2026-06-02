@@ -2,15 +2,18 @@ package handler
 
 import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
 	corsConfig middleware.CORSConfig
+	services   *service.Service
 }
 
-func NewHandler(corsConfig middleware.CORSConfig) *Handler {
+func NewHandler(services *service.Service, corsConfig middleware.CORSConfig) *Handler {
 	return &Handler{
+		services:   services,
 		corsConfig: corsConfig,
 	}
 }

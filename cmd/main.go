@@ -10,6 +10,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/joho/godotenv"
 )
@@ -87,8 +88,9 @@ func run() int {
 	}
 
 	// Launch Server
-	handlers := handler.NewHandler(corsConfig)
 	repos := repository.NewRepository(dbConnection)
+	service := service.NewService(repos)
+	handlers := handler.NewHandler(service, corsConfig)
 
 	serverPort := os.Getenv("PORT")
 	if serverPort == "" {
