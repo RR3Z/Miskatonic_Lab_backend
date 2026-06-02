@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 	"github.com/clerk/clerk-sdk-go/v2"
+	"github.com/jackc/pgx/v5"
 	svix "github.com/svix/svix-webhooks/go"
 )
 
@@ -38,33 +40,48 @@ func (h *Handler) getUserByClerkID(w http.ResponseWriter, r *http.Request) {
 	claims, ok := clerk.SessionClaimsFromContext(r.Context())
 	if !ok {
 		slog.Error(
-			"failed to read clerk user webhook request body",
-			"component", "clerk_webhook")
-		http.Error(w, "failed to read request body", http.StatusBadRequest)
+			"failed to get clerk session claims",
+			"component", "user_api",
+		)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	clerkUserID := claims.Subject
-	if clerkUserID == "" || strings.TrimSpace(clerkUserID) == "" {
+	if strings.TrimSpace(clerkUserID) == "" {
 		slog.Error(
-			"failed to read clerk user webhook request body",
-			"component", "clerk_webhook")
-		http.Error(w, "failed to read request body", http.StatusBadRequest)
+			"clerk session claims missing subject",
+			"component", "user_api",
+		)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	if err := h.services.User.GetUserByClerkID(r.Context(), clerkUserID); err != nil {
+	user, err := h.services.User.GetUserByClerkID(r.Context(), clerkUserID)
+	// DB is fine BUT user wasn't find
+	if errors.Is(err, pgx.ErrNoRows) {
 		slog.Error(
-			"failed to get user from clerk",
-			"component", "clerk_webhook",
+			"user not found by clerk id",
+			"component", "user_api",
 			"clerk_user_id", clerkUserID,
 			"error", err,
 		)
-		http.Error(w, "failed to create user", http.StatusInternalServerError)
+		http.Error(w, "user not found", http.StatusNotFound)
+		return
+	}
+	// Other errors
+	if err != nil {
+		slog.Error(
+			"failed to get user by clerk id",
+			"component", "user_api",
+			"clerk_user_id", clerkUserID,
+			"error", err,
+		)
+		http.Error(w, "failed to get user", http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	utils.WriteJSON(w, http.StatusOK, user)
 }
 
 func (h *Handler) handleUserClerkWebhook(w http.ResponseWriter, r *http.Request) {
