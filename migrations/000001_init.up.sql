@@ -4,8 +4,8 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     clerk_user_id TEXT NOT NULL UNIQUE,
 
-    username TEXT NOT NULL UNIQUE,
-    email TEXT NOT NULL UNIQUE,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
     avatar_url TEXT,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -17,13 +17,13 @@ CREATE TABLE characters (
 
     user_id UUID NOT NULL,
 
-    name TEXT NOT NULL,
-    player_name TEXT,
-    occupation TEXT,
-    age TEXT,
-    sex TEXT,
-    residence TEXT,
-    birthplace TEXT,
+    name VARCHAR(255) NOT NULL,
+    player_name VARCHAR(255),
+    occupation VARCHAR(120),
+    age SMALLINT CHECK (age >= 0),
+    sex VARCHAR(32),
+    residence VARCHAR(255),
+    birthplace VARCHAR(255),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -37,7 +37,7 @@ CREATE TABLE characters (
 CREATE TABLE skills_categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    name TEXT NOT NULL,
+    name VARCHAR(255) NOT NULL,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -46,10 +46,10 @@ CREATE TABLE skills_categories (
 CREATE TABLE skills_specialties (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    name TEXT NOT NULL,
+    name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
 
-    base_value INT NOT NULL CHECK (base_value >= 0),
+    base_value SMALLINT NOT NULL CHECK (base_value >= 0),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -59,14 +59,14 @@ CREATE TABLE characteristics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL UNIQUE,
 
-    strength INT CHECK (strength >= 0),
-    constitution INT CHECK (constitution >= 0),
-    size INT CHECK (size >= 0),
-    dexterity INT CHECK (dexterity >= 0),
-    appearance INT CHECK (appearance >= 0),
-    intelligence INT CHECK (intelligence >= 0),
-    power INT CHECK (power >= 0),
-    education INT CHECK (education >= 0),
+    strength SMALLINT CHECK (strength >= 0),
+    constitution SMALLINT CHECK (constitution >= 0),
+    size SMALLINT CHECK (size >= 0),
+    dexterity SMALLINT CHECK (dexterity >= 0),
+    appearance SMALLINT CHECK (appearance >= 0),
+    intelligence SMALLINT CHECK (intelligence >= 0),
+    power SMALLINT CHECK (power >= 0),
+    education SMALLINT CHECK (education >= 0),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -81,10 +81,10 @@ CREATE TABLE derived_stats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL UNIQUE,
 
-    speed INT CHECK (speed >= 0),
-    physique INT CHECK (physique >= 0),
-    damage_bonus INT CHECK (damage_bonus >= 0),
-    dodge_value INT CHECK (dodge_value >= 0),
+    speed SMALLINT CHECK (speed >= 0),
+    physique SMALLINT CHECK (physique >= 0),
+    damage_bonus SMALLINT CHECK (damage_bonus >= 0),
+    dodge_value SMALLINT CHECK (dodge_value >= 0),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -99,8 +99,8 @@ CREATE TABLE health_states (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL UNIQUE,
 
-    max_hp INT NOT NULL DEFAULT 1 CHECK (max_hp >= 0),
-    current_hp INT NOT NULL DEFAULT 1 CHECK (current_hp >= 0),
+    max_hp SMALLINT NOT NULL DEFAULT 1 CHECK (max_hp >= 0),
+    current_hp SMALLINT NOT NULL DEFAULT 1 CHECK (current_hp >= 0),
 
     major_wound BOOLEAN NOT NULL DEFAULT FALSE,
     unconscious BOOLEAN NOT NULL DEFAULT FALSE,
@@ -120,8 +120,8 @@ CREATE TABLE sanity_states (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL UNIQUE,
 
-    max_sanity INT NOT NULL DEFAULT 1 CHECK (max_sanity >= 0),
-    current_sanity INT NOT NULL DEFAULT 1 CHECK (current_sanity >= 0),
+    max_sanity SMALLINT NOT NULL DEFAULT 1 CHECK (max_sanity >= 0),
+    current_sanity SMALLINT NOT NULL DEFAULT 1 CHECK (current_sanity >= 0),
 
     temp_insanity BOOLEAN NOT NULL DEFAULT FALSE,
     indef_insanity BOOLEAN NOT NULL DEFAULT FALSE,
@@ -139,8 +139,8 @@ CREATE TABLE magic_states (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL UNIQUE,
 
-    max_mp INT NOT NULL DEFAULT 1 CHECK (max_mp >= 0),
-    current_mp INT NOT NULL DEFAULT 1 CHECK (current_mp >= 0),
+    max_mp SMALLINT NOT NULL DEFAULT 1 CHECK (max_mp >= 0),
+    current_mp SMALLINT NOT NULL DEFAULT 1 CHECK (current_mp >= 0),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -155,8 +155,8 @@ CREATE TABLE luck_states (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL UNIQUE,
 
-    starting_luck INT NOT NULL DEFAULT 1 CHECK (starting_luck >= 0),
-    current_luck INT NOT NULL DEFAULT 1 CHECK (current_luck >= 0),
+    starting_luck SMALLINT NOT NULL DEFAULT 1 CHECK (starting_luck >= 0),
+    current_luck SMALLINT NOT NULL DEFAULT 1 CHECK (current_luck >= 0),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -186,9 +186,9 @@ CREATE TABLE backstory_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     backstory_id UUID NOT NULL,
-    section TEXT NOT NULL,
+    section VARCHAR(32) NOT NULL,
 
-    title TEXT NOT NULL,
+    title VARCHAR(255) NOT NULL,
     text TEXT NOT NULL,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -217,11 +217,11 @@ CREATE TABLE skills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL,
 
-    name TEXT NOT NULL,
+    name VARCHAR(100) NOT NULL,
     category_id UUID NOT NULL,
 
-    base_value INT NOT NULL CHECK (base_value >= 0),
-    value INT NOT NULL CHECK (value >= 0),
+    base_value SMALLINT NOT NULL CHECK (base_value >= 0),
+    value SMALLINT NOT NULL CHECK (value >= 0),
     checked BOOLEAN NOT NULL DEFAULT FALSE,
 
     specialized BOOLEAN NOT NULL DEFAULT FALSE,
@@ -253,8 +253,8 @@ CREATE TABLE finances (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL UNIQUE,
 
-    spending_limit TEXT,
-    cash TEXT,
+    spending_limit VARCHAR(120),
+    cash VARCHAR(120),
     assets TEXT,
 
     credit_rating_skill_id UUID,
@@ -277,7 +277,7 @@ CREATE TABLE notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     character_id UUID NOT NULL,
 
-    title TEXT NOT NULL,
+    title VARCHAR(120) NOT NULL,
     body TEXT NOT NULL,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

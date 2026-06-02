@@ -8,7 +8,7 @@ type Character struct {
 	Name       string  `json:"name"`
 	PlayerName *string `json:"playerName,omitempty"`
 	Occupation *string `json:"occupation,omitempty"`
-	Age        *string `json:"age,omitempty"`
+	Age        *int    `json:"age,omitempty"`
 	Sex        *string `json:"sex,omitempty"`
 	Residence  *string `json:"residence,omitempty"`
 	Birthplace *string `json:"birthplace,omitempty"`
