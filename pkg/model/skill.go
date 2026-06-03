@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -28,4 +29,31 @@ type SkillSpecialtyModel struct {
 
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+func ToSkillModel(row db.GetSkillsRow) SkillModel {
+	var specialty *SkillSpecialtyModel
+	if row.SpecialtyPkID.Valid {
+		specialty = &SkillSpecialtyModel{
+			ID:          row.SpecialtyPkID,
+			Name:        *row.SpecialtyName,
+			Description: *row.SpecialtyDescription,
+			BaseValue:   *row.SpecialtyBaseValue,
+			CreatedAt:   row.SpecialtyCreatedAt,
+			UpdatedAt:   row.SpecialtyUpdatedAt,
+		}
+	}
+
+	return SkillModel{
+		ID:          row.ID,
+		Name:        row.Name,
+		BaseValue:   row.BaseValue,
+		Value:       row.Value,
+		Checked:     row.Checked,
+		Category:    row.CategoryName,
+		Specialized: row.Specialized,
+		Specialty:   specialty,
+		CreatedAt:   row.CreatedAt,
+		UpdatedAt:   row.UpdatedAt,
+	}
 }
