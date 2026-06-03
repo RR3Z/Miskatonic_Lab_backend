@@ -16,6 +16,12 @@ type ICharacter interface {
 	CreateCharacter(ctx context.Context, input db.CreateCharacterParams) (model.CharacterModel, error)
 	UpdateCharacter(ctx context.Context, input db.UpdateCharacterParams) (model.CharacterModel, error)
 	DeleteCharacter(ctx context.Context, input db.DeleteCharacterParams) error
+
+	GetAllNotes(ctx context.Context, input db.GetCharacterNotesParams) ([]db.Note, error)
+	GetNote(ctx context.Context, input db.GetCharacterNoteParams) (db.Note, error)
+	CreateNote(ctx context.Context, input db.CreateNoteParams) (db.Note, error)
+	UpdateNote(ctx context.Context, input db.UpdateNoteParams) (db.Note, error)
+	DeleteNote(ctx context.Context, input db.DeleteNoteParams) error
 }
 
 type CharacterService struct {
@@ -26,6 +32,7 @@ func NewCharacterService(repos *repository.Repository) *CharacterService {
 	return &CharacterService{repos: repos}
 }
 
+// Characters
 func (s *CharacterService) GetAllCharacters(ctx context.Context, userID string) ([]model.CharacterModel, error) {
 	characters, err := s.repos.Queries.GetAllUserCharacters(ctx, userID)
 	if err != nil {
@@ -145,4 +152,46 @@ func (s *CharacterService) DeleteCharacter(ctx context.Context, input db.DeleteC
 		ID:     input.ID,
 		UserID: input.UserID,
 	})
+}
+
+// Notes
+func (s *CharacterService) GetAllNotes(ctx context.Context, input db.GetCharacterNotesParams) ([]db.Note, error) {
+	notes, err := s.repos.Queries.GetCharacterNotes(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
+func (s *CharacterService) GetNote(ctx context.Context, input db.GetCharacterNoteParams) (db.Note, error) {
+	note, err := s.repos.Queries.GetCharacterNote(ctx, input)
+	if err != nil {
+		return db.Note{}, err
+	}
+
+	return note, nil
+}
+
+func (s *CharacterService) CreateNote(ctx context.Context, input db.CreateNoteParams) (db.Note, error) {
+	note, err := s.repos.Queries.CreateNote(ctx, input)
+	if err != nil {
+		return db.Note{}, err
+	}
+
+	return note, nil
+}
+
+func (s *CharacterService) UpdateNote(ctx context.Context, input db.UpdateNoteParams) (db.Note, error) {
+	note, err := s.repos.Queries.UpdateNote(ctx, input)
+	if err != nil {
+		return db.Note{}, err
+	}
+
+	return note, nil
+}
+
+func (s *CharacterService) DeleteNote(ctx context.Context, input db.DeleteNoteParams) error {
+	_, err := s.repos.Queries.DeleteNote(ctx, input)
+	return err
 }

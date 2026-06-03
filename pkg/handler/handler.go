@@ -38,6 +38,17 @@ func (h *Handler) InitRoutes() *chi.Mux {
 				r.Get("/", h.getCharacter)
 				r.Put("/", h.updateCharacter)
 				r.Delete("/", h.deleteCharacter)
+
+				r.Route("/notes", func(r chi.Router) {
+					r.Get("/", h.getAllNotes)
+					r.Post("/", h.createNote)
+
+					r.Route("/{noteID}", func(r chi.Router) {
+						r.Get("/", h.getNote)
+						r.Put("/", h.updateNote)
+						r.Delete("/", h.deleteNote)
+					})
+				})
 			})
 		})
 	})

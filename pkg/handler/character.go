@@ -221,6 +221,329 @@ func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// Notes
+func (h *Handler) getAllNotes(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	notes, err := h.services.Character.GetAllNotes(r.Context(), db.GetCharacterNotesParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		slog.Error(
+			"failed to get all character notes",
+			"component", "character_api",
+			"character_id", characterID,
+			"user_id", userID,
+			"error", err,
+		)
+		http.Error(w, "failed to get all character notes", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"successfully get all character notes",
+		"component", "character_note_api",
+		"character_id", characterID,
+		"user_id", userID,
+	)
+
+	utils.WriteJSON(w, http.StatusOK, notes)
+}
+
+func (h *Handler) getNote(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	noteID, err := getNoteIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid note id format",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"note_id", noteID,
+			"error", err,
+		)
+		http.Error(w, "invalid note id", http.StatusBadRequest)
+		return
+	}
+
+	note, err := h.services.Character.GetNote(r.Context(), db.GetCharacterNoteParams{
+		UserID:      userID,
+		CharacterID: characterID,
+		NoteID:      noteID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"note not found",
+				"component", "character_note_api",
+				"character_id", characterID,
+				"note_id", noteID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "note not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error(
+			"failed to get note data",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"note_id", noteID,
+			"user_id", userID,
+			"error", err,
+		)
+		http.Error(w, "failed to get note data", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"successfully get note",
+		"component", "character_note_api",
+		"character_id", characterID,
+		"note_id", noteID,
+		"user_id", userID,
+	)
+
+	utils.WriteJSON(w, http.StatusOK, note)
+}
+
+func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	var input db.CreateNoteParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		slog.Error(
+			"invalid request body",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	note, err := h.services.Character.CreateNote(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"character not found",
+				"component", "character_note_api",
+				"character_id", characterID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "character not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error("failed to create note",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"user_id", userID,
+			"error", err)
+		http.Error(w, "failed to create note", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"note created successfully",
+		"component", "character_note_api",
+		"character_id", characterID,
+		"user_id", userID,
+	)
+
+	utils.WriteJSON(w, http.StatusCreated, note)
+}
+
+func (h *Handler) updateNote(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	noteID, err := getNoteIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid note id format",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"note_id", noteID,
+			"error", err,
+		)
+		http.Error(w, "invalid note id", http.StatusBadRequest)
+		return
+	}
+
+	var input db.UpdateNoteParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		slog.Error(
+			"invalid request body",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+	input.NoteID = noteID
+
+	note, err := h.services.Character.UpdateNote(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"note not found",
+				"component", "character_note_api",
+				"character_id", characterID,
+				"note_id", noteID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "note not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error("failed to update note",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"note_id", noteID,
+			"user_id", userID,
+			"error", err)
+		http.Error(w, "failed to update note", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"note updated successfully",
+		"component", "character_note_api",
+		"character_id", characterID,
+		"note_id", noteID,
+		"user_id", userID,
+	)
+
+	utils.WriteJSON(w, http.StatusOK, note)
+}
+
+func (h *Handler) deleteNote(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	noteID, err := getNoteIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid note id format",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"note_id", noteID,
+			"error", err,
+		)
+		http.Error(w, "invalid note id", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.services.Character.DeleteNote(r.Context(), db.DeleteNoteParams{
+		UserID:      userID,
+		CharacterID: characterID,
+		NoteID:      noteID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"note not found",
+				"component", "character_note_api",
+				"character_id", characterID,
+				"note_id", noteID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "note not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error(
+			"failed to delete note",
+			"component", "character_note_api",
+			"character_id", characterID,
+			"note_id", noteID,
+			"user_id", userID,
+			"error", err,
+		)
+		http.Error(w, "failed to delete note", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"note deleted successfully",
+		"component", "character_api",
+		"character_id", characterID,
+		"note_id", noteID,
+		"user_id", userID,
+	)
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// Utils
 func getCharacterIDFromRequest(r *http.Request) (pgtype.UUID, error) {
 	characterID := chi.URLParam(r, "characterID")
 
@@ -230,4 +553,15 @@ func getCharacterIDFromRequest(r *http.Request) (pgtype.UUID, error) {
 	}
 
 	return characterUUID, nil
+}
+
+func getNoteIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+	noteID := chi.URLParam(r, "noteID")
+
+	var noteUUID pgtype.UUID
+	if err := noteUUID.Scan(noteID); err != nil {
+		return pgtype.UUID{}, err
+	}
+
+	return noteUUID, nil
 }
