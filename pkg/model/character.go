@@ -1,55 +1,32 @@
-package MiskatonicLab
+package model
 
-import "time"
+import (
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
-type Character struct {
-	Id string `json:"-"`
+type CharacterModel struct {
+	ID     pgtype.UUID `json:"id"`
+	UserID pgtype.UUID `json:"user_id"`
 
-	Name       string  `json:"name"`
-	PlayerName *string `json:"playerName,omitempty"`
-	Occupation *string `json:"occupation,omitempty"`
-	Age        *int    `json:"age,omitempty"`
-	Sex        *string `json:"sex,omitempty"`
-	Residence  *string `json:"residence,omitempty"`
-	Birthplace *string `json:"birthplace,omitempty"`
+	Name            string            `json:"name"`
+	PlayerName      *string           `json:"player_name"`
+	Occupation      *string           `json:"occupation"`
+	Age             *int16            `json:"age"`
+	Sex             *string           `json:"sex"`
+	Residence       *string           `json:"residence"`
+	Birthplace      *string           `json:"birthplace"`
+	Skills          []SkillModel      `json:"skills"`
+	Characteristics db.Characteristic `json:"characteristics"`
+	DerivedStats    db.DerivedStat    `json:"derived_stats"`
+	HP              db.HealthState    `json:"hp"`
+	MP              db.MagicState     `json:"mp"`
+	Sanity          db.SanityState    `json:"sanity"`
+	Luck            db.LuckState      `json:"luck"`
+	Backstory       BackstoryModel    `json:"backstory"`
+	Finances        FinancesModel     `json:"finances"`
+	Notes           db.Note           `json:"notes"`
 
-	Characteristics Characteristics `json:"characteristics"`
-	DerivedStats    DerivedStats    `json:"derivedStats"`
-	Skills          []Skill         `json:"skills"`
-	Finances        Finances        `json:"finances"`
-
-	HealthState HealthState `json:"healthState"`
-	SanityState SanityState `json:"sanityState"`
-	MagicState  MagicState  `json:"magicState"`
-	LuckState   LuckState   `json:"luckState"`
-
-	Backstory Backstory `json:"backstory"`
-
-	Notes []Note `json:"notes"`
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type Note struct {
-	Id string `json:"-"`
-
-	Title string `json:"title"`
-	Body  string `json:"body"`
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type Finances struct {
-	Id string `json:"-"`
-
-	SpendingLimit *string `json:"spendingLevel,omitempty"`
-	Cash          *string `json:"cash,omitempty"`
-	Assets        *string `json:"assets,omitempty"`
-
-	CreditRating *Skill `json:"creditRating,omitempty"` // Credit Rating, Средства
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }

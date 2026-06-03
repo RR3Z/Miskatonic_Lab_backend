@@ -1,32 +1,27 @@
-package MiskatonicLab
+package model
 
-import "time"
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
-type Backstory struct {
-	Id string `json:"-"`
+type BackstoryItemModel struct {
+	ID pgtype.UUID `json:"id"`
 
-	PersonalDescription *string `json:"personalDescription,omitempty"`
+	Section string `json:"section"`
+	Title   string `json:"title"`
+	Text    string `json:"text"`
 
-	InjuriesScars        []BackstoryItem `json:"injuriesScars"`
-	PhobiasManias        []BackstoryItem `json:"phobiasManias"`
-	ArcaneTomesSpells    []BackstoryItem `json:"arcaneTomesSpells"`
-	Encounters           []BackstoryItem `json:"encounters"`
-	IdeologyBeliefs      []BackstoryItem `json:"ideologyBeliefs"`
-	SignificantPeople    []BackstoryItem `json:"significantPeople"`
-	MeaningfulLocations  []BackstoryItem `json:"meaningfulLocations"`
-	TreasuredPossessions []BackstoryItem `json:"treasuredPossessions"`
-	Traits               []BackstoryItem `json:"traits"`
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
-type BackstoryItem struct {
-	Id string `json:"-"`
+type BackstoryModel struct {
+	ID          pgtype.UUID `json:"id"`
+	CharacterID pgtype.UUID `json:"character_id"`
 
-	Title string `json:"title"`
-	Text  string `json:"text"`
+	PersonalDescription *string              `json:"personal_description"`
+	Items               []BackstoryItemModel `json:"items"`
 
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
