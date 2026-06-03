@@ -51,11 +51,6 @@ type GetCharacterInput struct {
 	CharacterID pgtype.UUID `json:"character_id"`
 }
 
-type DeleteCharacterInput struct {
-	UserID      string      `json:"user_id"`
-	CharacterID pgtype.UUID `json:"character_id"`
-}
-
 func ToShortCharacterModel(c db.Character) CharacterModel {
 	return CharacterModel{
 		ID:         c.ID,

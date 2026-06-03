@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// Characters
 func (h *Handler) getAllCharacters(w http.ResponseWriter, r *http.Request) {
 	userID := utils.GetUserIDFromContext(r.Context())
 
@@ -164,9 +165,9 @@ func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.services.Character.DeleteCharacter(r.Context(), model.DeleteCharacterInput{
-		UserID:      userID,
-		CharacterID: characterID,
+	if err := h.services.Character.DeleteCharacter(r.Context(), db.DeleteCharacterParams{
+		UserID: userID,
+		ID:     characterID,
 	}); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			slog.Error(

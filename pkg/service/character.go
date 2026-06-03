@@ -15,7 +15,7 @@ type ICharacter interface {
 	GetCharacter(ctx context.Context, input model.GetCharacterInput) (model.CharacterModel, error)
 	CreateCharacter(ctx context.Context, input db.CreateCharacterParams) (model.CharacterModel, error)
 	UpdateCharacter(ctx context.Context, input db.UpdateCharacterParams) (model.CharacterModel, error)
-	DeleteCharacter(ctx context.Context, input model.DeleteCharacterInput) error
+	DeleteCharacter(ctx context.Context, input db.DeleteCharacterParams) error
 }
 
 type CharacterService struct {
@@ -140,9 +140,9 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input db.UpdateC
 	return model.ToShortCharacterModel(character), nil
 }
 
-func (s *CharacterService) DeleteCharacter(ctx context.Context, input model.DeleteCharacterInput) error {
+func (s *CharacterService) DeleteCharacter(ctx context.Context, input db.DeleteCharacterParams) error {
 	return s.repos.Queries.DeleteCharacter(ctx, db.DeleteCharacterParams{
-		ID:     input.CharacterID,
+		ID:     input.ID,
 		UserID: input.UserID,
 	})
 }
