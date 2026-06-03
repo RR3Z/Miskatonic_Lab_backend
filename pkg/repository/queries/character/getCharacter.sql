@@ -1,4 +1,4 @@
--- name: GetCharacterByIDAndUserID :one
+-- name: GetCharacter :one
 SELECT *
 FROM characters
 WHERE user_id = $1 AND id = $2;
