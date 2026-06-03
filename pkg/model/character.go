@@ -51,12 +51,6 @@ type GetCharacterInput struct {
 	CharacterID pgtype.UUID `json:"character_id"`
 }
 
-type CreateCharacterInput struct {
-}
-
-type UpdateCharacterInput struct {
-}
-
 type DeleteCharacterInput struct {
 	UserID      string      `json:"user_id"`
 	CharacterID pgtype.UUID `json:"character_id"`
