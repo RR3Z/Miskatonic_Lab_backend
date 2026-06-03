@@ -16,22 +16,31 @@ INSERT INTO notes (
     character_id,
     title,
     body
-) VALUES (
-    $1,
-    $2,
-    $3
 )
+SELECT
+    c.id,
+    $1,
+    $2
+FROM characters c
+WHERE c.user_id = $3
+  AND c.id = $4
 RETURNING id, character_id, title, body, created_at, updated_at
 `
 
 type CreateNoteParams struct {
-	CharacterID pgtype.UUID `json:"character_id"`
 	Title       string      `json:"title"`
 	Body        string      `json:"body"`
+	UserID      string      `json:"user_id"`
+	CharacterID pgtype.UUID `json:"character_id"`
 }
 
 func (q *Queries) CreateNote(ctx context.Context, arg CreateNoteParams) (Note, error) {
-	row := q.db.QueryRow(ctx, createNote, arg.CharacterID, arg.Title, arg.Body)
+	row := q.db.QueryRow(ctx, createNote,
+		arg.Title,
+		arg.Body,
+		arg.UserID,
+		arg.CharacterID,
+	)
 	var i Note
 	err := row.Scan(
 		&i.ID,

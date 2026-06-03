@@ -12,28 +12,34 @@ import (
 )
 
 const updateNote = `-- name: UpdateNote :one
-UPDATE notes
+UPDATE notes n
 SET
-    title = $3,
-    body = $4,
+    title = $1,
+    body = $2,
     updated_at = NOW()
-WHERE character_id = $1 AND id = $2
-RETURNING id, character_id, title, body, created_at, updated_at
+FROM characters c
+WHERE c.id = n.character_id
+  AND c.user_id = $3
+  AND n.character_id = $4
+  AND n.id = $5
+RETURNING n.id, n.character_id, n.title, n.body, n.created_at, n.updated_at
 `
 
 type UpdateNoteParams struct {
-	CharacterID pgtype.UUID `json:"character_id"`
-	ID          pgtype.UUID `json:"id"`
 	Title       string      `json:"title"`
 	Body        string      `json:"body"`
+	UserID      string      `json:"user_id"`
+	CharacterID pgtype.UUID `json:"character_id"`
+	NoteID      pgtype.UUID `json:"note_id"`
 }
 
 func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) (Note, error) {
 	row := q.db.QueryRow(ctx, updateNote,
-		arg.CharacterID,
-		arg.ID,
 		arg.Title,
 		arg.Body,
+		arg.UserID,
+		arg.CharacterID,
+		arg.NoteID,
 	)
 	var i Note
 	err := row.Scan(

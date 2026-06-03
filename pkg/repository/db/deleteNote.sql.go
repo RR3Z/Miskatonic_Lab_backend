@@ -11,17 +11,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deleteNote = `-- name: DeleteNote :exec
-DELETE FROM notes
-WHERE character_id = $1 AND id = $2
+const deleteNote = `-- name: DeleteNote :one
+DELETE FROM notes n
+USING characters c
+WHERE c.id = n.character_id
+  AND c.user_id = $1
+  AND n.character_id = $2
+  AND n.id = $3
+RETURNING n.id, n.character_id, n.title, n.body, n.created_at, n.updated_at
 `
 
 type DeleteNoteParams struct {
+	UserID      string      `json:"user_id"`
 	CharacterID pgtype.UUID `json:"character_id"`
-	ID          pgtype.UUID `json:"id"`
+	NoteID      pgtype.UUID `json:"note_id"`
 }
 
-func (q *Queries) DeleteNote(ctx context.Context, arg DeleteNoteParams) error {
-	_, err := q.db.Exec(ctx, deleteNote, arg.CharacterID, arg.ID)
-	return err
+func (q *Queries) DeleteNote(ctx context.Context, arg DeleteNoteParams) (Note, error) {
+	row := q.db.QueryRow(ctx, deleteNote, arg.UserID, arg.CharacterID, arg.NoteID)
+	var i Note
+	err := row.Scan(
+		&i.ID,
+		&i.CharacterID,
+		&i.Title,
+		&i.Body,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

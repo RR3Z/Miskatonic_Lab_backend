@@ -12,14 +12,21 @@ import (
 )
 
 const getCharacterNotes = `-- name: GetCharacterNotes :many
-SELECT id, character_id, title, body, created_at, updated_at
-FROM notes
-WHERE character_id = $1
-ORDER BY created_at DESC
+SELECT n.id, n.character_id, n.title, n.body, n.created_at, n.updated_at
+FROM notes n
+JOIN characters c ON c.id = n.character_id
+WHERE c.user_id = $1
+  AND n.character_id = $2
+ORDER BY n.created_at DESC
 `
 
-func (q *Queries) GetCharacterNotes(ctx context.Context, characterID pgtype.UUID) ([]Note, error) {
-	rows, err := q.db.Query(ctx, getCharacterNotes, characterID)
+type GetCharacterNotesParams struct {
+	UserID      string      `json:"user_id"`
+	CharacterID pgtype.UUID `json:"character_id"`
+}
+
+func (q *Queries) GetCharacterNotes(ctx context.Context, arg GetCharacterNotesParams) ([]Note, error) {
+	rows, err := q.db.Query(ctx, getCharacterNotes, arg.UserID, arg.CharacterID)
 	if err != nil {
 		return nil, err
 	}

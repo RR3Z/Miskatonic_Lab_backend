@@ -1,5 +1,7 @@
 -- name: GetCharacterNotes :many
-SELECT *
-FROM notes
-WHERE character_id = $1
-ORDER BY created_at DESC;
+SELECT n.*
+FROM notes n
+JOIN characters c ON c.id = n.character_id
+WHERE c.user_id = sqlc.arg(user_id)
+  AND n.character_id = sqlc.arg(character_id)
+ORDER BY n.created_at DESC;

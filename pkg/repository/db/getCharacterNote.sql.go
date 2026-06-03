@@ -12,18 +12,22 @@ import (
 )
 
 const getCharacterNote = `-- name: GetCharacterNote :one
-SELECT id, character_id, title, body, created_at, updated_at
-FROM notes
-WHERE character_id = $1 AND id = $2
+SELECT n.id, n.character_id, n.title, n.body, n.created_at, n.updated_at
+FROM notes n
+JOIN characters c ON c.id = n.character_id
+WHERE c.user_id = $1
+  AND n.character_id = $2
+  AND n.id = $3
 `
 
 type GetCharacterNoteParams struct {
+	UserID      string      `json:"user_id"`
 	CharacterID pgtype.UUID `json:"character_id"`
-	ID          pgtype.UUID `json:"id"`
+	NoteID      pgtype.UUID `json:"note_id"`
 }
 
 func (q *Queries) GetCharacterNote(ctx context.Context, arg GetCharacterNoteParams) (Note, error) {
-	row := q.db.QueryRow(ctx, getCharacterNote, arg.CharacterID, arg.ID)
+	row := q.db.QueryRow(ctx, getCharacterNote, arg.UserID, arg.CharacterID, arg.NoteID)
 	var i Note
 	err := row.Scan(
 		&i.ID,
