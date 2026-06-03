@@ -18,7 +18,7 @@ WHERE user_id = $1
 `
 
 type DeleteCharacterParams struct {
-	UserID pgtype.UUID `json:"user_id"`
+	UserID string      `json:"user_id"`
 	ID     pgtype.UUID `json:"id"`
 }
 

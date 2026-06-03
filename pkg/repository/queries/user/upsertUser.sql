@@ -1,6 +1,6 @@
 -- name: UpsertUser :one
 INSERT INTO users (
-    clerk_user_id,
+    id,
     username,
     email,
     avatar_url
@@ -10,7 +10,7 @@ INSERT INTO users (
     $3,
     $4
 )
-ON CONFLICT (clerk_user_id)
+ON CONFLICT (id)
 DO UPDATE SET
     username = EXCLUDED.username,
     email = EXCLUDED.email,

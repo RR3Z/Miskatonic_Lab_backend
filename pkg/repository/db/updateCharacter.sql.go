@@ -28,7 +28,7 @@ RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birth
 `
 
 type UpdateCharacterParams struct {
-	UserID     pgtype.UUID `json:"user_id"`
+	UserID     string      `json:"user_id"`
 	ID         pgtype.UUID `json:"id"`
 	Name       string      `json:"name"`
 	PlayerName *string     `json:"player_name"`

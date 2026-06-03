@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const listCharactersByUserID = `-- name: ListCharactersByUserID :many
@@ -18,7 +16,7 @@ WHERE user_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListCharactersByUserID(ctx context.Context, userID pgtype.UUID) ([]Character, error) {
+func (q *Queries) ListCharactersByUserID(ctx context.Context, userID string) ([]Character, error) {
 	rows, err := q.db.Query(ctx, listCharactersByUserID, userID)
 	if err != nil {
 		return nil, err

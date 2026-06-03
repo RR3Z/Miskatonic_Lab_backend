@@ -36,7 +36,7 @@ type ClerkWebhookUserEmail struct {
 	EmailAddress string `json:"email_address"`
 }
 
-func (h *Handler) getUserByClerkID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getUserByID(w http.ResponseWriter, r *http.Request) {
 	claims, ok := clerk.SessionClaimsFromContext(r.Context())
 	if !ok {
 		slog.Error(
@@ -47,8 +47,8 @@ func (h *Handler) getUserByClerkID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clerkUserID := claims.Subject
-	if strings.TrimSpace(clerkUserID) == "" {
+	userID := claims.Subject
+	if strings.TrimSpace(userID) == "" {
 		slog.Error(
 			"clerk session claims missing subject",
 			"component", "user_api",
@@ -57,13 +57,13 @@ func (h *Handler) getUserByClerkID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.services.User.GetUserByClerkID(r.Context(), clerkUserID)
+	user, err := h.services.User.GetUserByID(r.Context(), userID)
 	// DB is fine BUT user wasn't find
 	if errors.Is(err, pgx.ErrNoRows) {
 		slog.Error(
 			"user not found by clerk id",
 			"component", "user_api",
-			"clerk_user_id", clerkUserID,
+			"clerk_user_id", userID,
 			"error", err,
 		)
 		http.Error(w, "user not found", http.StatusNotFound)
@@ -74,7 +74,7 @@ func (h *Handler) getUserByClerkID(w http.ResponseWriter, r *http.Request) {
 		slog.Error(
 			"failed to get user by clerk id",
 			"component", "user_api",
-			"clerk_user_id", clerkUserID,
+			"clerk_user_id", userID,
 			"error", err,
 		)
 		http.Error(w, "failed to get user", http.StatusInternalServerError)
@@ -136,13 +136,13 @@ func (h *Handler) handleUserClerkWebhook(w http.ResponseWriter, r *http.Request)
 
 func (h *Handler) createUser(w http.ResponseWriter, r *http.Request, data ClerkWebhookUserData) {
 	input := db.UpsertUserParams{
-		ClerkUserID: data.ID,
-		Username:    parseClerkWebhookUsername(data),
-		Email:       parseClerkWebhookEmail(data),
-		AvatarUrl:   data.ImageURL,
+		ID:        data.ID,
+		Username:  parseClerkWebhookUsername(data),
+		Email:     parseClerkWebhookEmail(data),
+		AvatarUrl: data.ImageURL,
 	}
 
-	if err := h.services.User.UpsertUserFromClerk(r.Context(), input); err != nil {
+	if err := h.services.User.UpsertUser(r.Context(), input); err != nil {
 		slog.Error(
 			"failed to create user from clerk webhook",
 			"component", "clerk_webhook",
@@ -158,13 +158,13 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request, data ClerkW
 
 func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request, data ClerkWebhookUserData) {
 	input := db.UpsertUserParams{
-		ClerkUserID: data.ID,
-		Username:    parseClerkWebhookUsername(data),
-		Email:       parseClerkWebhookEmail(data),
-		AvatarUrl:   data.ImageURL,
+		ID:        data.ID,
+		Username:  parseClerkWebhookUsername(data),
+		Email:     parseClerkWebhookEmail(data),
+		AvatarUrl: data.ImageURL,
 	}
 
-	if err := h.services.User.UpsertUserFromClerk(r.Context(), input); err != nil {
+	if err := h.services.User.UpsertUser(r.Context(), input); err != nil {
 		slog.Error(
 			"failed to update user from clerk webhook",
 			"component", "clerk_webhook",
@@ -178,8 +178,8 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request, data ClerkW
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request, clerkUserId string) {
-	if strings.TrimSpace(clerkUserId) == "" {
+func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request, userID string) {
+	if strings.TrimSpace(userID) == "" {
 		slog.Error(
 			"failed to delete user from clerk webhook: missing clerk user id",
 			"component", "clerk_webhook",
@@ -188,11 +188,11 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request, clerkUserId
 		return
 	}
 
-	if err := h.services.User.DeleteUserFromClerk(r.Context(), clerkUserId); err != nil {
+	if err := h.services.User.DeleteUser(r.Context(), userID); err != nil {
 		slog.Error(
 			"failed to delete user from clerk webhook",
 			"component", "clerk_webhook",
-			"clerk_user_id", clerkUserId,
+			"clerk_user_id", userID,
 			"error", err,
 		)
 		http.Error(w, "failed to delete user", http.StatusInternalServerError)

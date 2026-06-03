@@ -11,7 +11,7 @@ import (
 
 const upsertUser = `-- name: UpsertUser :one
 INSERT INTO users (
-    clerk_user_id,
+    id,
     username,
     email,
     avatar_url
@@ -21,25 +21,25 @@ INSERT INTO users (
     $3,
     $4
 )
-ON CONFLICT (clerk_user_id)
+ON CONFLICT (id)
 DO UPDATE SET
     username = EXCLUDED.username,
     email = EXCLUDED.email,
     avatar_url = EXCLUDED.avatar_url,
     updated_at = NOW()
-RETURNING id, clerk_user_id, username, email, avatar_url, created_at, updated_at
+RETURNING id, username, email, avatar_url, created_at, updated_at
 `
 
 type UpsertUserParams struct {
-	ClerkUserID string  `json:"clerk_user_id"`
-	Username    string  `json:"username"`
-	Email       string  `json:"email"`
-	AvatarUrl   *string `json:"avatar_url"`
+	ID        string  `json:"id"`
+	Username  string  `json:"username"`
+	Email     string  `json:"email"`
+	AvatarUrl *string `json:"avatar_url"`
 }
 
 func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, upsertUser,
-		arg.ClerkUserID,
+		arg.ID,
 		arg.Username,
 		arg.Email,
 		arg.AvatarUrl,
@@ -47,7 +47,6 @@ func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) (User, e
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.ClerkUserID,
 		&i.Username,
 		&i.Email,
 		&i.AvatarUrl,

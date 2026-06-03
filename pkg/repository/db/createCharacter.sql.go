@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createCharacter = `-- name: CreateCharacter :one
@@ -35,14 +33,14 @@ RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birth
 `
 
 type CreateCharacterParams struct {
-	UserID     pgtype.UUID `json:"user_id"`
-	Name       string      `json:"name"`
-	PlayerName *string     `json:"player_name"`
-	Occupation *string     `json:"occupation"`
-	Age        *int16      `json:"age"`
-	Sex        *string     `json:"sex"`
-	Residence  *string     `json:"residence"`
-	Birthplace *string     `json:"birthplace"`
+	UserID     string  `json:"user_id"`
+	Name       string  `json:"name"`
+	PlayerName *string `json:"player_name"`
+	Occupation *string `json:"occupation"`
+	Age        *int16  `json:"age"`
+	Sex        *string `json:"sex"`
+	Residence  *string `json:"residence"`
+	Birthplace *string `json:"birthplace"`
 }
 
 func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams) (Character, error) {

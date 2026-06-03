@@ -18,7 +18,7 @@ WHERE user_id = $1 AND id = $2
 `
 
 type GetCharacterByIDAndUserIDParams struct {
-	UserID pgtype.UUID `json:"user_id"`
+	UserID string      `json:"user_id"`
 	ID     pgtype.UUID `json:"id"`
 }
 

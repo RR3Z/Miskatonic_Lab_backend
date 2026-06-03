@@ -7,7 +7,7 @@ import (
 
 type CharacterModel struct {
 	ID     pgtype.UUID `json:"id"`
-	UserID pgtype.UUID `json:"user_id"`
+	UserID string      `json:"user_id"`
 
 	Name            string            `json:"name"`
 	PlayerName      *string           `json:"player_name"`

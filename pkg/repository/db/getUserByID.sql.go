@@ -7,22 +7,19 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getUserByID = `-- name: GetUserByID :one
-SELECT id, clerk_user_id, username, email, avatar_url, created_at, updated_at
+const getUserByClerkID = `-- name: GetUserByClerkID :one
+SELECT id, username, email, avatar_url, created_at, updated_at
 FROM users
 WHERE id = $1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByID, id)
+func (q *Queries) GetUserByClerkID(ctx context.Context, id string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByClerkID, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.ClerkUserID,
 		&i.Username,
 		&i.Email,
 		&i.AvatarUrl,

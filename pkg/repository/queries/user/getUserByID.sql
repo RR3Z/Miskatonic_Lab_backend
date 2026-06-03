@@ -1,4 +1,4 @@
--- name: GetUserByID :one
+-- name: GetUserByClerkID :one
 SELECT *
 FROM users
 WHERE id = $1;

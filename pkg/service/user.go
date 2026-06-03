@@ -8,9 +8,9 @@ import (
 )
 
 type IUser interface {
-	UpsertUserFromClerk(ctx context.Context, input db.UpsertUserParams) error
-	DeleteUserFromClerk(ctx context.Context, clerkUserID string) error
-	GetUserByClerkID(ctx context.Context, clerkUserID string) (db.User, error)
+	UpsertUser(ctx context.Context, input db.UpsertUserParams) error
+	DeleteUser(ctx context.Context, userID string) error
+	GetUserByID(ctx context.Context, userID string) (db.User, error)
 }
 
 type UserService struct {
@@ -21,21 +21,21 @@ func NewUserService(repos *repository.Repository) *UserService {
 	return &UserService{repos: repos}
 }
 
-func (s *UserService) UpsertUserFromClerk(ctx context.Context, input db.UpsertUserParams) error {
+func (s *UserService) UpsertUser(ctx context.Context, input db.UpsertUserParams) error {
 	_, err := s.repos.Queries.UpsertUser(ctx, db.UpsertUserParams{
-		ClerkUserID: input.ClerkUserID,
-		Username:    input.Username,
-		Email:       input.Email,
-		AvatarUrl:   input.AvatarUrl,
+		ID:        input.ID,
+		Username:  input.Username,
+		Email:     input.Email,
+		AvatarUrl: input.AvatarUrl,
 	})
 
 	return err
 }
 
-func (s *UserService) DeleteUserFromClerk(ctx context.Context, clerkUserID string) error {
-	return s.repos.Queries.DeleteUserByClerkID(ctx, clerkUserID)
+func (s *UserService) DeleteUser(ctx context.Context, userID string) error {
+	return s.repos.Queries.DeleteUserByClerkID(ctx, userID)
 }
 
-func (s *UserService) GetUserByClerkID(ctx context.Context, clerkUserID string) (db.User, error) {
-	return s.repos.Queries.GetUserByClerkID(ctx, clerkUserID)
+func (s *UserService) GetUserByID(ctx context.Context, userID string) (db.User, error) {
+	return s.repos.Queries.GetUserByClerkID(ctx, userID)
 }

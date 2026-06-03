@@ -28,7 +28,7 @@ type BackstoryItem struct {
 
 type Character struct {
 	ID         pgtype.UUID        `json:"id"`
-	UserID     pgtype.UUID        `json:"user_id"`
+	UserID     string             `json:"user_id"`
 	Name       string             `json:"name"`
 	PlayerName *string            `json:"player_name"`
 	Occupation *string            `json:"occupation"`
@@ -159,11 +159,10 @@ type SkillsSpecialty struct {
 }
 
 type User struct {
-	ID          pgtype.UUID        `json:"id"`
-	ClerkUserID string             `json:"clerk_user_id"`
-	Username    string             `json:"username"`
-	Email       string             `json:"email"`
-	AvatarUrl   *string            `json:"avatar_url"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	ID        string             `json:"id"`
+	Username  string             `json:"username"`
+	Email     string             `json:"email"`
+	AvatarUrl *string            `json:"avatar_url"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
