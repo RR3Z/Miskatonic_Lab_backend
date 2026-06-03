@@ -28,7 +28,7 @@ func (h *Handler) InitRoutes() *chi.Mux {
 	router.Route("/api", func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
 
-		r.Get("/me", h.getUserByClerkID)
+		r.Get("/me", h.getUserByID)
 
 		r.Route("/characters", func(r chi.Router) {
 			r.Post("/", h.createCharacter)
