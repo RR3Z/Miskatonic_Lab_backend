@@ -30,6 +30,12 @@ func (h *Handler) getAllCharacters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	slog.Info(
+		"successfully get all user characters",
+		"component", "character_api",
+		"user_id", userID,
+	)
+
 	utils.WriteJSON(w, http.StatusOK, characters)
 }
 
@@ -107,6 +113,12 @@ func (h *Handler) createCharacter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	slog.Info(
+		"character created successfully",
+		"component", "character_api",
+		"user_id", userID,
+	)
+
 	utils.WriteJSON(w, http.StatusCreated, character)
 }
 
@@ -145,6 +157,13 @@ func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to update character", http.StatusInternalServerError)
 		return
 	}
+
+	slog.Info(
+		"character updated successfully",
+		"component", "character_api",
+		"character_id", characterID,
+		"user_id", userID,
+	)
 
 	utils.WriteJSON(w, http.StatusOK, character)
 
