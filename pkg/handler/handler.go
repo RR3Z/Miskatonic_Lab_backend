@@ -31,12 +31,12 @@ func (h *Handler) InitRoutes() *chi.Mux {
 
 	router.Use(middleware.RequestLoggingMiddleware(slog.Default()))
 
-	router.Post("/webhooks/clerk/user", h.handleUserClerkWebhook)
+	router.Post("/webhooks/clerk/user", AppHandler(h.handleUserClerkWebhook).ServeHTTP)
 
 	router.Route("/api", func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
 
-		r.Get("/me", h.getUserByID)
+		r.Get("/me", AppHandler(h.getUserByID).ServeHTTP)
 
 		r.Route("/characters", func(r chi.Router) {
 			r.Post("/", AppHandler(h.createCharacter).ServeHTTP)

@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 
+	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -36,105 +36,91 @@ type ClerkWebhookUserEmail struct {
 	EmailAddress string `json:"email_address"`
 }
 
-func (h *Handler) getUserByID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getUserByID(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	claims, ok := clerk.SessionClaimsFromContext(r.Context())
 	if !ok {
-		slog.Error(
-			"failed to get clerk session claims",
-			"component", "user_api",
-		)
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusUnauthorized,
+			Message: "unauthorized",
+			Err:     errors.New("failed to get clerk session claims"),
+		}
 	}
 
 	userID := claims.Subject
 	if strings.TrimSpace(userID) == "" {
-		slog.Error(
-			"clerk session claims missing subject",
-			"component", "user_api",
-		)
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusUnauthorized,
+			Message: "unauthorized",
+			Err:     errors.New("clerk session claims missing subject"),
+		}
 	}
 
 	user, err := h.services.User.GetUserByID(r.Context(), userID)
 	// DB is fine BUT user wasn't find
 	if errors.Is(err, pgx.ErrNoRows) {
-		slog.Error(
-			"user not found by clerk id",
-			"component", "user_api",
-			"clerk_user_id", userID,
-			"error", err,
-		)
-		http.Error(w, "user not found", http.StatusNotFound)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusNotFound,
+			Message: "user not found",
+			Err:     err,
+		}
 	}
 	// Other errors
 	if err != nil {
-		slog.Error(
-			"failed to get user by clerk id",
-			"component", "user_api",
-			"clerk_user_id", userID,
-			"error", err,
-		)
-		http.Error(w, "failed to get user", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get user",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, user)
+	return nil
 }
 
-func (h *Handler) handleUserClerkWebhook(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleUserClerkWebhook(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
-		slog.Error(
-			"failed to read clerk user webhook request body",
-			"component", "clerk_webhook",
-			"error", err,
-		)
-		http.Error(w, "failed to read request body", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "failed to read request body",
+			Err:     err,
+		}
 	}
 
 	if err := verifyClerkWebhook(payload, r.Header); err != nil {
-		slog.Error(
-			"failed to verify clerk user webhook signature",
-			"component", "clerk_webhook",
-			"error", err,
-		)
-		http.Error(w, "invalid webhook signature", http.StatusUnauthorized)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusUnauthorized,
+			Message: "invalid webhook signature",
+			Err:     err,
+		}
 	}
 
 	var event ClerkWebhookUserEvent
 	if err := json.Unmarshal(payload, &event); err != nil {
-		slog.Error(
-			"failed to parse clerk user webhook payload",
-			"component", "clerk_webhook",
-			"error", err,
-		)
-		http.Error(w, "invalid webhook payload", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid webhook payload",
+			Err:     err,
+		}
 	}
 
-	if event.Type == "user.created" {
-		h.createUser(w, r, event.Data)
-	} else if event.Type == "user.updated" {
-		h.updateUser(w, r, event.Data)
-	} else if event.Type == "user.deleted" {
-		h.deleteUser(w, r, event.Data.ID)
-	} else {
-		slog.Error(
-			"unexpected clerk user webhook event type",
-			"component", "clerk_webhook",
-			"event_type", event.Type,
-		)
-		http.Error(w, "unexpected webhook event type", http.StatusBadRequest)
-		return
+	switch event.Type {
+	case "user.created":
+		return h.createUser(w, r, event.Data)
+	case "user.updated":
+		return h.updateUser(w, r, event.Data)
+	case "user.deleted":
+		return h.deleteUser(w, r, event.Data.ID)
+	default:
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "unexpected webhook event type",
+			Err:     errors.New("unexpected clerk user webhook event type: " + event.Type),
+		}
 	}
 }
 
-func (h *Handler) createUser(w http.ResponseWriter, r *http.Request, data ClerkWebhookUserData) {
+func (h *Handler) createUser(w http.ResponseWriter, r *http.Request, data ClerkWebhookUserData) *myErrors.AppError {
 	input := db.UpsertUserParams{
 		ID:        data.ID,
 		Username:  parseClerkWebhookUsername(data),
@@ -143,20 +129,18 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request, data ClerkW
 	}
 
 	if err := h.services.User.UpsertUser(r.Context(), input); err != nil {
-		slog.Error(
-			"failed to create user from clerk webhook",
-			"component", "clerk_webhook",
-			"clerk_user_id", data.ID,
-			"error", err,
-		)
-		http.Error(w, "failed to create user", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to create user",
+			Err:     err,
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
-func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request, data ClerkWebhookUserData) {
+func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request, data ClerkWebhookUserData) *myErrors.AppError {
 	input := db.UpsertUserParams{
 		ID:        data.ID,
 		Username:  parseClerkWebhookUsername(data),
@@ -165,41 +149,36 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request, data ClerkW
 	}
 
 	if err := h.services.User.UpsertUser(r.Context(), input); err != nil {
-		slog.Error(
-			"failed to update user from clerk webhook",
-			"component", "clerk_webhook",
-			"clerk_user_id", data.ID,
-			"error", err,
-		)
-		http.Error(w, "failed to update user", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to update user",
+			Err:     err,
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
-func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request, userID string) {
+func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request, userID string) *myErrors.AppError {
 	if strings.TrimSpace(userID) == "" {
-		slog.Error(
-			"failed to delete user from clerk webhook: missing clerk user id",
-			"component", "clerk_webhook",
-		)
-		http.Error(w, "missing clerk user id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "missing clerk user id",
+			Err:     errors.New("failed to delete user from clerk webhook: missing clerk user id"),
+		}
 	}
 
 	if err := h.services.User.DeleteUser(r.Context(), userID); err != nil {
-		slog.Error(
-			"failed to delete user from clerk webhook",
-			"component", "clerk_webhook",
-			"clerk_user_id", userID,
-			"error", err,
-		)
-		http.Error(w, "failed to delete user", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete user",
+			Err:     err,
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 func verifyClerkWebhook(payload []byte, headers http.Header) error {
