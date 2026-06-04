@@ -12,6 +12,15 @@ import (
 )
 
 const upsertHealthState = `-- name: UpsertHealthState :one
+WITH input AS (
+    SELECT
+        $3::smallint AS max_hp,
+        $4::smallint AS current_hp,
+        $5::boolean AS major_wound,
+        $6::boolean AS unconscious,
+        $7::boolean AS dying,
+        $8::boolean AS dead
+)
 INSERT INTO health_states (
     character_id,
     max_hp,
@@ -23,48 +32,49 @@ INSERT INTO health_states (
 )
 SELECT
     c.id,
-    $1,
-    $2,
-    $3,
-    $4,
-    $5,
-    $6
+    COALESCE(input.max_hp, 1),
+    COALESCE(input.current_hp, 1),
+    COALESCE(input.major_wound, FALSE),
+    COALESCE(input.unconscious, FALSE),
+    COALESCE(input.dying, FALSE),
+    COALESCE(input.dead, FALSE)
 FROM characters c
-WHERE c.user_id = $7
-  AND c.id = $8
+CROSS JOIN input
+WHERE c.user_id = $1
+  AND c.id = $2
 ON CONFLICT (character_id) DO UPDATE
 SET
-    max_hp = EXCLUDED.max_hp,
-    current_hp = EXCLUDED.current_hp,
-    major_wound = EXCLUDED.major_wound,
-    unconscious = EXCLUDED.unconscious,
-    dying = EXCLUDED.dying,
-    dead = EXCLUDED.dead,
+    max_hp = COALESCE((SELECT max_hp FROM input), health_states.max_hp),
+    current_hp = COALESCE((SELECT current_hp FROM input), health_states.current_hp),
+    major_wound = COALESCE((SELECT major_wound FROM input), health_states.major_wound),
+    unconscious = COALESCE((SELECT unconscious FROM input), health_states.unconscious),
+    dying = COALESCE((SELECT dying FROM input), health_states.dying),
+    dead = COALESCE((SELECT dead FROM input), health_states.dead),
     updated_at = NOW()
 RETURNING id, character_id, max_hp, current_hp, major_wound, unconscious, dying, dead, created_at, updated_at
 `
 
 type UpsertHealthStateParams struct {
-	MaxHp       int16       `json:"max_hp"`
-	CurrentHp   int16       `json:"current_hp"`
-	MajorWound  bool        `json:"major_wound"`
-	Unconscious bool        `json:"unconscious"`
-	Dying       bool        `json:"dying"`
-	Dead        bool        `json:"dead"`
 	UserID      string      `json:"user_id"`
 	CharacterID pgtype.UUID `json:"character_id"`
+	MaxHp       *int16      `json:"max_hp"`
+	CurrentHp   *int16      `json:"current_hp"`
+	MajorWound  *bool       `json:"major_wound"`
+	Unconscious *bool       `json:"unconscious"`
+	Dying       *bool       `json:"dying"`
+	Dead        *bool       `json:"dead"`
 }
 
 func (q *Queries) UpsertHealthState(ctx context.Context, arg UpsertHealthStateParams) (HealthState, error) {
 	row := q.db.QueryRow(ctx, upsertHealthState,
+		arg.UserID,
+		arg.CharacterID,
 		arg.MaxHp,
 		arg.CurrentHp,
 		arg.MajorWound,
 		arg.Unconscious,
 		arg.Dying,
 		arg.Dead,
-		arg.UserID,
-		arg.CharacterID,
 	)
 	var i HealthState
 	err := row.Scan(
