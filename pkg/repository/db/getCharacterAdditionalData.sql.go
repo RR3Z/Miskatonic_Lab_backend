@@ -101,28 +101,6 @@ func (q *Queries) GetFinances(ctx context.Context, characterID pgtype.UUID) (Fin
 	return i, err
 }
 
-const getHealthState = `-- name: GetHealthState :one
-SELECT id, character_id, max_hp, current_hp, major_wound, unconscious, dying, dead, created_at, updated_at FROM health_states WHERE character_id = $1
-`
-
-func (q *Queries) GetHealthState(ctx context.Context, characterID pgtype.UUID) (HealthState, error) {
-	row := q.db.QueryRow(ctx, getHealthState, characterID)
-	var i HealthState
-	err := row.Scan(
-		&i.ID,
-		&i.CharacterID,
-		&i.MaxHp,
-		&i.CurrentHp,
-		&i.MajorWound,
-		&i.Unconscious,
-		&i.Dying,
-		&i.Dead,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getLuckState = `-- name: GetLuckState :one
 SELECT id, character_id, starting_luck, current_luck, created_at, updated_at FROM luck_states WHERE character_id = $1
 `

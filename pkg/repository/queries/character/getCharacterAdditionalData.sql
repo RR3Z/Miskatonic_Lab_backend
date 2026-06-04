@@ -1,9 +1,6 @@
 -- name: GetDerivedStats :one
 SELECT * FROM derived_stats WHERE character_id = $1;
 
--- name: GetHealthState :one
-SELECT * FROM health_states WHERE character_id = $1;
-
 -- name: GetMagicState :one
 SELECT * FROM magic_states WHERE character_id = $1;
 
