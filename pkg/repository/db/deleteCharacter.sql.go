@@ -11,10 +11,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deleteCharacter = `-- name: DeleteCharacter :exec
+const deleteCharacter = `-- name: DeleteCharacter :one
 DELETE FROM characters
 WHERE user_id = $1
   AND id = $2
+RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at
 `
 
 type DeleteCharacterParams struct {
@@ -22,7 +23,21 @@ type DeleteCharacterParams struct {
 	ID     pgtype.UUID `json:"id"`
 }
 
-func (q *Queries) DeleteCharacter(ctx context.Context, arg DeleteCharacterParams) error {
-	_, err := q.db.Exec(ctx, deleteCharacter, arg.UserID, arg.ID)
-	return err
+func (q *Queries) DeleteCharacter(ctx context.Context, arg DeleteCharacterParams) (Character, error) {
+	row := q.db.QueryRow(ctx, deleteCharacter, arg.UserID, arg.ID)
+	var i Character
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.PlayerName,
+		&i.Occupation,
+		&i.Age,
+		&i.Sex,
+		&i.Residence,
+		&i.Birthplace,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

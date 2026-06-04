@@ -158,10 +158,11 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input db.UpdateC
 }
 
 func (s *CharacterService) DeleteCharacter(ctx context.Context, input db.DeleteCharacterParams) error {
-	return s.repos.Queries.DeleteCharacter(ctx, db.DeleteCharacterParams{
+	_, err := s.repos.Queries.DeleteCharacter(ctx, db.DeleteCharacterParams{
 		ID:     input.ID,
 		UserID: input.UserID,
 	})
+	return err
 }
 
 // Characteristics
