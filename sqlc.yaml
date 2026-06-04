@@ -6,6 +6,7 @@ sql:
       - 'pkg/repository/queries/user'
       - 'pkg/repository/queries/character'
       - 'pkg/repository/queries/note'
+      - 'pkg/repository/queries/characteristics'
     gen:
       go:
         package: 'db'

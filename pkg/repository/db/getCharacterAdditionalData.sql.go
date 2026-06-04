@@ -61,30 +61,6 @@ func (q *Queries) GetBackstoryItemsByBackstoryID(ctx context.Context, backstoryI
 	return items, nil
 }
 
-const getCharacteristics = `-- name: GetCharacteristics :one
-SELECT id, character_id, strength, constitution, size, dexterity, appearance, intelligence, power, education, created_at, updated_at FROM characteristics WHERE character_id = $1
-`
-
-func (q *Queries) GetCharacteristics(ctx context.Context, characterID pgtype.UUID) (Characteristic, error) {
-	row := q.db.QueryRow(ctx, getCharacteristics, characterID)
-	var i Characteristic
-	err := row.Scan(
-		&i.ID,
-		&i.CharacterID,
-		&i.Strength,
-		&i.Constitution,
-		&i.Size,
-		&i.Dexterity,
-		&i.Appearance,
-		&i.Intelligence,
-		&i.Power,
-		&i.Education,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getDerivedStats = `-- name: GetDerivedStats :one
 SELECT id, character_id, speed, physique, damage_bonus, dodge_value, created_at, updated_at FROM derived_stats WHERE character_id = $1
 `
@@ -181,38 +157,6 @@ func (q *Queries) GetMagicState(ctx context.Context, characterID pgtype.UUID) (M
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const getNotes = `-- name: GetNotes :many
-SELECT id, character_id, title, body, created_at, updated_at FROM notes WHERE character_id = $1
-ORDER BY created_at DESC
-`
-
-func (q *Queries) GetNotes(ctx context.Context, characterID pgtype.UUID) ([]Note, error) {
-	rows, err := q.db.Query(ctx, getNotes, characterID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Note{}
-	for rows.Next() {
-		var i Note
-		if err := rows.Scan(
-			&i.ID,
-			&i.CharacterID,
-			&i.Title,
-			&i.Body,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getSanityState = `-- name: GetSanityState :one
