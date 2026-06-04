@@ -63,7 +63,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 	}
 	rawData.Character = characterGeneralData
 
-	characteristics, err := s.repos.Queries.GetCharacteristics(ctx, characterGeneralData.ID)
+	characteristics, err := s.repos.Queries.GetCharacteristics(ctx, db.GetCharacteristicsParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return model.CharacterModel{}, err
 	}
@@ -105,7 +108,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 	}
 	rawData.Skills = skills
 
-	notes, err := s.repos.Queries.GetNotes(ctx, characterGeneralData.ID)
+	notes, err := s.repos.Queries.GetNotes(ctx, db.GetNotesParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return model.CharacterModel{}, err
 	}
