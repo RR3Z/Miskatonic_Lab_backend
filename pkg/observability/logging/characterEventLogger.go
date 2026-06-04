@@ -58,9 +58,50 @@ func (l *CharacterEventLogger) Handle(ctx context.Context, event events.Event) {
 		l.logCharacterHealthDeleteSucceeded(ctx, e)
 	case characterEvents.CharacterHealthDeleteFailed:
 		l.logCharacterHealthDeleteFailed(ctx, e)
+
+	case characterEvents.CharacterCharacteristicsGetSucceeded:
+		l.logCharacterCharacteristicsGetSucceeded(ctx, e)
+	case characterEvents.CharacterCharacteristicsGetFailed:
+		l.logCharacterCharacteristicsGetFailed(ctx, e)
+
+	case characterEvents.CharacterCharacteristicsUpsertSucceeded:
+		l.logCharacterCharacteristicsUpsertSucceeded(ctx, e)
+	case characterEvents.CharacterCharacteristicsUpsertFailed:
+		l.logCharacterCharacteristicsUpsertFailed(ctx, e)
+
+	case characterEvents.CharacterCharacteristicsDeleteSucceeded:
+		l.logCharacterCharacteristicsDeleteSucceeded(ctx, e)
+	case characterEvents.CharacterCharacteristicsDeleteFailed:
+		l.logCharacterCharacteristicsDeleteFailed(ctx, e)
+
+	case characterEvents.CharacterNotesListSucceeded:
+		l.logCharacterNotesListSucceeded(ctx, e)
+	case characterEvents.CharacterNotesListFailed:
+		l.logCharacterNotesListFailed(ctx, e)
+
+	case characterEvents.CharacterNoteGetSucceeded:
+		l.logCharacterNoteGetSucceeded(ctx, e)
+	case characterEvents.CharacterNoteGetFailed:
+		l.logCharacterNoteGetFailed(ctx, e)
+
+	case characterEvents.CharacterNoteCreateSucceeded:
+		l.logCharacterNoteCreateSucceeded(ctx, e)
+	case characterEvents.CharacterNoteCreateFailed:
+		l.logCharacterNoteCreateFailed(ctx, e)
+
+	case characterEvents.CharacterNoteUpdateSucceeded:
+		l.logCharacterNoteUpdateSucceeded(ctx, e)
+	case characterEvents.CharacterNoteUpdateFailed:
+		l.logCharacterNoteUpdateFailed(ctx, e)
+
+	case characterEvents.CharacterNoteDeleteSucceeded:
+		l.logCharacterNoteDeleteSucceeded(ctx, e)
+	case characterEvents.CharacterNoteDeleteFailed:
+		l.logCharacterNoteDeleteFailed(ctx, e)
 	}
 }
 
+// Character
 func (l *CharacterEventLogger) logCharactersListSucceeded(ctx context.Context, event characterEvents.CharactersListSucceeded) {
 	l.logger.InfoContext(ctx, "characters listed",
 		"event", event.EventName(),
@@ -142,6 +183,7 @@ func (l *CharacterEventLogger) logCharacterDeleteFailed(ctx context.Context, eve
 	)
 }
 
+// HealthState
 func (l *CharacterEventLogger) logCharacterHealthGetSucceeded(ctx context.Context, event characterEvents.CharacterHealthGetSucceeded) {
 	l.logger.InfoContext(ctx, "character health fetched",
 		"event", event.EventName(),
@@ -186,6 +228,147 @@ func (l *CharacterEventLogger) logCharacterHealthDeleteFailed(ctx context.Contex
 		"event", event.EventName(),
 		"user_id", event.UserID,
 		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+// Characteristics
+func (l *CharacterEventLogger) logCharacterCharacteristicsGetSucceeded(ctx context.Context, event characterEvents.CharacterCharacteristicsGetSucceeded) {
+	l.logger.InfoContext(ctx, "character characteristics fetched",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterCharacteristicsGetFailed(ctx context.Context, event characterEvents.CharacterCharacteristicsGetFailed) {
+	l.logger.ErrorContext(ctx, "failed to fetch character characteristics",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterCharacteristicsUpsertSucceeded(ctx context.Context, event characterEvents.CharacterCharacteristicsUpsertSucceeded) {
+	l.logger.InfoContext(ctx, "character characteristics upserted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterCharacteristicsUpsertFailed(ctx context.Context, event characterEvents.CharacterCharacteristicsUpsertFailed) {
+	l.logger.ErrorContext(ctx, "failed to upsert character characteristics",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterCharacteristicsDeleteSucceeded(ctx context.Context, event characterEvents.CharacterCharacteristicsDeleteSucceeded) {
+	l.logger.InfoContext(ctx, "character characteristics deleted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterCharacteristicsDeleteFailed(ctx context.Context, event characterEvents.CharacterCharacteristicsDeleteFailed) {
+	l.logger.ErrorContext(ctx, "failed to delete character characteristics",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+// Note
+func (l *CharacterEventLogger) logCharacterNotesListSucceeded(ctx context.Context, event characterEvents.CharacterNotesListSucceeded) {
+	l.logger.InfoContext(ctx, "character notes listed",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"count", event.Count,
+	)
+}
+func (l *CharacterEventLogger) logCharacterNotesListFailed(ctx context.Context, event characterEvents.CharacterNotesListFailed) {
+	l.logger.ErrorContext(ctx, "failed to list character notes",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterNoteGetSucceeded(ctx context.Context, event characterEvents.CharacterNoteGetSucceeded) {
+	l.logger.InfoContext(ctx, "character note fetched",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"note_id", event.NoteID,
+		"title", event.Title,
+	)
+}
+func (l *CharacterEventLogger) logCharacterNoteGetFailed(ctx context.Context, event characterEvents.CharacterNoteGetFailed) {
+	l.logger.ErrorContext(ctx, "failed to fetch character note",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"note_id", event.NoteID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterNoteCreateSucceeded(ctx context.Context, event characterEvents.CharacterNoteCreateSucceeded) {
+	l.logger.InfoContext(ctx, "character note created",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"note_id", event.NoteID,
+		"title", event.Title,
+	)
+}
+func (l *CharacterEventLogger) logCharacterNoteCreateFailed(ctx context.Context, event characterEvents.CharacterNoteCreateFailed) {
+	l.logger.ErrorContext(ctx, "failed to create character note",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterNoteUpdateSucceeded(ctx context.Context, event characterEvents.CharacterNoteUpdateSucceeded) {
+	l.logger.InfoContext(ctx, "character note updated",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"note_id", event.NoteID,
+		"title", event.Title,
+	)
+}
+func (l *CharacterEventLogger) logCharacterNoteUpdateFailed(ctx context.Context, event characterEvents.CharacterNoteUpdateFailed) {
+	l.logger.ErrorContext(ctx, "failed to update character note",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"note_id", event.NoteID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterNoteDeleteSucceeded(ctx context.Context, event characterEvents.CharacterNoteDeleteSucceeded) {
+	l.logger.InfoContext(ctx, "character note deleted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"note_id", event.NoteID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterNoteDeleteFailed(ctx context.Context, event characterEvents.CharacterNoteDeleteFailed) {
+	l.logger.ErrorContext(ctx, "failed to delete character note",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"note_id", event.NoteID,
 		"error", event.Err,
 	)
 }
