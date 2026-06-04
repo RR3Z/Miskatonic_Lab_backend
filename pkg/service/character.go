@@ -17,8 +17,8 @@ type ICharacter interface {
 	UpdateCharacter(ctx context.Context, input db.UpdateCharacterParams) (model.CharacterModel, error)
 	DeleteCharacter(ctx context.Context, input db.DeleteCharacterParams) error
 
-	GetAllNotes(ctx context.Context, input db.GetCharacterNotesParams) ([]db.Note, error)
-	GetNote(ctx context.Context, input db.GetCharacterNoteParams) (db.Note, error)
+	GetNotes(ctx context.Context, input db.GetNotesParams) ([]db.Note, error)
+	GetNote(ctx context.Context, input db.GetNoteParams) (db.Note, error)
 	CreateNote(ctx context.Context, input db.CreateNoteParams) (db.Note, error)
 	UpdateNote(ctx context.Context, input db.UpdateNoteParams) (db.Note, error)
 	DeleteNote(ctx context.Context, input db.DeleteNoteParams) error
@@ -155,8 +155,8 @@ func (s *CharacterService) DeleteCharacter(ctx context.Context, input db.DeleteC
 }
 
 // Notes
-func (s *CharacterService) GetAllNotes(ctx context.Context, input db.GetCharacterNotesParams) ([]db.Note, error) {
-	notes, err := s.repos.Queries.GetCharacterNotes(ctx, input)
+func (s *CharacterService) GetNotes(ctx context.Context, input db.GetNotesParams) ([]db.Note, error) {
+	notes, err := s.repos.Queries.GetNotes(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +164,8 @@ func (s *CharacterService) GetAllNotes(ctx context.Context, input db.GetCharacte
 	return notes, nil
 }
 
-func (s *CharacterService) GetNote(ctx context.Context, input db.GetCharacterNoteParams) (db.Note, error) {
-	note, err := s.repos.Queries.GetCharacterNote(ctx, input)
+func (s *CharacterService) GetNote(ctx context.Context, input db.GetNoteParams) (db.Note, error) {
+	note, err := s.repos.Queries.GetNote(ctx, input)
 	if err != nil {
 		return db.Note{}, err
 	}

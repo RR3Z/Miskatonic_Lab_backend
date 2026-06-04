@@ -222,7 +222,7 @@ func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) {
 }
 
 // Notes
-func (h *Handler) getAllNotes(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getNotes(w http.ResponseWriter, r *http.Request) {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -237,7 +237,7 @@ func (h *Handler) getAllNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notes, err := h.services.Character.GetAllNotes(r.Context(), db.GetCharacterNotesParams{
+	notes, err := h.services.Character.GetNotes(r.Context(), db.GetNotesParams{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -291,7 +291,7 @@ func (h *Handler) getNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	note, err := h.services.Character.GetNote(r.Context(), db.GetCharacterNoteParams{
+	note, err := h.services.Character.GetNote(r.Context(), db.GetNoteParams{
 		UserID:      userID,
 		CharacterID: characterID,
 		NoteID:      noteID,
