@@ -150,6 +150,18 @@ func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) {
 
 	character, err := h.services.Character.UpdateCharacter(r.Context(), input)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"character not found",
+				"component", "character_api",
+				"character_id", characterID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "character not found", http.StatusNotFound)
+			return
+		}
+
 		slog.Error("failed to update character",
 			"component", "character_api",
 			"user_id", userID,
