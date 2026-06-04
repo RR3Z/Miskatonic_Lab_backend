@@ -7,6 +7,7 @@ import (
 
 	MiskatonicLab "github.com/RR3Z/Miskatonic_Lab_backend"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
@@ -14,19 +15,6 @@ import (
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/joho/godotenv"
 )
-
-func main() {
-	setupLogger()
-	os.Exit(run())
-}
-
-func setupLogger() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
-
-	slog.SetDefault(logger)
-}
 
 func run() int {
 	// Load ENV
@@ -87,9 +75,12 @@ func run() int {
 		AllowedOrigins: allowedOrigins,
 	}
 
+	// Logging
+	publisher := events.NewSyncPublisher()
+
 	// Launch Server
 	repos := repository.NewRepository(dbConnection)
-	service := service.NewService(repos)
+	service := service.NewService(repos, publisher)
 	handlers := handler.NewHandler(service, corsConfig)
 
 	serverPort := os.Getenv("PORT")
@@ -122,4 +113,17 @@ func run() int {
 	}
 
 	return 0
+}
+
+func setupLogger() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
+	slog.SetDefault(logger)
+}
+
+func main() {
+	setupLogger()
+	os.Exit(run())
 }

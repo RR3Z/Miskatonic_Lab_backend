@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 )
@@ -10,9 +11,11 @@ type Service struct {
 	Character characterServices.ICharacter
 }
 
-func NewService(repos *repository.Repository) *Service {
+func NewService(repos *repository.Repository, publisher events.EventPublisher) *Service {
+	characterService := characterServices.NewCharacterService(repos)
+
 	return &Service{
 		User:      NewUserService(repos),
-		Character: characterServices.NewCharacterService(repos),
+		Character: characterServices.NewEventPublishingCharacterService(characterService, publisher),
 	}
 }
