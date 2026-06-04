@@ -43,6 +43,21 @@ func (l *CharacterEventLogger) Handle(ctx context.Context, event events.Event) {
 		l.logCharacterDeleteSucceeded(ctx, e)
 	case characterEvents.CharacterDeleteFailed:
 		l.logCharacterDeleteFailed(ctx, e)
+
+	case characterEvents.CharacterHealthGetSucceeded:
+		l.logCharacterHealthGetSucceeded(ctx, e)
+	case characterEvents.CharacterHealthGetFailed:
+		l.logCharacterHealthGetFailed(ctx, e)
+
+	case characterEvents.CharacterHealthUpsertSucceeded:
+		l.logCharacterHealthUpsertSucceeded(ctx, e)
+	case characterEvents.CharacterHealthUpsertFailed:
+		l.logCharacterHealthUpsertFailed(ctx, e)
+
+	case characterEvents.CharacterHealthDeleteSucceeded:
+		l.logCharacterHealthDeleteSucceeded(ctx, e)
+	case characterEvents.CharacterHealthDeleteFailed:
+		l.logCharacterHealthDeleteFailed(ctx, e)
 	}
 }
 
@@ -53,7 +68,6 @@ func (l *CharacterEventLogger) logCharactersListSucceeded(ctx context.Context, e
 		"count", event.Count,
 	)
 }
-
 func (l *CharacterEventLogger) logCharactersListFailed(ctx context.Context, event characterEvents.CharactersListFailed) {
 	l.logger.ErrorContext(ctx, "failed to list characters",
 		"event", event.EventName(),
@@ -70,7 +84,6 @@ func (l *CharacterEventLogger) logCharacterGetSucceeded(ctx context.Context, eve
 		"name", event.Name,
 	)
 }
-
 func (l *CharacterEventLogger) logCharacterGetFailed(ctx context.Context, event characterEvents.CharacterGetFailed) {
 	l.logger.ErrorContext(ctx, "failed to fetch character",
 		"event", event.EventName(),
@@ -88,7 +101,6 @@ func (l *CharacterEventLogger) logCharacterCreateSucceeded(ctx context.Context, 
 		"name", event.Name,
 	)
 }
-
 func (l *CharacterEventLogger) logCharacterCreateFailed(ctx context.Context, event characterEvents.CharacterCreateFailed) {
 	l.logger.ErrorContext(ctx, "failed to create character",
 		"event", event.EventName(),
@@ -105,7 +117,6 @@ func (l *CharacterEventLogger) logCharacterUpdateSucceeded(ctx context.Context, 
 		"name", event.Name,
 	)
 }
-
 func (l *CharacterEventLogger) logCharacterUpdateFailed(ctx context.Context, event characterEvents.CharacterUpdateFailed) {
 	l.logger.ErrorContext(ctx, "failed to update character",
 		"event", event.EventName(),
@@ -122,9 +133,56 @@ func (l *CharacterEventLogger) logCharacterDeleteSucceeded(ctx context.Context, 
 		"character_id", event.CharacterID,
 	)
 }
-
 func (l *CharacterEventLogger) logCharacterDeleteFailed(ctx context.Context, event characterEvents.CharacterDeleteFailed) {
 	l.logger.ErrorContext(ctx, "failed to delete character",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterHealthGetSucceeded(ctx context.Context, event characterEvents.CharacterHealthGetSucceeded) {
+	l.logger.InfoContext(ctx, "character health fetched",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterHealthGetFailed(ctx context.Context, event characterEvents.CharacterHealthGetFailed) {
+	l.logger.ErrorContext(ctx, "failed to fetch character health",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterHealthUpsertSucceeded(ctx context.Context, event characterEvents.CharacterHealthUpsertSucceeded) {
+	l.logger.InfoContext(ctx, "character health upserted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterHealthUpsertFailed(ctx context.Context, event characterEvents.CharacterHealthUpsertFailed) {
+	l.logger.ErrorContext(ctx, "failed to upsert character health",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterHealthDeleteSucceeded(ctx context.Context, event characterEvents.CharacterHealthDeleteSucceeded) {
+	l.logger.InfoContext(ctx, "character health deleted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterHealthDeleteFailed(ctx context.Context, event characterEvents.CharacterHealthDeleteFailed) {
+	l.logger.ErrorContext(ctx, "failed to delete character health",
 		"event", event.EventName(),
 		"user_id", event.UserID,
 		"character_id", event.CharacterID,
