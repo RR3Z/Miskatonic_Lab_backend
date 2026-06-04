@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
@@ -28,6 +29,8 @@ func (h *Handler) InitRoutes() *chi.Mux {
 		AllowedOrigins: allowedOrigins,
 	}))
 
+	router.Use(middleware.RequestLoggingMiddleware(slog.Default()))
+
 	router.Post("/webhooks/clerk/user", h.handleUserClerkWebhook)
 
 	router.Route("/api", func(r chi.Router) {
@@ -36,35 +39,35 @@ func (h *Handler) InitRoutes() *chi.Mux {
 		r.Get("/me", h.getUserByID)
 
 		r.Route("/characters", func(r chi.Router) {
-			r.Post("/", h.createCharacter)
-			r.Get("/", h.getAllCharacters)
+			r.Post("/", AppHandler(h.createCharacter).ServeHTTP)
+			r.Get("/", AppHandler(h.getAllCharacters).ServeHTTP)
 
 			r.Route("/{characterID}", func(r chi.Router) {
-				r.Get("/", h.getCharacter)
-				r.Put("/", h.updateCharacter)
-				r.Delete("/", h.deleteCharacter)
+				r.Get("/", AppHandler(h.getCharacter).ServeHTTP)
+				r.Put("/", AppHandler(h.updateCharacter).ServeHTTP)
+				r.Delete("/", AppHandler(h.deleteCharacter).ServeHTTP)
 
 				r.Route("/characteristics", func(r chi.Router) {
-					r.Get("/", h.getCharacteristics)
-					r.Put("/", h.upsertCharacteristics)
-					r.Delete("/", h.deleteCharacteristics)
+					r.Get("/", AppHandler(h.getCharacteristics).ServeHTTP)
+					r.Put("/", AppHandler(h.upsertCharacteristics).ServeHTTP)
+					r.Delete("/", AppHandler(h.deleteCharacteristics).ServeHTTP)
 				})
 
 
 				r.Route("/health", func(r chi.Router) {
-					r.Get("/", h.getHealth)
-					r.Put("/", h.upsertHealth)
-					r.Delete("/", h.deleteHealth)
+					r.Get("/", AppHandler(h.getHealth).ServeHTTP)
+					r.Put("/", AppHandler(h.upsertHealth).ServeHTTP)
+					r.Delete("/", AppHandler(h.deleteHealth).ServeHTTP)
 				})
 
 				r.Route("/notes", func(r chi.Router) {
-					r.Get("/", h.getNotes)
-					r.Post("/", h.createNote)
+					r.Get("/", AppHandler(h.getNotes).ServeHTTP)
+					r.Post("/", AppHandler(h.createNote).ServeHTTP)
 
 					r.Route("/{noteID}", func(r chi.Router) {
-						r.Get("/", h.getNote)
-						r.Put("/", h.updateNote)
-						r.Delete("/", h.deleteNote)
+						r.Get("/", AppHandler(h.getNote).ServeHTTP)
+						r.Put("/", AppHandler(h.updateNote).ServeHTTP)
+						r.Delete("/", AppHandler(h.deleteNote).ServeHTTP)
 					})
 				})
 			})

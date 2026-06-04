@@ -3,9 +3,9 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"log/slog"
 	"net/http"
 
+	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
@@ -15,31 +15,32 @@ import (
 )
 
 // Characters
-func (h *Handler) getAllCharacters(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getAllCharacters(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characters, err := h.services.Character.GetAllCharacters(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "failed to get all user characters", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get user characters",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, characters)
+	return nil
 }
 
-func (h *Handler) getCharacter(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	character, err := h.services.Character.GetCharacter(r.Context(), model.GetCharacterInput{
@@ -48,59 +49,69 @@ func (h *Handler) getCharacter(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to get character data", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character data",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, character)
+	return nil
 }
 
-func (h *Handler) createCharacter(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	var input db.CreateCharacterParams
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		slog.Error("invalid request body", "component", "character_api", "error", err)
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
 	}
 	input.UserID = userID
 
 	character, err := h.services.Character.CreateCharacter(r.Context(), input)
 	if err != nil {
-		http.Error(w, "failed to create character", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to create character",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, character)
+	return nil
 }
 
-func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	var input db.UpdateCharacterParams
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		slog.Error("invalid request body",
-			"component", "character_api",
-			"error", err)
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
 	}
 	input.UserID = userID
 	input.ID = characterID
@@ -108,30 +119,34 @@ func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) {
 	character, err := h.services.Character.UpdateCharacter(r.Context(), input)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to update character", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to update character",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, character)
+	return nil
 }
 
-func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	if err := h.services.Character.DeleteCharacter(r.Context(), db.DeleteCharacterParams{
@@ -139,31 +154,35 @@ func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) {
 		ID:     characterID,
 	}); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to delete character", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete character",
+			Err:     err,
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 // Health
-func (h *Handler) getHealth(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_health_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	health, err := h.services.Character.GetHealth(r.Context(), db.GetHealthStateParams{
@@ -172,39 +191,43 @@ func (h *Handler) getHealth(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character health not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character health not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to get character health", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character health",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, health)
+	return nil
 }
 
-func (h *Handler) upsertHealth(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) upsertHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_health_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	var input db.UpsertHealthStateParams
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		slog.Error("invalid request body",
-			"component", "character_health_api",
-			"error", err)
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
 	}
 	input.UserID = userID
 	input.CharacterID = characterID
@@ -212,30 +235,34 @@ func (h *Handler) upsertHealth(w http.ResponseWriter, r *http.Request) {
 	health, err := h.services.Character.UpsertHealth(r.Context(), input)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to upsert character health", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to upsert character health",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, health)
+	return nil
 }
 
-func (h *Handler) deleteHealth(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) deleteHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_health_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	if err := h.services.Character.DeleteHealth(r.Context(), db.DeleteHealthStateParams{
@@ -243,31 +270,41 @@ func (h *Handler) deleteHealth(w http.ResponseWriter, r *http.Request) {
 		CharacterID: characterID,
 	}); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character health not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character health not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to delete character health", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete character health",
+			Err:     err,
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
+// Sanity
+
+// Magic
+
+// Luck
+
 // Characteristics
-func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_characteristics_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	characteristics, err := h.services.Character.GetCharacteristics(r.Context(), db.GetCharacteristicsParams{
@@ -276,39 +313,43 @@ func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to get character characteristics", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character characteristics",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, characteristics)
+	return nil
 }
 
-func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_characteristics_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	var input db.UpsertCharacteristicsParams
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		slog.Error("invalid request body",
-			"component", "character_characteristics_api",
-			"error", err)
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
 	}
 	input.UserID = userID
 	input.CharacterID = characterID
@@ -316,30 +357,34 @@ func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) 
 	characteristics, err := h.services.Character.UpsertCharacteristics(r.Context(), input)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to upsert character characteristics", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to upsert character characteristics",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, characteristics)
+	return nil
 }
 
-func (h *Handler) deleteCharacteristics(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) deleteCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_characteristics_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	if err := h.services.Character.DeleteCharacteristics(r.Context(), db.DeleteCharacteristicsParams{
@@ -347,31 +392,35 @@ func (h *Handler) deleteCharacteristics(w http.ResponseWriter, r *http.Request) 
 		CharacterID: characterID,
 	}); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character characteristics not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character characteristics not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to delete character characteristics", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete character characteristics",
+			Err:     err,
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 // Notes
-func (h *Handler) getNotes(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getNotes(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	notes, err := h.services.Character.GetNotes(r.Context(), db.GetNotesParams{
@@ -379,39 +428,36 @@ func (h *Handler) getNotes(w http.ResponseWriter, r *http.Request) {
 		CharacterID: characterID,
 	})
 	if err != nil {
-		http.Error(w, "failed to get all character notes", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get all character notes",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, notes)
+	return nil
 }
 
-func (h *Handler) getNote(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	noteID, err := getNoteIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid note id format",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"note_id", noteID,
-			"error", err,
-		)
-		http.Error(w, "invalid note id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid note id",
+			Err:     err,
+		}
 	}
 
 	note, err := h.services.Character.GetNote(r.Context(), db.GetNoteParams{
@@ -421,42 +467,43 @@ func (h *Handler) getNote(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "note not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "note not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to get note data", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get note data",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, note)
+	return nil
 }
 
-func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	var input db.CreateNoteParams
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		slog.Error(
-			"invalid request body",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
 	}
 	input.UserID = userID
 	input.CharacterID = characterID
@@ -464,55 +511,52 @@ func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) {
 	note, err := h.services.Character.CreateNote(r.Context(), input)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "character not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to create note", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to create note",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, note)
+	return nil
 }
 
-func (h *Handler) updateNote(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	noteID, err := getNoteIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid note id format",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"note_id", noteID,
-			"error", err,
-		)
-		http.Error(w, "invalid note id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid note id",
+			Err:     err,
+		}
 	}
 
 	var input db.UpdateNoteParams
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		slog.Error(
-			"invalid request body",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
 	}
 	input.UserID = userID
 	input.CharacterID = characterID
@@ -521,43 +565,43 @@ func (h *Handler) updateNote(w http.ResponseWriter, r *http.Request) {
 	note, err := h.services.Character.UpdateNote(r.Context(), input)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "note not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "note not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to update note", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to update note",
+			Err:     err,
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusOK, note)
+	return nil
 }
 
-func (h *Handler) deleteNote(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) deleteNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid character id format",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"error", err,
-		)
-		http.Error(w, "invalid character id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
 	}
 
 	noteID, err := getNoteIDFromRequest(r)
 	if err != nil {
-		slog.Error(
-			"invalid note id format",
-			"component", "character_note_api",
-			"character_id", characterID,
-			"note_id", noteID,
-			"error", err,
-		)
-		http.Error(w, "invalid note id", http.StatusBadRequest)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid note id",
+			Err:     err,
+		}
 	}
 
 	if err := h.services.Character.DeleteNote(r.Context(), db.DeleteNoteParams{
@@ -566,15 +610,22 @@ func (h *Handler) deleteNote(w http.ResponseWriter, r *http.Request) {
 		NoteID:      noteID,
 	}); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "note not found", http.StatusNotFound)
-			return
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "note not found",
+				Err:     err,
+			}
 		}
 
-		http.Error(w, "failed to delete note", http.StatusInternalServerError)
-		return
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete note",
+			Err:     err,
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 // Utils
