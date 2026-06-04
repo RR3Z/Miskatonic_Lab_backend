@@ -9,7 +9,6 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	EventsLogging "github.com/RR3Z/Miskatonic_Lab_backend/pkg/observability/logging"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
@@ -63,20 +62,6 @@ func run() int {
 	}
 	clerk.SetKey(clerkSecretKey)
 
-	// Configure CORS
-	allowedOrigins := config.ParseAllowedOrigins(os.Getenv("CORS_ALLOWED_ORIGINS"))
-	if len(allowedOrigins) == 0 {
-		slog.Error(
-			"cors allowed origins are not set",
-			"component", "main",
-			"env", "CORS_ALLOWED_ORIGINS",
-		)
-		return 1
-	}
-	corsConfig := middleware.CORSConfig{
-		AllowedOrigins: allowedOrigins,
-	}
-
 	// Logging
 	publisher := events.NewSyncPublisher()
 	publisher.Subscribe(EventsLogging.NewCharacterEventLogger(slog.Default()))
@@ -84,7 +69,7 @@ func run() int {
 	// Launch Server
 	repos := repository.NewRepository(dbConnection)
 	service := service.NewService(repos, publisher)
-	handlers := handler.NewHandler(service, corsConfig)
+	handlers := handler.NewHandler(service)
 
 	serverPort := os.Getenv("PORT")
 	if serverPort == "" {

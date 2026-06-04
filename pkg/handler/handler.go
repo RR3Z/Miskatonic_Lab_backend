@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"os"
+
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/go-chi/chi/v5"
@@ -11,17 +14,19 @@ type Handler struct {
 	services   *service.Service
 }
 
-func NewHandler(services *service.Service, corsConfig middleware.CORSConfig) *Handler {
+func NewHandler(services *service.Service) *Handler {
 	return &Handler{
-		services:   services,
-		corsConfig: corsConfig,
+		services: services,
 	}
 }
 
 func (h *Handler) InitRoutes() *chi.Mux {
 	router := chi.NewRouter()
 
-	router.Use(middleware.CORSMiddleware(h.corsConfig))
+	allowedOrigins := config.ParseAllowedOrigins(os.Getenv("CORS_ALLOWED_ORIGINS"))
+	router.Use(middleware.CORSMiddleware(middleware.CORSConfig{
+		AllowedOrigins: allowedOrigins,
+	}))
 
 	router.Post("/webhooks/clerk/user", h.handleUserClerkWebhook)
 
