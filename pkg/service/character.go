@@ -124,7 +124,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 		}
 	} else {
 		rawData.Backstory = &backstory
-		rawData.BackstoryItems, _ = s.repos.Queries.GetBackstoryItemsByBackstoryID(ctx, backstory.ID)
+		rawData.BackstoryItems, err = s.repos.Queries.GetBackstoryItemsByBackstoryID(ctx, backstory.ID)
+		if err != nil {
+			return model.CharacterModel{}, err
+		}
 	}
 
 	finances, err := s.repos.Queries.GetFinances(ctx, characterGeneralData.ID)
