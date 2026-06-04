@@ -6,10 +6,12 @@ type EventPublisher interface {
 	Publish(ctx context.Context, event Event)
 }
 
+// Implements EventPublisher
 type NoopPublisher struct{}
 
 func (p *NoopPublisher) Publish(ctx context.Context, event Event) {}
 
+// Implements EventPublisher
 type SyncPublisher struct {
 	handlers []EventHandler
 }
