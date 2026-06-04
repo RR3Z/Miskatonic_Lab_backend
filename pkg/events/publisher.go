@@ -6,10 +6,6 @@ type EventPublisher interface {
 	Publish(ctx context.Context, event Event)
 }
 
-type EventSubscriber interface {
-	Subscribe(handler EventHandler)
-}
-
 type SyncPublisher struct {
 	handlers []EventHandler
 }
