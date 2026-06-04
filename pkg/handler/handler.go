@@ -39,6 +39,12 @@ func (h *Handler) InitRoutes() *chi.Mux {
 				r.Put("/", h.updateCharacter)
 				r.Delete("/", h.deleteCharacter)
 
+				r.Route("/characteristics", func(r chi.Router) {
+					r.Get("/", h.getCharacteristics)
+					r.Put("/", h.upsertCharacteristics)
+					r.Delete("/", h.deleteCharacteristics)
+				})
+
 				r.Route("/notes", func(r chi.Router) {
 					r.Get("/", h.getNotes)
 					r.Post("/", h.createNote)

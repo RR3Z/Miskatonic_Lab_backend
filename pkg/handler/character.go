@@ -221,6 +221,160 @@ func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// Characteristics
+func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_characteristics_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	characteristics, err := h.services.Character.GetCharacteristics(r.Context(), db.GetCharacteristicsParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"characteristics not found",
+				"component", "character_characteristics_api",
+				"character_id", characterID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "character not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error(
+			"failed to get character characteristics",
+			"component", "character_characteristics_api",
+			"character_id", characterID,
+			"user_id", userID,
+			"error", err,
+		)
+		http.Error(w, "failed to get character characteristics", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"successfully get character characteristics",
+		"component", "character_characteristics_api",
+		"character_id", characterID,
+		"user_id", userID,
+	)
+
+	utils.WriteJSON(w, http.StatusOK, characteristics)
+}
+
+func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_characteristics_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	var input db.UpsertCharacteristicsParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		slog.Error("invalid request body",
+			"component", "character_characteristics_api",
+			"error", err)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	characteristics, err := h.services.Character.UpsertCharacteristics(r.Context(), input)
+	if err != nil {
+		slog.Error("failed to upsert character characteristics",
+			"component", "character_characteristics_api",
+			"user_id", userID,
+			"character_id", characterID,
+			"error", err)
+		http.Error(w, "failed to upsert character characteristics", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"character characteristics upserted successfully",
+		"component", "character_characteristics_api",
+		"user_id", userID,
+		"character_id", characterID,
+		"user_id", userID,
+	)
+
+	utils.WriteJSON(w, http.StatusOK, characteristics)
+}
+
+func (h *Handler) deleteCharacteristics(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_characteristics_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.services.Character.DeleteCharacteristics(r.Context(), db.DeleteCharacteristicsParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"character characteristics not found",
+				"component", "character_characteristics_api",
+				"character_id", characterID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "character characteristics not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error(
+			"failed to delete character characteristics",
+			"component", "character_characteristics_api",
+			"character_id", characterID,
+			"user_id", userID,
+			"error", err,
+		)
+		http.Error(w, "failed to delete character characteristics", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"character characteristics deleted successfully",
+		"component", "character_characteristics_api",
+		"character_id", characterID,
+		"user_id", userID,
+	)
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Notes
 func (h *Handler) getNotes(w http.ResponseWriter, r *http.Request) {
 	userID := utils.GetUserIDFromContext(r.Context())
