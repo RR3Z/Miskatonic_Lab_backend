@@ -15,7 +15,9 @@ type SyncPublisher struct {
 }
 
 func NewSyncPublisher() *SyncPublisher {
-	return &SyncPublisher{}
+	return &SyncPublisher{
+		handlers: []EventHandler{},
+	}
 }
 
 func (p *SyncPublisher) Subscribe(handler EventHandler) {
