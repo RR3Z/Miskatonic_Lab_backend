@@ -17,6 +17,10 @@ type ICharacter interface {
 	UpdateCharacter(ctx context.Context, input db.UpdateCharacterParams) (model.CharacterModel, error)
 	DeleteCharacter(ctx context.Context, input db.DeleteCharacterParams) error
 
+	GetHealth(ctx context.Context, input db.GetHealthStateParams) (db.HealthState, error)
+	UpsertHealth(ctx context.Context, input db.UpsertHealthStateParams) (db.HealthState, error)
+	DeleteHealth(ctx context.Context, input db.DeleteHealthStateParams) error
+
 	GetCharacteristics(ctx context.Context, input db.GetCharacteristicsParams) (db.Characteristic, error)
 	UpsertCharacteristics(ctx context.Context, input db.UpsertCharacteristicsParams) (db.Characteristic, error)
 	DeleteCharacteristics(ctx context.Context, input db.DeleteCharacteristicsParams) error
@@ -78,7 +82,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 	}
 	rawData.DerivedStats = derivedStats
 
-	hp, err := s.repos.Queries.GetHealthState(ctx, characterGeneralData.ID)
+	hp, err := s.repos.Queries.GetHealthState(ctx, db.GetHealthStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return model.CharacterModel{}, err
 	}
@@ -166,6 +173,33 @@ func (s *CharacterService) DeleteCharacter(ctx context.Context, input db.DeleteC
 		UserID: input.UserID,
 	})
 	return err
+}
+
+// Health
+func (s *CharacterService) GetHealth(ctx context.Context, input db.GetHealthStateParams) (db.HealthState, error) {
+	health, err := s.repos.Queries.GetHealthState(ctx, input)
+	if err != nil {
+		return db.HealthState{}, err
+	}
+
+	return health, nil
+}
+
+func (s *CharacterService) UpsertHealth(ctx context.Context, input db.UpsertHealthStateParams) (db.HealthState, error) {
+	health, err := s.repos.Queries.UpsertHealthState(ctx, input)
+	if err != nil {
+		return db.HealthState{}, err
+	}
+
+	return health, nil
+}
+
+func (s *CharacterService) DeleteHealth(ctx context.Context, input db.DeleteHealthStateParams) error {
+	if _, err := s.repos.Queries.DeleteHealthState(ctx, input); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Characteristics

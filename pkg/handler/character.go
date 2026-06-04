@@ -232,6 +232,171 @@ func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// Health
+func (h *Handler) getHealth(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_health_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	health, err := h.services.Character.GetHealth(r.Context(), db.GetHealthStateParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"character health not found",
+				"component", "character_health_api",
+				"character_id", characterID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "character health not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error(
+			"failed to get character health",
+			"component", "character_health_api",
+			"character_id", characterID,
+			"user_id", userID,
+			"error", err,
+		)
+		http.Error(w, "failed to get character health", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"successfully get character health",
+		"component", "character_health_api",
+		"character_id", characterID,
+		"user_id", userID,
+	)
+
+	utils.WriteJSON(w, http.StatusOK, health)
+}
+
+func (h *Handler) upsertHealth(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_health_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	var input db.UpsertHealthStateParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		slog.Error("invalid request body",
+			"component", "character_health_api",
+			"error", err)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	health, err := h.services.Character.UpsertHealth(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"character health not found",
+				"component", "character_health_api",
+				"user_id", userID,
+				"character_id", characterID,
+				"error", err,
+			)
+			http.Error(w, "character not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error("failed to upsert character health",
+			"component", "character_health_api",
+			"user_id", userID,
+			"character_id", characterID,
+			"error", err)
+		http.Error(w, "failed to upsert character health", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"character health upserted successfully",
+		"component", "character_health_api",
+		"user_id", userID,
+		"character_id", characterID,
+	)
+
+	utils.WriteJSON(w, http.StatusOK, health)
+}
+
+func (h *Handler) deleteHealth(w http.ResponseWriter, r *http.Request) {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		slog.Error(
+			"invalid character id format",
+			"component", "character_health_api",
+			"character_id", characterID,
+			"error", err,
+		)
+		http.Error(w, "invalid character id", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.services.Character.DeleteHealth(r.Context(), db.DeleteHealthStateParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"character health not found",
+				"component", "character_health_api",
+				"character_id", characterID,
+				"user_id", userID,
+				"error", err,
+			)
+			http.Error(w, "character health not found", http.StatusNotFound)
+			return
+		}
+
+		slog.Error(
+			"failed to delete character health",
+			"component", "character_health_api",
+			"character_id", characterID,
+			"user_id", userID,
+			"error", err,
+		)
+		http.Error(w, "failed to delete character health", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(
+		"character health deleted successfully",
+		"component", "character_health_api",
+		"character_id", characterID,
+		"user_id", userID,
+	)
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Characteristics
 func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) {
 	userID := utils.GetUserIDFromContext(r.Context())
