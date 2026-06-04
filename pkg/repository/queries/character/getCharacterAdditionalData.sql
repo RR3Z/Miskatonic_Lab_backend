@@ -1,6 +1,3 @@
--- name: GetCharacteristics :one
-SELECT * FROM characteristics WHERE character_id = $1;
-
 -- name: GetDerivedStats :one
 SELECT * FROM derived_stats WHERE character_id = $1;
 
@@ -40,7 +37,3 @@ ORDER BY created_at;
 
 -- name: GetFinances :one
 SELECT * FROM finances WHERE character_id = $1;
-
--- name: GetNotes :many
-SELECT * FROM notes WHERE character_id = $1
-ORDER BY created_at DESC;
