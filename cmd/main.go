@@ -10,10 +10,12 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
+	EventsLogging "github.com/RR3Z/Miskatonic_Lab_backend/pkg/observability/logging"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/joho/godotenv"
+	"github.com/lmittmann/tint"
 )
 
 func run() int {
@@ -77,6 +79,7 @@ func run() int {
 
 	// Logging
 	publisher := events.NewSyncPublisher()
+	publisher.Subscribe(EventsLogging.NewCharacterEventLogger(slog.Default()))
 
 	// Launch Server
 	repos := repository.NewRepository(dbConnection)
@@ -98,7 +101,7 @@ func run() int {
 
 	slog.Info(
 		"http server starting",
-		"component", "http_server",
+		"component", "main",
 		"port", serverPort,
 	)
 
@@ -116,8 +119,9 @@ func run() int {
 }
 
 func setupLogger() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+	logger := slog.New(tint.NewHandler(os.Stdout, &tint.Options{
+		Level:      slog.LevelInfo,
+		TimeFormat: "15:04:05",
 	}))
 
 	slog.SetDefault(logger)
