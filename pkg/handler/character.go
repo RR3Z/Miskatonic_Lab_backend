@@ -166,7 +166,6 @@ func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) {
 	)
 
 	utils.WriteJSON(w, http.StatusOK, character)
-
 }
 
 func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) {
@@ -303,6 +302,18 @@ func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) 
 
 	characteristics, err := h.services.Character.UpsertCharacteristics(r.Context(), input)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(
+				"character not found",
+				"component", "character_characteristics_api",
+				"user_id", userID,
+				"character_id", characterID,
+				"error", err,
+			)
+			http.Error(w, "character not found", http.StatusNotFound)
+			return
+		}
+
 		slog.Error("failed to upsert character characteristics",
 			"component", "character_characteristics_api",
 			"user_id", userID,
@@ -317,7 +328,6 @@ func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) 
 		"component", "character_characteristics_api",
 		"user_id", userID,
 		"character_id", characterID,
-		"user_id", userID,
 	)
 
 	utils.WriteJSON(w, http.StatusOK, characteristics)
