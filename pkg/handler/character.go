@@ -421,6 +421,128 @@ func (h *Handler) deleteSanity(w http.ResponseWriter, r *http.Request) *myErrors
 }
 
 // Magic
+func (h *Handler) getMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	magic, err := h.services.Character.GetMagic(r.Context(), db.GetMagicStateParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character magic not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character magic",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, magic)
+	return nil
+}
+
+func (h *Handler) upsertMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	var input db.UpsertMagicStateParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	magic, err := h.services.Character.UpsertMagic(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
+		}
+
+		if isMagicStateValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "current_mp value cannot exceed max_mp value",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to upsert character magic",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, magic)
+	return nil
+}
+
+func (h *Handler) deleteMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	if err := h.services.Character.DeleteMagic(r.Context(), db.DeleteMagicStateParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character magic not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete character magic",
+			Err:     err,
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
 
 // Luck
 func (h *Handler) getLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
@@ -910,6 +1032,15 @@ func isHealthStateValidationError(err error) bool {
 
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_health_states_current_lte_max"
+}
+
+func isMagicStateValidationError(err error) bool {
+	if errors.Is(err, myErrors.ErrCurrentMagicExceedsMax) {
+		return true
+	}
+
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_magic_states_current_lte_max"
 }
 
 func isSanityStateValidationError(err error) bool {

@@ -79,7 +79,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 	}
 	rawData.Sanity = sanity
 
-	mp, err := s.repos.Queries.GetMagicState(ctx, characterGeneralData.ID)
+	mp, err := s.repos.Queries.GetMagicState(ctx, db.GetMagicStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return model.CharacterModel{}, err
 	}
@@ -302,6 +305,76 @@ func (s *CharacterService) DeleteSanity(ctx context.Context, input db.DeleteSani
 	return nil
 }
 
+// Magic
+func (s *CharacterService) GetMagic(ctx context.Context, input db.GetMagicStateParams) (db.MagicState, error) {
+	magic, err := s.repos.Queries.GetMagicState(ctx, input)
+	if err != nil {
+		return db.MagicState{}, err
+	}
+
+	return magic, nil
+}
+
+func (s *CharacterService) UpsertMagic(ctx context.Context, input db.UpsertMagicStateParams) (db.MagicState, error) {
+	if err := s.validateMagicState(ctx, input); err != nil {
+		return db.MagicState{}, err
+	}
+
+	magic, err := s.repos.Queries.UpsertMagicState(ctx, input)
+	if err != nil {
+		return db.MagicState{}, err
+	}
+
+	return magic, nil
+}
+
+func (s *CharacterService) validateMagicState(ctx context.Context, input db.UpsertMagicStateParams) error {
+	if input.MaxMp != nil && input.CurrentMp != nil {
+		if *input.CurrentMp > *input.MaxMp {
+			return myErrors.ErrCurrentMagicExceedsMax
+		}
+		return nil
+	}
+
+	if input.MaxMp == nil && input.CurrentMp == nil {
+		return nil
+	}
+
+	existing, err := s.repos.Queries.GetMagicState(ctx, db.GetMagicStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	maxMp := existing.MaxMp
+	if input.MaxMp != nil {
+		maxMp = *input.MaxMp
+	}
+
+	currentMp := existing.CurrentMp
+	if input.CurrentMp != nil {
+		currentMp = *input.CurrentMp
+	}
+
+	if currentMp > maxMp {
+		return myErrors.ErrCurrentMagicExceedsMax
+	}
+
+	return nil
+}
+
+func (s *CharacterService) DeleteMagic(ctx context.Context, input db.DeleteMagicStateParams) error {
+	if _, err := s.repos.Queries.DeleteMagicState(ctx, input); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // Luck
 func (s *CharacterService) GetLuck(ctx context.Context, input db.GetLuckStateParams) (db.LuckState, error) {

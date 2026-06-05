@@ -74,6 +74,20 @@ func (l *CharacterEventLogger) Handle(ctx context.Context, event events.Event) {
 	case characterEvents.CharacterSanityDeleteFailed:
 		l.logCharacterSanityDeleteFailed(ctx, e)
 
+	case characterEvents.CharacterMagicGetSucceeded:
+		l.logCharacterMagicGetSucceeded(ctx, e)
+	case characterEvents.CharacterMagicGetFailed:
+		l.logCharacterMagicGetFailed(ctx, e)
+
+	case characterEvents.CharacterMagicUpsertSucceeded:
+		l.logCharacterMagicUpsertSucceeded(ctx, e)
+	case characterEvents.CharacterMagicUpsertFailed:
+		l.logCharacterMagicUpsertFailed(ctx, e)
+
+	case characterEvents.CharacterMagicDeleteSucceeded:
+		l.logCharacterMagicDeleteSucceeded(ctx, e)
+	case characterEvents.CharacterMagicDeleteFailed:
+		l.logCharacterMagicDeleteFailed(ctx, e)
 
 	case characterEvents.CharacterLuckGetSucceeded:
 		l.logCharacterLuckGetSucceeded(ctx, e)
@@ -305,6 +319,55 @@ func (l *CharacterEventLogger) logCharacterSanityDeleteSucceeded(ctx context.Con
 }
 func (l *CharacterEventLogger) logCharacterSanityDeleteFailed(ctx context.Context, event characterEvents.CharacterSanityDeleteFailed) {
 	l.logger.ErrorContext(ctx, "failed to delete character sanity",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+// MagicState
+func (l *CharacterEventLogger) logCharacterMagicGetSucceeded(ctx context.Context, event characterEvents.CharacterMagicGetSucceeded) {
+	l.logger.InfoContext(ctx, "character magic fetched",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterMagicGetFailed(ctx context.Context, event characterEvents.CharacterMagicGetFailed) {
+	l.logger.ErrorContext(ctx, "failed to fetch character magic",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterMagicUpsertSucceeded(ctx context.Context, event characterEvents.CharacterMagicUpsertSucceeded) {
+	l.logger.InfoContext(ctx, "character magic upserted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterMagicUpsertFailed(ctx context.Context, event characterEvents.CharacterMagicUpsertFailed) {
+	l.logger.ErrorContext(ctx, "failed to upsert character magic",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterMagicDeleteSucceeded(ctx context.Context, event characterEvents.CharacterMagicDeleteSucceeded) {
+	l.logger.InfoContext(ctx, "character magic deleted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterMagicDeleteFailed(ctx context.Context, event characterEvents.CharacterMagicDeleteFailed) {
+	l.logger.ErrorContext(ctx, "failed to delete character magic",
 		"event", event.EventName(),
 		"user_id", event.UserID,
 		"character_id", event.CharacterID,

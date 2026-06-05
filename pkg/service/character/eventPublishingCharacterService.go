@@ -235,6 +235,63 @@ func (s *EventPublishingCharacterService) DeleteSanity(ctx context.Context, inpu
 	return nil
 }
 
+// Magic
+func (s *EventPublishingCharacterService) GetMagic(ctx context.Context, input db.GetMagicStateParams) (db.MagicState, error) {
+	magic, err := s.next.GetMagic(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterMagicGetFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.MagicState{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterMagicGetSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return magic, nil
+}
+
+func (s *EventPublishingCharacterService) UpsertMagic(ctx context.Context, input db.UpsertMagicStateParams) (db.MagicState, error) {
+	magic, err := s.next.UpsertMagic(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterMagicUpsertFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.MagicState{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterMagicUpsertSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return magic, nil
+}
+
+func (s *EventPublishingCharacterService) DeleteMagic(ctx context.Context, input db.DeleteMagicStateParams) error {
+	err := s.next.DeleteMagic(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterMagicDeleteFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterMagicDeleteSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return nil
+}
 
 // Luck
 func (s *EventPublishingCharacterService) GetLuck(ctx context.Context, input db.GetLuckStateParams) (db.LuckState, error) {

@@ -22,6 +22,10 @@ type ICharacter interface {
 	UpsertSanity(ctx context.Context, input db.UpsertSanityStateParams) (db.SanityState, error)
 	DeleteSanity(ctx context.Context, input db.DeleteSanityStateParams) error
 
+	GetMagic(ctx context.Context, input db.GetMagicStateParams) (db.MagicState, error)
+	UpsertMagic(ctx context.Context, input db.UpsertMagicStateParams) (db.MagicState, error)
+	DeleteMagic(ctx context.Context, input db.DeleteMagicStateParams) error
+
 	GetLuck(ctx context.Context, input db.GetLuckStateParams) (db.LuckState, error)
 	UpsertLuck(ctx context.Context, input db.UpsertLuckStateParams) (db.LuckState, error)
 	DeleteLuck(ctx context.Context, input db.DeleteLuckStateParams) error
