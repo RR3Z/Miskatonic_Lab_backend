@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -167,12 +168,56 @@ func (s *CharacterService) GetHealth(ctx context.Context, input db.GetHealthStat
 }
 
 func (s *CharacterService) UpsertHealth(ctx context.Context, input db.UpsertHealthStateParams) (db.HealthState, error) {
+	if err := s.validateHealthState(ctx, input); err != nil {
+		return db.HealthState{}, err
+	}
+
 	health, err := s.repos.Queries.UpsertHealthState(ctx, input)
 	if err != nil {
 		return db.HealthState{}, err
 	}
 
 	return health, nil
+}
+
+func (s *CharacterService) validateHealthState(ctx context.Context, input db.UpsertHealthStateParams) error {
+	if input.MaxHp != nil && input.CurrentHp != nil {
+		if *input.CurrentHp > *input.MaxHp {
+			return myErrors.ErrCurrentHealthExceedsMax
+		}
+		return nil
+	}
+
+	if input.MaxHp == nil && input.CurrentHp == nil {
+		return nil
+	}
+
+	existing, err := s.repos.Queries.GetHealthState(ctx, db.GetHealthStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	maxHp := existing.MaxHp
+	if input.MaxHp != nil {
+		maxHp = *input.MaxHp
+	}
+
+	currentHp := existing.CurrentHp
+	if input.CurrentHp != nil {
+		currentHp = *input.CurrentHp
+	}
+
+	if currentHp > maxHp {
+		return myErrors.ErrCurrentHealthExceedsMax
+	}
+
+	return nil
 }
 
 func (s *CharacterService) DeleteHealth(ctx context.Context, input db.DeleteHealthStateParams) error {
@@ -194,12 +239,56 @@ func (s *CharacterService) GetSanity(ctx context.Context, input db.GetSanityStat
 }
 
 func (s *CharacterService) UpsertSanity(ctx context.Context, input db.UpsertSanityStateParams) (db.SanityState, error) {
+	if err := s.validateSanityState(ctx, input); err != nil {
+		return db.SanityState{}, err
+	}
+
 	sanity, err := s.repos.Queries.UpsertSanityState(ctx, input)
 	if err != nil {
 		return db.SanityState{}, err
 	}
 
 	return sanity, nil
+}
+
+func (s *CharacterService) validateSanityState(ctx context.Context, input db.UpsertSanityStateParams) error {
+	if input.MaxSanity != nil && input.CurrentSanity != nil {
+		if *input.CurrentSanity > *input.MaxSanity {
+			return myErrors.ErrCurrentSanityExceedsMax
+		}
+		return nil
+	}
+
+	if input.MaxSanity == nil && input.CurrentSanity == nil {
+		return nil
+	}
+
+	existing, err := s.repos.Queries.GetSanityState(ctx, db.GetSanityStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	maxSanity := existing.MaxSanity
+	if input.MaxSanity != nil {
+		maxSanity = *input.MaxSanity
+	}
+
+	currentSanity := existing.CurrentSanity
+	if input.CurrentSanity != nil {
+		currentSanity = *input.CurrentSanity
+	}
+
+	if currentSanity > maxSanity {
+		return myErrors.ErrCurrentSanityExceedsMax
+	}
+
+	return nil
 }
 
 func (s *CharacterService) DeleteSanity(ctx context.Context, input db.DeleteSanityStateParams) error {

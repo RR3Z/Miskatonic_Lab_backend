@@ -11,6 +11,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -241,6 +242,13 @@ func (h *Handler) upsertHealth(w http.ResponseWriter, r *http.Request) *myErrors
 				Err:     err,
 			}
 		}
+		if isHealthStateValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "current_hp value cannot exceed max_hp value",
+				Err:     err,
+			}
+		}
 
 		return &myErrors.AppError{
 			Status:  http.StatusInternalServerError,
@@ -354,6 +362,14 @@ func (h *Handler) upsertSanity(w http.ResponseWriter, r *http.Request) *myErrors
 			return &myErrors.AppError{
 				Status:  http.StatusNotFound,
 				Message: "character not found",
+				Err:     err,
+			}
+		}
+
+		if isSanityStateValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "current_sanity value cannot exceed max_sanity value",
 				Err:     err,
 			}
 		}
@@ -763,4 +779,22 @@ func getNoteIDFromRequest(r *http.Request) (pgtype.UUID, error) {
 	}
 
 	return noteUUID, nil
+}
+
+func isHealthStateValidationError(err error) bool {
+	if errors.Is(err, myErrors.ErrCurrentHealthExceedsMax) {
+		return true
+	}
+
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_health_states_current_lte_max"
+}
+
+func isSanityStateValidationError(err error) bool {
+	if errors.Is(err, myErrors.ErrCurrentSanityExceedsMax) {
+		return true
+	}
+
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_sanity_states_current_lte_max"
 }
