@@ -235,6 +235,65 @@ func (s *EventPublishingCharacterService) DeleteSanity(ctx context.Context, inpu
 	return nil
 }
 
+
+// Luck
+func (s *EventPublishingCharacterService) GetLuck(ctx context.Context, input db.GetLuckStateParams) (db.LuckState, error) {
+	luck, err := s.next.GetLuck(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterLuckGetFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.LuckState{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterLuckGetSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return luck, nil
+}
+
+func (s *EventPublishingCharacterService) UpsertLuck(ctx context.Context, input db.UpsertLuckStateParams) (db.LuckState, error) {
+	luck, err := s.next.UpsertLuck(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterLuckUpsertFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.LuckState{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterLuckUpsertSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return luck, nil
+}
+
+func (s *EventPublishingCharacterService) DeleteLuck(ctx context.Context, input db.DeleteLuckStateParams) error {
+	err := s.next.DeleteLuck(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterLuckDeleteFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterLuckDeleteSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return nil
+}
+
 // Characteristics
 func (s *EventPublishingCharacterService) GetCharacteristics(ctx context.Context, input db.GetCharacteristicsParams) (db.Characteristic, error) {
 	characteristics, err := s.next.GetCharacteristics(ctx, input)

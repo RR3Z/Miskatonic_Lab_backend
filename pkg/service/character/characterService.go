@@ -85,7 +85,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 	}
 	rawData.MP = mp
 
-	luck, err := s.repos.Queries.GetLuckState(ctx, characterGeneralData.ID)
+	luck, err := s.repos.Queries.GetLuckState(ctx, db.GetLuckStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return model.CharacterModel{}, err
 	}
@@ -293,6 +296,78 @@ func (s *CharacterService) validateSanityState(ctx context.Context, input db.Ups
 
 func (s *CharacterService) DeleteSanity(ctx context.Context, input db.DeleteSanityStateParams) error {
 	if _, err := s.repos.Queries.DeleteSanityState(ctx, input); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
+// Luck
+func (s *CharacterService) GetLuck(ctx context.Context, input db.GetLuckStateParams) (db.LuckState, error) {
+	luck, err := s.repos.Queries.GetLuckState(ctx, input)
+	if err != nil {
+		return db.LuckState{}, err
+	}
+
+	return luck, nil
+}
+
+func (s *CharacterService) UpsertLuck(ctx context.Context, input db.UpsertLuckStateParams) (db.LuckState, error) {
+	if err := s.validateLuckState(ctx, input); err != nil {
+		return db.LuckState{}, err
+	}
+
+	luck, err := s.repos.Queries.UpsertLuckState(ctx, input)
+	if err != nil {
+		return db.LuckState{}, err
+	}
+
+	return luck, nil
+}
+
+func (s *CharacterService) validateLuckState(ctx context.Context, input db.UpsertLuckStateParams) error {
+	if input.StartingLuck != nil && input.CurrentLuck != nil {
+		if *input.CurrentLuck > *input.StartingLuck {
+			return myErrors.ErrCurrentLuckExceedsStarting
+		}
+		return nil
+	}
+
+	if input.StartingLuck == nil && input.CurrentLuck == nil {
+		return nil
+	}
+
+	existing, err := s.repos.Queries.GetLuckState(ctx, db.GetLuckStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	startingLuck := existing.StartingLuck
+	if input.StartingLuck != nil {
+		startingLuck = *input.StartingLuck
+	}
+
+	currentLuck := existing.CurrentLuck
+	if input.CurrentLuck != nil {
+		currentLuck = *input.CurrentLuck
+	}
+
+	if currentLuck > startingLuck {
+		return myErrors.ErrCurrentLuckExceedsStarting
+	}
+
+	return nil
+}
+
+func (s *CharacterService) DeleteLuck(ctx context.Context, input db.DeleteLuckStateParams) error {
+	if _, err := s.repos.Queries.DeleteLuckState(ctx, input); err != nil {
 		return err
 	}
 

@@ -423,6 +423,128 @@ func (h *Handler) deleteSanity(w http.ResponseWriter, r *http.Request) *myErrors
 // Magic
 
 // Luck
+func (h *Handler) getLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	luck, err := h.services.Character.GetLuck(r.Context(), db.GetLuckStateParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character luck not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character luck",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, luck)
+	return nil
+}
+
+func (h *Handler) upsertLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	var input db.UpsertLuckStateParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	luck, err := h.services.Character.UpsertLuck(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
+		}
+
+		if isLuckStateValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "current_luck value cannot exceed starting_luck value",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to upsert character luck",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, luck)
+	return nil
+}
+
+func (h *Handler) deleteLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	if err := h.services.Character.DeleteLuck(r.Context(), db.DeleteLuckStateParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character luck not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete character luck",
+			Err:     err,
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
 
 // Characteristics
 func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
@@ -797,4 +919,13 @@ func isSanityStateValidationError(err error) bool {
 
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_sanity_states_current_lte_max"
+}
+
+func isLuckStateValidationError(err error) bool {
+	if errors.Is(err, myErrors.ErrCurrentLuckExceedsStarting) {
+		return true
+	}
+
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_luck_states_current_lte_starting"
 }

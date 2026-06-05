@@ -74,6 +74,22 @@ func (l *CharacterEventLogger) Handle(ctx context.Context, event events.Event) {
 	case characterEvents.CharacterSanityDeleteFailed:
 		l.logCharacterSanityDeleteFailed(ctx, e)
 
+
+	case characterEvents.CharacterLuckGetSucceeded:
+		l.logCharacterLuckGetSucceeded(ctx, e)
+	case characterEvents.CharacterLuckGetFailed:
+		l.logCharacterLuckGetFailed(ctx, e)
+
+	case characterEvents.CharacterLuckUpsertSucceeded:
+		l.logCharacterLuckUpsertSucceeded(ctx, e)
+	case characterEvents.CharacterLuckUpsertFailed:
+		l.logCharacterLuckUpsertFailed(ctx, e)
+
+	case characterEvents.CharacterLuckDeleteSucceeded:
+		l.logCharacterLuckDeleteSucceeded(ctx, e)
+	case characterEvents.CharacterLuckDeleteFailed:
+		l.logCharacterLuckDeleteFailed(ctx, e)
+
 	case characterEvents.CharacterCharacteristicsGetSucceeded:
 		l.logCharacterCharacteristicsGetSucceeded(ctx, e)
 	case characterEvents.CharacterCharacteristicsGetFailed:
