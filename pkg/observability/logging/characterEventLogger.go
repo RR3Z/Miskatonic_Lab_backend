@@ -59,6 +59,21 @@ func (l *CharacterEventLogger) Handle(ctx context.Context, event events.Event) {
 	case characterEvents.CharacterHealthDeleteFailed:
 		l.logCharacterHealthDeleteFailed(ctx, e)
 
+	case characterEvents.CharacterSanityGetSucceeded:
+		l.logCharacterSanityGetSucceeded(ctx, e)
+	case characterEvents.CharacterSanityGetFailed:
+		l.logCharacterSanityGetFailed(ctx, e)
+
+	case characterEvents.CharacterSanityUpsertSucceeded:
+		l.logCharacterSanityUpsertSucceeded(ctx, e)
+	case characterEvents.CharacterSanityUpsertFailed:
+		l.logCharacterSanityUpsertFailed(ctx, e)
+
+	case characterEvents.CharacterSanityDeleteSucceeded:
+		l.logCharacterSanityDeleteSucceeded(ctx, e)
+	case characterEvents.CharacterSanityDeleteFailed:
+		l.logCharacterSanityDeleteFailed(ctx, e)
+
 	case characterEvents.CharacterCharacteristicsGetSucceeded:
 		l.logCharacterCharacteristicsGetSucceeded(ctx, e)
 	case characterEvents.CharacterCharacteristicsGetFailed:
@@ -225,6 +240,55 @@ func (l *CharacterEventLogger) logCharacterHealthDeleteSucceeded(ctx context.Con
 }
 func (l *CharacterEventLogger) logCharacterHealthDeleteFailed(ctx context.Context, event characterEvents.CharacterHealthDeleteFailed) {
 	l.logger.ErrorContext(ctx, "failed to delete character health",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+// SanityState
+func (l *CharacterEventLogger) logCharacterSanityGetSucceeded(ctx context.Context, event characterEvents.CharacterSanityGetSucceeded) {
+	l.logger.InfoContext(ctx, "character sanity fetched",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterSanityGetFailed(ctx context.Context, event characterEvents.CharacterSanityGetFailed) {
+	l.logger.ErrorContext(ctx, "failed to fetch character sanity",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterSanityUpsertSucceeded(ctx context.Context, event characterEvents.CharacterSanityUpsertSucceeded) {
+	l.logger.InfoContext(ctx, "character sanity upserted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterSanityUpsertFailed(ctx context.Context, event characterEvents.CharacterSanityUpsertFailed) {
+	l.logger.ErrorContext(ctx, "failed to upsert character sanity",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterSanityDeleteSucceeded(ctx context.Context, event characterEvents.CharacterSanityDeleteSucceeded) {
+	l.logger.InfoContext(ctx, "character sanity deleted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterSanityDeleteFailed(ctx context.Context, event characterEvents.CharacterSanityDeleteFailed) {
+	l.logger.ErrorContext(ctx, "failed to delete character sanity",
 		"event", event.EventName(),
 		"user_id", event.UserID,
 		"character_id", event.CharacterID,

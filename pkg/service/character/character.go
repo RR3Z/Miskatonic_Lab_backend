@@ -18,6 +18,10 @@ type ICharacter interface {
 	UpsertHealth(ctx context.Context, input db.UpsertHealthStateParams) (db.HealthState, error)
 	DeleteHealth(ctx context.Context, input db.DeleteHealthStateParams) error
 
+	GetSanity(ctx context.Context, input db.GetSanityStateParams) (db.SanityState, error)
+	UpsertSanity(ctx context.Context, input db.UpsertSanityStateParams) (db.SanityState, error)
+	DeleteSanity(ctx context.Context, input db.DeleteSanityStateParams) error
+
 	GetCharacteristics(ctx context.Context, input db.GetCharacteristicsParams) (db.Characteristic, error)
 	UpsertCharacteristics(ctx context.Context, input db.UpsertCharacteristicsParams) (db.Characteristic, error)
 	DeleteCharacteristics(ctx context.Context, input db.DeleteCharacteristicsParams) error

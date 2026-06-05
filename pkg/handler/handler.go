@@ -60,6 +60,13 @@ func (h *Handler) InitRoutes() *chi.Mux {
 					r.Delete("/", AppHandler(h.deleteHealth).ServeHTTP)
 				})
 
+
+				r.Route("/sanity", func(r chi.Router) {
+					r.Get("/", AppHandler(h.getSanity).ServeHTTP)
+					r.Put("/", AppHandler(h.upsertSanity).ServeHTTP)
+					r.Delete("/", AppHandler(h.deleteSanity).ServeHTTP)
+				})
+
 				r.Route("/notes", func(r chi.Router) {
 					r.Get("/", AppHandler(h.getNotes).ServeHTTP)
 					r.Post("/", AppHandler(h.createNote).ServeHTTP)

@@ -69,7 +69,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 	}
 	rawData.HP = hp
 
-	sanity, err := s.repos.Queries.GetSanityState(ctx, characterGeneralData.ID)
+	sanity, err := s.repos.Queries.GetSanityState(ctx, db.GetSanityStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return model.CharacterModel{}, err
 	}
@@ -174,6 +177,33 @@ func (s *CharacterService) UpsertHealth(ctx context.Context, input db.UpsertHeal
 
 func (s *CharacterService) DeleteHealth(ctx context.Context, input db.DeleteHealthStateParams) error {
 	if _, err := s.repos.Queries.DeleteHealthState(ctx, input); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Sanity
+func (s *CharacterService) GetSanity(ctx context.Context, input db.GetSanityStateParams) (db.SanityState, error) {
+	sanity, err := s.repos.Queries.GetSanityState(ctx, input)
+	if err != nil {
+		return db.SanityState{}, err
+	}
+
+	return sanity, nil
+}
+
+func (s *CharacterService) UpsertSanity(ctx context.Context, input db.UpsertSanityStateParams) (db.SanityState, error) {
+	sanity, err := s.repos.Queries.UpsertSanityState(ctx, input)
+	if err != nil {
+		return db.SanityState{}, err
+	}
+
+	return sanity, nil
+}
+
+func (s *CharacterService) DeleteSanity(ctx context.Context, input db.DeleteSanityStateParams) error {
+	if _, err := s.repos.Queries.DeleteSanityState(ctx, input); err != nil {
 		return err
 	}
 

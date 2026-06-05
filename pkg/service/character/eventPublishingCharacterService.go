@@ -177,6 +177,64 @@ func (s *EventPublishingCharacterService) DeleteHealth(ctx context.Context, inpu
 	return nil
 }
 
+// Sanity
+func (s *EventPublishingCharacterService) GetSanity(ctx context.Context, input db.GetSanityStateParams) (db.SanityState, error) {
+	sanity, err := s.next.GetSanity(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterSanityGetFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.SanityState{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterSanityGetSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return sanity, nil
+}
+
+func (s *EventPublishingCharacterService) UpsertSanity(ctx context.Context, input db.UpsertSanityStateParams) (db.SanityState, error) {
+	sanity, err := s.next.UpsertSanity(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterSanityUpsertFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.SanityState{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterSanityUpsertSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return sanity, nil
+}
+
+func (s *EventPublishingCharacterService) DeleteSanity(ctx context.Context, input db.DeleteSanityStateParams) error {
+	err := s.next.DeleteSanity(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterSanityDeleteFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterSanityDeleteSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return nil
+}
+
 // Characteristics
 func (s *EventPublishingCharacterService) GetCharacteristics(ctx context.Context, input db.GetCharacteristicsParams) (db.Characteristic, error) {
 	characteristics, err := s.next.GetCharacteristics(ctx, input)
