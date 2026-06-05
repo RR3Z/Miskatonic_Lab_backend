@@ -351,6 +351,64 @@ func (s *EventPublishingCharacterService) DeleteLuck(ctx context.Context, input 
 	return nil
 }
 
+// Finances
+func (s *EventPublishingCharacterService) GetFinances(ctx context.Context, input db.GetFinancesParams) (db.Finance, error) {
+	finances, err := s.next.GetFinances(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterFinancesGetFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.Finance{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterFinancesGetSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return finances, nil
+}
+
+func (s *EventPublishingCharacterService) UpsertFinances(ctx context.Context, input db.UpsertFinancesParams) (db.Finance, error) {
+	finances, err := s.next.UpsertFinances(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterFinancesUpsertFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.Finance{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterFinancesUpsertSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return finances, nil
+}
+
+func (s *EventPublishingCharacterService) DeleteFinances(ctx context.Context, input db.DeleteFinancesParams) error {
+	err := s.next.DeleteFinances(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterFinancesDeleteFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterFinancesDeleteSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return nil
+}
+
 // Characteristics
 func (s *EventPublishingCharacterService) GetCharacteristics(ctx context.Context, input db.GetCharacteristicsParams) (db.Characteristic, error) {
 	characteristics, err := s.next.GetCharacteristics(ctx, input)

@@ -668,6 +668,130 @@ func (h *Handler) deleteLuck(w http.ResponseWriter, r *http.Request) *myErrors.A
 	return nil
 }
 
+// Finances
+func (h *Handler) getFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	finances, err := h.services.Character.GetFinances(r.Context(), db.GetFinancesParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character finances not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character finances",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, finances)
+	return nil
+}
+
+func (h *Handler) upsertFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	var input db.UpsertFinancesParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	finances, err := h.services.Character.UpsertFinances(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
+		}
+
+		if isFinancesValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "credit_rating_skill_id must reference a skill from this character",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to upsert character finances",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, finances)
+	return nil
+}
+
+func (h *Handler) deleteFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	if err := h.services.Character.DeleteFinances(r.Context(), db.DeleteFinancesParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character finances not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete character finances",
+			Err:     err,
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
 // Characteristics
 func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
@@ -1059,4 +1183,9 @@ func isLuckStateValidationError(err error) bool {
 
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_luck_states_current_lte_starting"
+}
+
+func isFinancesValidationError(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.ConstraintName == "fk_finances_credit_rating_skill"
 }

@@ -125,7 +125,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 		}
 	}
 
-	finances, err := s.repos.Queries.GetFinances(ctx, characterGeneralData.ID)
+	finances, err := s.repos.Queries.GetFinances(ctx, db.GetFinancesParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return model.CharacterModel{}, err
@@ -441,6 +444,33 @@ func (s *CharacterService) validateLuckState(ctx context.Context, input db.Upser
 
 func (s *CharacterService) DeleteLuck(ctx context.Context, input db.DeleteLuckStateParams) error {
 	if _, err := s.repos.Queries.DeleteLuckState(ctx, input); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Finances
+func (s *CharacterService) GetFinances(ctx context.Context, input db.GetFinancesParams) (db.Finance, error) {
+	finances, err := s.repos.Queries.GetFinances(ctx, input)
+	if err != nil {
+		return db.Finance{}, err
+	}
+
+	return finances, nil
+}
+
+func (s *CharacterService) UpsertFinances(ctx context.Context, input db.UpsertFinancesParams) (db.Finance, error) {
+	finances, err := s.repos.Queries.UpsertFinances(ctx, input)
+	if err != nil {
+		return db.Finance{}, err
+	}
+
+	return finances, nil
+}
+
+func (s *CharacterService) DeleteFinances(ctx context.Context, input db.DeleteFinancesParams) error {
+	if _, err := s.repos.Queries.DeleteFinances(ctx, input); err != nil {
 		return err
 	}
 

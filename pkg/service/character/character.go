@@ -30,6 +30,10 @@ type ICharacter interface {
 	UpsertLuck(ctx context.Context, input db.UpsertLuckStateParams) (db.LuckState, error)
 	DeleteLuck(ctx context.Context, input db.DeleteLuckStateParams) error
 
+	GetFinances(ctx context.Context, input db.GetFinancesParams) (db.Finance, error)
+	UpsertFinances(ctx context.Context, input db.UpsertFinancesParams) (db.Finance, error)
+	DeleteFinances(ctx context.Context, input db.DeleteFinancesParams) error
+
 	GetCharacteristics(ctx context.Context, input db.GetCharacteristicsParams) (db.Characteristic, error)
 	UpsertCharacteristics(ctx context.Context, input db.UpsertCharacteristicsParams) (db.Characteristic, error)
 	DeleteCharacteristics(ctx context.Context, input db.DeleteCharacteristicsParams) error
