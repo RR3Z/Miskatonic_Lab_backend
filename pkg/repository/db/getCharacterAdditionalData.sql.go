@@ -101,42 +101,6 @@ func (q *Queries) GetFinances(ctx context.Context, characterID pgtype.UUID) (Fin
 	return i, err
 }
 
-const getLuckState = `-- name: GetLuckState :one
-SELECT id, character_id, starting_luck, current_luck, created_at, updated_at FROM luck_states WHERE character_id = $1
-`
-
-func (q *Queries) GetLuckState(ctx context.Context, characterID pgtype.UUID) (LuckState, error) {
-	row := q.db.QueryRow(ctx, getLuckState, characterID)
-	var i LuckState
-	err := row.Scan(
-		&i.ID,
-		&i.CharacterID,
-		&i.StartingLuck,
-		&i.CurrentLuck,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getMagicState = `-- name: GetMagicState :one
-SELECT id, character_id, max_mp, current_mp, created_at, updated_at FROM magic_states WHERE character_id = $1
-`
-
-func (q *Queries) GetMagicState(ctx context.Context, characterID pgtype.UUID) (MagicState, error) {
-	row := q.db.QueryRow(ctx, getMagicState, characterID)
-	var i MagicState
-	err := row.Scan(
-		&i.ID,
-		&i.CharacterID,
-		&i.MaxMp,
-		&i.CurrentMp,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getSkills = `-- name: GetSkills :many
 SELECT s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.specialized, s.specialty_id, s.created_at, s.updated_at,
     sc.name as category_name,
