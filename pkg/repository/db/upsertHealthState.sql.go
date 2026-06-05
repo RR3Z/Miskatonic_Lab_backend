@@ -21,6 +21,7 @@ WITH input AS (
         $7::boolean AS dying,
         $8::boolean AS dead
 )
+
 INSERT INTO health_states (
     character_id,
     max_hp,

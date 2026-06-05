@@ -8,6 +8,9 @@ sql:
       - 'pkg/repository/queries/note'
       - 'pkg/repository/queries/characteristics'
       - 'pkg/repository/queries/healthState'
+      - 'pkg/repository/queries/sanityState'
+      # - 'pkg/repository/queries/magicState'
+      # - 'pkg/repository/queries/luckState'
     gen:
       go:
         package: 'db'

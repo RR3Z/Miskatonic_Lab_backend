@@ -4,9 +4,6 @@ SELECT * FROM derived_stats WHERE character_id = $1;
 -- name: GetMagicState :one
 SELECT * FROM magic_states WHERE character_id = $1;
 
--- name: GetSanityState :one
-SELECT * FROM sanity_states WHERE character_id = $1;
-
 -- name: GetLuckState :one
 SELECT * FROM luck_states WHERE character_id = $1;
 

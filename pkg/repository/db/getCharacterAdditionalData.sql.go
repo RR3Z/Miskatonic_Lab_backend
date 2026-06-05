@@ -137,26 +137,6 @@ func (q *Queries) GetMagicState(ctx context.Context, characterID pgtype.UUID) (M
 	return i, err
 }
 
-const getSanityState = `-- name: GetSanityState :one
-SELECT id, character_id, max_sanity, current_sanity, temp_insanity, indef_insanity, created_at, updated_at FROM sanity_states WHERE character_id = $1
-`
-
-func (q *Queries) GetSanityState(ctx context.Context, characterID pgtype.UUID) (SanityState, error) {
-	row := q.db.QueryRow(ctx, getSanityState, characterID)
-	var i SanityState
-	err := row.Scan(
-		&i.ID,
-		&i.CharacterID,
-		&i.MaxSanity,
-		&i.CurrentSanity,
-		&i.TempInsanity,
-		&i.IndefInsanity,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getSkills = `-- name: GetSkills :many
 SELECT s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.specialized, s.specialty_id, s.created_at, s.updated_at,
     sc.name as category_name,
