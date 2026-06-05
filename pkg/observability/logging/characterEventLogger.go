@@ -104,6 +104,21 @@ func (l *CharacterEventLogger) Handle(ctx context.Context, event events.Event) {
 	case characterEvents.CharacterLuckDeleteFailed:
 		l.logCharacterLuckDeleteFailed(ctx, e)
 
+	case characterEvents.CharacterFinancesGetSucceeded:
+		l.logCharacterFinancesGetSucceeded(ctx, e)
+	case characterEvents.CharacterFinancesGetFailed:
+		l.logCharacterFinancesGetFailed(ctx, e)
+
+	case characterEvents.CharacterFinancesUpsertSucceeded:
+		l.logCharacterFinancesUpsertSucceeded(ctx, e)
+	case characterEvents.CharacterFinancesUpsertFailed:
+		l.logCharacterFinancesUpsertFailed(ctx, e)
+
+	case characterEvents.CharacterFinancesDeleteSucceeded:
+		l.logCharacterFinancesDeleteSucceeded(ctx, e)
+	case characterEvents.CharacterFinancesDeleteFailed:
+		l.logCharacterFinancesDeleteFailed(ctx, e)
+
 	case characterEvents.CharacterCharacteristicsGetSucceeded:
 		l.logCharacterCharacteristicsGetSucceeded(ctx, e)
 	case characterEvents.CharacterCharacteristicsGetFailed:
@@ -417,6 +432,55 @@ func (l *CharacterEventLogger) logCharacterLuckDeleteSucceeded(ctx context.Conte
 }
 func (l *CharacterEventLogger) logCharacterLuckDeleteFailed(ctx context.Context, event characterEvents.CharacterLuckDeleteFailed) {
 	l.logger.ErrorContext(ctx, "failed to delete character luck",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+// Finances
+func (l *CharacterEventLogger) logCharacterFinancesGetSucceeded(ctx context.Context, event characterEvents.CharacterFinancesGetSucceeded) {
+	l.logger.InfoContext(ctx, "character finances fetched",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterFinancesGetFailed(ctx context.Context, event characterEvents.CharacterFinancesGetFailed) {
+	l.logger.ErrorContext(ctx, "failed to fetch character finances",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterFinancesUpsertSucceeded(ctx context.Context, event characterEvents.CharacterFinancesUpsertSucceeded) {
+	l.logger.InfoContext(ctx, "character finances upserted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterFinancesUpsertFailed(ctx context.Context, event characterEvents.CharacterFinancesUpsertFailed) {
+	l.logger.ErrorContext(ctx, "failed to upsert character finances",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterFinancesDeleteSucceeded(ctx context.Context, event characterEvents.CharacterFinancesDeleteSucceeded) {
+	l.logger.InfoContext(ctx, "character finances deleted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterFinancesDeleteFailed(ctx context.Context, event characterEvents.CharacterFinancesDeleteFailed) {
+	l.logger.ErrorContext(ctx, "failed to delete character finances",
 		"event", event.EventName(),
 		"user_id", event.UserID,
 		"character_id", event.CharacterID,
