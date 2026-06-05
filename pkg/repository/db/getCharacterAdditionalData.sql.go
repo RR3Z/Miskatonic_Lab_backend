@@ -81,26 +81,6 @@ func (q *Queries) GetDerivedStats(ctx context.Context, characterID pgtype.UUID) 
 	return i, err
 }
 
-const getFinances = `-- name: GetFinances :one
-SELECT id, character_id, spending_limit, cash, assets, credit_rating_skill_id, created_at, updated_at FROM finances WHERE character_id = $1
-`
-
-func (q *Queries) GetFinances(ctx context.Context, characterID pgtype.UUID) (Finance, error) {
-	row := q.db.QueryRow(ctx, getFinances, characterID)
-	var i Finance
-	err := row.Scan(
-		&i.ID,
-		&i.CharacterID,
-		&i.SpendingLimit,
-		&i.Cash,
-		&i.Assets,
-		&i.CreditRatingSkillID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getSkills = `-- name: GetSkills :many
 SELECT s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.specialized, s.specialty_id, s.created_at, s.updated_at,
     sc.name as category_name,

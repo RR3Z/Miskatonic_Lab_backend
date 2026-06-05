@@ -22,6 +22,3 @@ SELECT * FROM backstories WHERE character_id = $1;
 -- name: GetBackstoryItemsByBackstoryID :many
 SELECT * FROM backstory_items WHERE backstory_id = $1
 ORDER BY created_at;
-
--- name: GetFinances :one
-SELECT * FROM finances WHERE character_id = $1;

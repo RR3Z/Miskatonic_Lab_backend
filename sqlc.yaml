@@ -11,6 +11,7 @@ sql:
       - 'pkg/repository/queries/sanityState'
       - 'pkg/repository/queries/magicState'
       - 'pkg/repository/queries/luckState'
+      - 'pkg/repository/queries/finances'
     gen:
       go:
         package: 'db'
