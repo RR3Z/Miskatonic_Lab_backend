@@ -53,6 +53,11 @@ func (h *Handler) InitRoutes() *chi.Mux {
 					r.Delete("/", AppHandler(h.deleteCharacteristics).ServeHTTP)
 				})
 
+				r.Route("/derived-stats", func(r chi.Router) {
+					r.Get("/", AppHandler(h.getDerivedStats).ServeHTTP)
+					r.Put("/", AppHandler(h.upsertDerivedStats).ServeHTTP)
+					r.Delete("/", AppHandler(h.deleteDerivedStats).ServeHTTP)
+				})
 
 				r.Route("/health", func(r chi.Router) {
 					r.Get("/", AppHandler(h.getHealth).ServeHTTP)

@@ -55,7 +55,10 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input model.GetChar
 	}
 	rawData.Characteristics = characteristics
 
-	derivedStats, err := s.repos.Queries.GetDerivedStats(ctx, characterGeneralData.ID)
+	derivedStats, err := s.repos.Queries.GetDerivedStats(ctx, db.GetDerivedStatsParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return model.CharacterModel{}, err
 	}
@@ -471,6 +474,33 @@ func (s *CharacterService) UpsertFinances(ctx context.Context, input db.UpsertFi
 
 func (s *CharacterService) DeleteFinances(ctx context.Context, input db.DeleteFinancesParams) error {
 	if _, err := s.repos.Queries.DeleteFinances(ctx, input); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DerivedStats
+func (s *CharacterService) GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error) {
+	derivedStats, err := s.repos.Queries.GetDerivedStats(ctx, input)
+	if err != nil {
+		return db.DerivedStat{}, err
+	}
+
+	return derivedStats, nil
+}
+
+func (s *CharacterService) UpsertDerivedStats(ctx context.Context, input db.UpsertDerivedStatsParams) (db.DerivedStat, error) {
+	derivedStats, err := s.repos.Queries.UpsertDerivedStats(ctx, input)
+	if err != nil {
+		return db.DerivedStat{}, err
+	}
+
+	return derivedStats, nil
+}
+
+func (s *CharacterService) DeleteDerivedStats(ctx context.Context, input db.DeleteDerivedStatsParams) error {
+	if _, err := s.repos.Queries.DeleteDerivedStats(ctx, input); err != nil {
 		return err
 	}
 

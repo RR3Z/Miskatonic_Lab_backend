@@ -409,6 +409,64 @@ func (s *EventPublishingCharacterService) DeleteFinances(ctx context.Context, in
 	return nil
 }
 
+// DerivedStats
+func (s *EventPublishingCharacterService) GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error) {
+	derivedStats, err := s.next.GetDerivedStats(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsGetFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.DerivedStat{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsGetSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return derivedStats, nil
+}
+
+func (s *EventPublishingCharacterService) UpsertDerivedStats(ctx context.Context, input db.UpsertDerivedStatsParams) (db.DerivedStat, error) {
+	derivedStats, err := s.next.UpsertDerivedStats(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsUpsertFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return db.DerivedStat{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsUpsertSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return derivedStats, nil
+}
+
+func (s *EventPublishingCharacterService) DeleteDerivedStats(ctx context.Context, input db.DeleteDerivedStatsParams) error {
+	err := s.next.DeleteDerivedStats(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsDeleteFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsDeleteSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return nil
+}
+
 // Characteristics
 func (s *EventPublishingCharacterService) GetCharacteristics(ctx context.Context, input db.GetCharacteristicsParams) (db.Characteristic, error) {
 	characteristics, err := s.next.GetCharacteristics(ctx, input)

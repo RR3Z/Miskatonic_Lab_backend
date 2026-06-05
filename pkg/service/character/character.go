@@ -34,6 +34,10 @@ type ICharacter interface {
 	UpsertFinances(ctx context.Context, input db.UpsertFinancesParams) (db.Finance, error)
 	DeleteFinances(ctx context.Context, input db.DeleteFinancesParams) error
 
+	GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error)
+	UpsertDerivedStats(ctx context.Context, input db.UpsertDerivedStatsParams) (db.DerivedStat, error)
+	DeleteDerivedStats(ctx context.Context, input db.DeleteDerivedStatsParams) error
+
 	GetCharacteristics(ctx context.Context, input db.GetCharacteristicsParams) (db.Characteristic, error)
 	UpsertCharacteristics(ctx context.Context, input db.UpsertCharacteristicsParams) (db.Characteristic, error)
 	DeleteCharacteristics(ctx context.Context, input db.DeleteCharacteristicsParams) error
