@@ -119,6 +119,21 @@ func (l *CharacterEventLogger) Handle(ctx context.Context, event events.Event) {
 	case characterEvents.CharacterFinancesDeleteFailed:
 		l.logCharacterFinancesDeleteFailed(ctx, e)
 
+	case characterEvents.CharacterDerivedStatsGetSucceeded:
+		l.logCharacterDerivedStatsGetSucceeded(ctx, e)
+	case characterEvents.CharacterDerivedStatsGetFailed:
+		l.logCharacterDerivedStatsGetFailed(ctx, e)
+
+	case characterEvents.CharacterDerivedStatsUpsertSucceeded:
+		l.logCharacterDerivedStatsUpsertSucceeded(ctx, e)
+	case characterEvents.CharacterDerivedStatsUpsertFailed:
+		l.logCharacterDerivedStatsUpsertFailed(ctx, e)
+
+	case characterEvents.CharacterDerivedStatsDeleteSucceeded:
+		l.logCharacterDerivedStatsDeleteSucceeded(ctx, e)
+	case characterEvents.CharacterDerivedStatsDeleteFailed:
+		l.logCharacterDerivedStatsDeleteFailed(ctx, e)
+
 	case characterEvents.CharacterCharacteristicsGetSucceeded:
 		l.logCharacterCharacteristicsGetSucceeded(ctx, e)
 	case characterEvents.CharacterCharacteristicsGetFailed:
@@ -481,6 +496,55 @@ func (l *CharacterEventLogger) logCharacterFinancesDeleteSucceeded(ctx context.C
 }
 func (l *CharacterEventLogger) logCharacterFinancesDeleteFailed(ctx context.Context, event characterEvents.CharacterFinancesDeleteFailed) {
 	l.logger.ErrorContext(ctx, "failed to delete character finances",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+// DerivedStats
+func (l *CharacterEventLogger) logCharacterDerivedStatsGetSucceeded(ctx context.Context, event characterEvents.CharacterDerivedStatsGetSucceeded) {
+	l.logger.InfoContext(ctx, "character derived stats fetched",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterDerivedStatsGetFailed(ctx context.Context, event characterEvents.CharacterDerivedStatsGetFailed) {
+	l.logger.ErrorContext(ctx, "failed to fetch character derived stats",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterDerivedStatsUpsertSucceeded(ctx context.Context, event characterEvents.CharacterDerivedStatsUpsertSucceeded) {
+	l.logger.InfoContext(ctx, "character derived stats upserted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterDerivedStatsUpsertFailed(ctx context.Context, event characterEvents.CharacterDerivedStatsUpsertFailed) {
+	l.logger.ErrorContext(ctx, "failed to upsert character derived stats",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterDerivedStatsDeleteSucceeded(ctx context.Context, event characterEvents.CharacterDerivedStatsDeleteSucceeded) {
+	l.logger.InfoContext(ctx, "character derived stats deleted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterDerivedStatsDeleteFailed(ctx context.Context, event characterEvents.CharacterDerivedStatsDeleteFailed) {
+	l.logger.ErrorContext(ctx, "failed to delete character derived stats",
 		"event", event.EventName(),
 		"user_id", event.UserID,
 		"character_id", event.CharacterID,
