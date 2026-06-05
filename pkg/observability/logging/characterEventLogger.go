@@ -375,6 +375,55 @@ func (l *CharacterEventLogger) logCharacterMagicDeleteFailed(ctx context.Context
 	)
 }
 
+// LuckState
+func (l *CharacterEventLogger) logCharacterLuckGetSucceeded(ctx context.Context, event characterEvents.CharacterLuckGetSucceeded) {
+	l.logger.InfoContext(ctx, "character luck fetched",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterLuckGetFailed(ctx context.Context, event characterEvents.CharacterLuckGetFailed) {
+	l.logger.ErrorContext(ctx, "failed to fetch character luck",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterLuckUpsertSucceeded(ctx context.Context, event characterEvents.CharacterLuckUpsertSucceeded) {
+	l.logger.InfoContext(ctx, "character luck upserted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterLuckUpsertFailed(ctx context.Context, event characterEvents.CharacterLuckUpsertFailed) {
+	l.logger.ErrorContext(ctx, "failed to upsert character luck",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterLuckDeleteSucceeded(ctx context.Context, event characterEvents.CharacterLuckDeleteSucceeded) {
+	l.logger.InfoContext(ctx, "character luck deleted",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+	)
+}
+func (l *CharacterEventLogger) logCharacterLuckDeleteFailed(ctx context.Context, event characterEvents.CharacterLuckDeleteFailed) {
+	l.logger.ErrorContext(ctx, "failed to delete character luck",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
 // Characteristics
 func (l *CharacterEventLogger) logCharacterCharacteristicsGetSucceeded(ctx context.Context, event characterEvents.CharacterCharacteristicsGetSucceeded) {
 	l.logger.InfoContext(ctx, "character characteristics fetched",
