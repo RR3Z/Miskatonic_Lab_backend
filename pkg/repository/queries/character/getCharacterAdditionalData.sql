@@ -1,6 +1,3 @@
--- name: GetDerivedStats :one
-SELECT * FROM derived_stats WHERE character_id = $1;
-
 -- name: GetSkills :many
 SELECT s.*,
     sc.name as category_name,
