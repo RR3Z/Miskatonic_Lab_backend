@@ -561,6 +561,48 @@ func (s *CharacterService) DeleteBackstoryItem(ctx context.Context, input db.Del
 	return err
 }
 
+// Skills
+func (s *CharacterService) GetSkills(ctx context.Context, input db.GetCharacterSkillsParams) ([]model.SkillModel, error) {
+	skills, err := s.repos.Queries.GetCharacterSkills(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return model.ToCharacterSkillModels(skills), nil
+}
+
+func (s *CharacterService) GetSkill(ctx context.Context, input db.GetCharacterSkillParams) (model.SkillModel, error) {
+	skill, err := s.repos.Queries.GetCharacterSkill(ctx, input)
+	if err != nil {
+		return model.SkillModel{}, err
+	}
+
+	return model.ToSingleCharacterSkillModel(skill), nil
+}
+
+func (s *CharacterService) CreateSkill(ctx context.Context, input db.CreateCharacterSkillParams) (model.SkillModel, error) {
+	skill, err := s.repos.Queries.CreateCharacterSkill(ctx, input)
+	if err != nil {
+		return model.SkillModel{}, err
+	}
+
+	return model.ToCreatedCharacterSkillModel(skill), nil
+}
+
+func (s *CharacterService) UpdateSkill(ctx context.Context, input db.UpdateCharacterSkillParams) (model.SkillModel, error) {
+	skill, err := s.repos.Queries.UpdateCharacterSkill(ctx, input)
+	if err != nil {
+		return model.SkillModel{}, err
+	}
+
+	return model.ToUpdatedCharacterSkillModel(skill), nil
+}
+
+func (s *CharacterService) DeleteSkill(ctx context.Context, input db.DeleteCharacterSkillParams) error {
+	_, err := s.repos.Queries.DeleteCharacterSkill(ctx, input)
+	return err
+}
+
 // DerivedStats
 func (s *CharacterService) GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error) {
 	derivedStats, err := s.repos.Queries.GetDerivedStats(ctx, input)

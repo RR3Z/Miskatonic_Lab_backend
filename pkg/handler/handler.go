@@ -106,6 +106,17 @@ func (h *Handler) InitRoutes() *chi.Mux {
 					r.Delete("/", AppHandler(h.deleteFinances).ServeHTTP)
 				})
 
+				r.Route("/skills", func(r chi.Router) {
+					r.Get("/", AppHandler(h.getSkills).ServeHTTP)
+					r.Post("/", AppHandler(h.createSkill).ServeHTTP)
+
+					r.Route("/{skillID}", func(r chi.Router) {
+						r.Get("/", AppHandler(h.getSkill).ServeHTTP)
+						r.Put("/", AppHandler(h.updateSkill).ServeHTTP)
+						r.Delete("/", AppHandler(h.deleteSkill).ServeHTTP)
+					})
+				})
+
 				r.Route("/notes", func(r chi.Router) {
 					r.Get("/", AppHandler(h.getNotes).ServeHTTP)
 					r.Post("/", AppHandler(h.createNote).ServeHTTP)

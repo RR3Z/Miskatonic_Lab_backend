@@ -1141,6 +1141,248 @@ func (h *Handler) deleteBackstoryItem(w http.ResponseWriter, r *http.Request) *m
 	return nil
 }
 
+// Skills
+func (h *Handler) getSkills(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	skills, err := h.services.Character.GetSkills(r.Context(), db.GetCharacterSkillsParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character skills",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, skills)
+	return nil
+}
+
+func (h *Handler) getSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	skillID, err := getSkillIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid skill id",
+			Err:     err,
+		}
+	}
+
+	skill, err := h.services.Character.GetSkill(r.Context(), db.GetCharacterSkillParams{
+		UserID:      userID,
+		CharacterID: characterID,
+		SkillID:     skillID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "skill not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get skill",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, skill)
+	return nil
+}
+
+func (h *Handler) createSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	var input db.CreateCharacterSkillParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	skill, err := h.services.Character.CreateSkill(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
+		}
+
+		if isSkillValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "skill payload is invalid",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to create skill",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, skill)
+	return nil
+}
+
+func (h *Handler) updateSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	skillID, err := getSkillIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid skill id",
+			Err:     err,
+		}
+	}
+
+	var input db.UpdateCharacterSkillParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+	input.SkillID = skillID
+
+	skill, err := h.services.Character.UpdateSkill(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "skill not found",
+				Err:     err,
+			}
+		}
+
+		if isSkillValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "skill payload is invalid",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to update skill",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, skill)
+	return nil
+}
+
+func (h *Handler) deleteSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	skillID, err := getSkillIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid skill id",
+			Err:     err,
+		}
+	}
+
+	if err := h.services.Character.DeleteSkill(r.Context(), db.DeleteCharacterSkillParams{
+		UserID:      userID,
+		CharacterID: characterID,
+		SkillID:     skillID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "skill not found",
+				Err:     err,
+			}
+		}
+
+		if isSkillReferencedError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusConflict,
+				Message: "skill is referenced by character finances",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete skill",
+			Err:     err,
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
 // DerivedStats
 func (h *Handler) getDerivedStats(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
@@ -1633,6 +1875,17 @@ func getBackstoryItemIDFromRequest(r *http.Request) (pgtype.UUID, error) {
 	return itemUUID, nil
 }
 
+func getSkillIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+	skillID := chi.URLParam(r, "skillID")
+
+	var skillUUID pgtype.UUID
+	if err := skillUUID.Scan(skillID); err != nil {
+		return pgtype.UUID{}, err
+	}
+
+	return skillUUID, nil
+}
+
 func isHealthStateValidationError(err error) bool {
 	if errors.Is(err, myErrors.ErrCurrentHealthExceedsMax) {
 		return true
@@ -1694,4 +1947,26 @@ func isDerivedStatsValidationError(err error) bool {
 func isBackstoryItemValidationError(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_backstory_items_section"
+}
+
+func isSkillValidationError(err error) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return false
+	}
+
+	switch pgErr.ConstraintName {
+	case "skills_base_value_check",
+		"skills_value_check",
+		"fk_skills_category",
+		"fk_skills_specialty":
+		return true
+	default:
+		return false
+	}
+}
+
+func isSkillReferencedError(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.ConstraintName == "fk_finances_credit_rating_skill"
 }

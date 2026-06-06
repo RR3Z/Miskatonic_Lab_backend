@@ -576,6 +576,113 @@ func (s *EventPublishingCharacterService) DeleteBackstoryItem(ctx context.Contex
 	return nil
 }
 
+// Skills
+func (s *EventPublishingCharacterService) GetSkills(ctx context.Context, input db.GetCharacterSkillsParams) ([]model.SkillModel, error) {
+	skills, err := s.next.GetSkills(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterSkillsListFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return nil, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterSkillsListSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+		Count:       len(skills),
+	})
+
+	return skills, nil
+}
+
+func (s *EventPublishingCharacterService) GetSkill(ctx context.Context, input db.GetCharacterSkillParams) (model.SkillModel, error) {
+	skill, err := s.next.GetSkill(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterSkillGetFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			SkillID:     input.SkillID.String(),
+			Err:         err,
+		})
+		return model.SkillModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterSkillGetSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+		SkillID:     input.SkillID.String(),
+		Name:        skill.Name,
+	})
+
+	return skill, nil
+}
+
+func (s *EventPublishingCharacterService) CreateSkill(ctx context.Context, input db.CreateCharacterSkillParams) (model.SkillModel, error) {
+	skill, err := s.next.CreateSkill(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterSkillCreateFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return model.SkillModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterSkillCreateSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+		SkillID:     skill.ID.String(),
+		Name:        skill.Name,
+	})
+
+	return skill, nil
+}
+
+func (s *EventPublishingCharacterService) UpdateSkill(ctx context.Context, input db.UpdateCharacterSkillParams) (model.SkillModel, error) {
+	skill, err := s.next.UpdateSkill(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterSkillUpdateFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			SkillID:     input.SkillID.String(),
+			Err:         err,
+		})
+		return model.SkillModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterSkillUpdateSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+		SkillID:     input.SkillID.String(),
+		Name:        skill.Name,
+	})
+
+	return skill, nil
+}
+
+func (s *EventPublishingCharacterService) DeleteSkill(ctx context.Context, input db.DeleteCharacterSkillParams) error {
+	err := s.next.DeleteSkill(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterSkillDeleteFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			SkillID:     input.SkillID.String(),
+			Err:         err,
+		})
+		return err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterSkillDeleteSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+		SkillID:     input.SkillID.String(),
+	})
+
+	return nil
+}
+
 // DerivedStats
 func (s *EventPublishingCharacterService) GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error) {
 	derivedStats, err := s.next.GetDerivedStats(ctx, input)

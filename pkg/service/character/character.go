@@ -43,6 +43,12 @@ type ICharacter interface {
 	UpdateBackstoryItem(ctx context.Context, input db.UpdateBackstoryItemParams) (model.BackstoryItemModel, error)
 	DeleteBackstoryItem(ctx context.Context, input db.DeleteBackstoryItemParams) error
 
+	GetSkills(ctx context.Context, input db.GetCharacterSkillsParams) ([]model.SkillModel, error)
+	GetSkill(ctx context.Context, input db.GetCharacterSkillParams) (model.SkillModel, error)
+	CreateSkill(ctx context.Context, input db.CreateCharacterSkillParams) (model.SkillModel, error)
+	UpdateSkill(ctx context.Context, input db.UpdateCharacterSkillParams) (model.SkillModel, error)
+	DeleteSkill(ctx context.Context, input db.DeleteCharacterSkillParams) error
+
 	GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error)
 	UpsertDerivedStats(ctx context.Context, input db.UpsertDerivedStatsParams) (db.DerivedStat, error)
 	DeleteDerivedStats(ctx context.Context, input db.DeleteDerivedStatsParams) error
