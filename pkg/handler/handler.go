@@ -11,8 +11,7 @@ import (
 )
 
 type Handler struct {
-	corsConfig middleware.CORSConfig
-	services   *service.Service
+	services *service.Service
 }
 
 func NewHandler(services *service.Service) *Handler {
