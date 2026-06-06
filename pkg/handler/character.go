@@ -792,6 +792,355 @@ func (h *Handler) deleteFinances(w http.ResponseWriter, r *http.Request) *myErro
 	return nil
 }
 
+// Backstory
+func (h *Handler) getBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	backstory, err := h.services.Character.GetBackstory(r.Context(), db.GetBackstoryByCharacterParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character backstory not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character backstory",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, backstory)
+	return nil
+}
+
+func (h *Handler) upsertBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	var input db.UpsertBackstoryParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	backstory, err := h.services.Character.UpsertBackstory(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to upsert character backstory",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, backstory)
+	return nil
+}
+
+func (h *Handler) deleteBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	if err := h.services.Character.DeleteBackstory(r.Context(), db.DeleteBackstoryParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character backstory not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete character backstory",
+			Err:     err,
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
+func (h *Handler) getBackstoryItems(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	items, err := h.services.Character.GetBackstoryItems(r.Context(), db.GetBackstoryItemsParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get character backstory items",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, items)
+	return nil
+}
+
+func (h *Handler) getBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	itemID, err := getBackstoryItemIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid backstory item id",
+			Err:     err,
+		}
+	}
+
+	item, err := h.services.Character.GetBackstoryItem(r.Context(), db.GetBackstoryItemParams{
+		UserID:          userID,
+		CharacterID:     characterID,
+		BackstoryItemID: itemID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "backstory item not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get backstory item",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, item)
+	return nil
+}
+
+func (h *Handler) createBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	var input db.CreateBackstoryItemParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+
+	item, err := h.services.Character.CreateBackstoryItem(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "character backstory not found",
+				Err:     err,
+			}
+		}
+
+		if isBackstoryItemValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "backstory item section is invalid",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to create backstory item",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, item)
+	return nil
+}
+
+func (h *Handler) updateBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	itemID, err := getBackstoryItemIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid backstory item id",
+			Err:     err,
+		}
+	}
+
+	var input db.UpdateBackstoryItemParams
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}
+	}
+	input.UserID = userID
+	input.CharacterID = characterID
+	input.BackstoryItemID = itemID
+
+	item, err := h.services.Character.UpdateBackstoryItem(r.Context(), input)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "backstory item not found",
+				Err:     err,
+			}
+		}
+
+		if isBackstoryItemValidationError(err) {
+			return &myErrors.AppError{
+				Status:  http.StatusBadRequest,
+				Message: "backstory item section is invalid",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to update backstory item",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, item)
+	return nil
+}
+
+func (h *Handler) deleteBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid character id",
+			Err:     err,
+		}
+	}
+
+	itemID, err := getBackstoryItemIDFromRequest(r)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid backstory item id",
+			Err:     err,
+		}
+	}
+
+	if err := h.services.Character.DeleteBackstoryItem(r.Context(), db.DeleteBackstoryItemParams{
+		UserID:          userID,
+		CharacterID:     characterID,
+		BackstoryItemID: itemID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &myErrors.AppError{
+				Status:  http.StatusNotFound,
+				Message: "backstory item not found",
+				Err:     err,
+			}
+		}
+
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to delete backstory item",
+			Err:     err,
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
 // DerivedStats
 func (h *Handler) getDerivedStats(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
@@ -1273,6 +1622,17 @@ func getNoteIDFromRequest(r *http.Request) (pgtype.UUID, error) {
 	return noteUUID, nil
 }
 
+func getBackstoryItemIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+	itemID := chi.URLParam(r, "itemID")
+
+	var itemUUID pgtype.UUID
+	if err := itemUUID.Scan(itemID); err != nil {
+		return pgtype.UUID{}, err
+	}
+
+	return itemUUID, nil
+}
+
 func isHealthStateValidationError(err error) bool {
 	if errors.Is(err, myErrors.ErrCurrentHealthExceedsMax) {
 		return true
@@ -1329,4 +1689,9 @@ func isDerivedStatsValidationError(err error) bool {
 	default:
 		return false
 	}
+}
+
+func isBackstoryItemValidationError(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.ConstraintName == "chk_backstory_items_section"
 }

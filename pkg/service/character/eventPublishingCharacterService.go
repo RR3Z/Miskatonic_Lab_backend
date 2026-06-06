@@ -409,6 +409,173 @@ func (s *EventPublishingCharacterService) DeleteFinances(ctx context.Context, in
 	return nil
 }
 
+// Backstory
+func (s *EventPublishingCharacterService) GetBackstory(ctx context.Context, input db.GetBackstoryByCharacterParams) (model.BackstoryModel, error) {
+	backstory, err := s.next.GetBackstory(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryGetFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return model.BackstoryModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryGetSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return backstory, nil
+}
+
+func (s *EventPublishingCharacterService) UpsertBackstory(ctx context.Context, input db.UpsertBackstoryParams) (model.BackstoryModel, error) {
+	backstory, err := s.next.UpsertBackstory(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryUpsertFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return model.BackstoryModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryUpsertSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return backstory, nil
+}
+
+func (s *EventPublishingCharacterService) DeleteBackstory(ctx context.Context, input db.DeleteBackstoryParams) error {
+	err := s.next.DeleteBackstory(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryDeleteFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryDeleteSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+	})
+
+	return nil
+}
+
+func (s *EventPublishingCharacterService) GetBackstoryItems(ctx context.Context, input db.GetBackstoryItemsParams) ([]model.BackstoryItemModel, error) {
+	items, err := s.next.GetBackstoryItems(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemsListFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return nil, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemsListSucceeded{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID.String(),
+		Count:       len(items),
+	})
+
+	return items, nil
+}
+
+func (s *EventPublishingCharacterService) GetBackstoryItem(ctx context.Context, input db.GetBackstoryItemParams) (model.BackstoryItemModel, error) {
+	item, err := s.next.GetBackstoryItem(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemGetFailed{
+			UserID:          input.UserID,
+			CharacterID:     input.CharacterID.String(),
+			BackstoryItemID: input.BackstoryItemID.String(),
+			Err:             err,
+		})
+		return model.BackstoryItemModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemGetSucceeded{
+		UserID:          input.UserID,
+		CharacterID:     input.CharacterID.String(),
+		BackstoryItemID: input.BackstoryItemID.String(),
+		Section:         item.Section,
+		Title:           item.Title,
+	})
+
+	return item, nil
+}
+
+func (s *EventPublishingCharacterService) CreateBackstoryItem(ctx context.Context, input db.CreateBackstoryItemParams) (model.BackstoryItemModel, error) {
+	item, err := s.next.CreateBackstoryItem(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemCreateFailed{
+			UserID:      input.UserID,
+			CharacterID: input.CharacterID.String(),
+			Err:         err,
+		})
+		return model.BackstoryItemModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemCreateSucceeded{
+		UserID:          input.UserID,
+		CharacterID:     input.CharacterID.String(),
+		BackstoryItemID: item.ID.String(),
+		Section:         item.Section,
+		Title:           item.Title,
+	})
+
+	return item, nil
+}
+
+func (s *EventPublishingCharacterService) UpdateBackstoryItem(ctx context.Context, input db.UpdateBackstoryItemParams) (model.BackstoryItemModel, error) {
+	item, err := s.next.UpdateBackstoryItem(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemUpdateFailed{
+			UserID:          input.UserID,
+			CharacterID:     input.CharacterID.String(),
+			BackstoryItemID: input.BackstoryItemID.String(),
+			Err:             err,
+		})
+		return model.BackstoryItemModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemUpdateSucceeded{
+		UserID:          input.UserID,
+		CharacterID:     input.CharacterID.String(),
+		BackstoryItemID: input.BackstoryItemID.String(),
+		Section:         item.Section,
+		Title:           item.Title,
+	})
+
+	return item, nil
+}
+
+func (s *EventPublishingCharacterService) DeleteBackstoryItem(ctx context.Context, input db.DeleteBackstoryItemParams) error {
+	err := s.next.DeleteBackstoryItem(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemDeleteFailed{
+			UserID:          input.UserID,
+			CharacterID:     input.CharacterID.String(),
+			BackstoryItemID: input.BackstoryItemID.String(),
+			Err:             err,
+		})
+		return err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemDeleteSucceeded{
+		UserID:          input.UserID,
+		CharacterID:     input.CharacterID.String(),
+		BackstoryItemID: input.BackstoryItemID.String(),
+	})
+
+	return nil
+}
+
 // DerivedStats
 func (s *EventPublishingCharacterService) GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error) {
 	derivedStats, err := s.next.GetDerivedStats(ctx, input)

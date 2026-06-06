@@ -480,6 +480,87 @@ func (s *CharacterService) DeleteFinances(ctx context.Context, input db.DeleteFi
 	return nil
 }
 
+// Backstory
+func (s *CharacterService) GetBackstory(ctx context.Context, input db.GetBackstoryByCharacterParams) (model.BackstoryModel, error) {
+	backstory, err := s.repos.Queries.GetBackstoryByCharacter(ctx, input)
+	if err != nil {
+		return model.BackstoryModel{}, err
+	}
+
+	items, err := s.repos.Queries.GetBackstoryItems(ctx, db.GetBackstoryItemsParams(input))
+	if err != nil {
+		return model.BackstoryModel{}, err
+	}
+
+	return model.ToBackstoryModel(backstory, items), nil
+}
+
+func (s *CharacterService) UpsertBackstory(ctx context.Context, input db.UpsertBackstoryParams) (model.BackstoryModel, error) {
+	backstory, err := s.repos.Queries.UpsertBackstory(ctx, input)
+	if err != nil {
+		return model.BackstoryModel{}, err
+	}
+
+	items, err := s.repos.Queries.GetBackstoryItems(ctx, db.GetBackstoryItemsParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		return model.BackstoryModel{}, err
+	}
+
+	return model.ToBackstoryModel(backstory, items), nil
+}
+
+func (s *CharacterService) DeleteBackstory(ctx context.Context, input db.DeleteBackstoryParams) error {
+	if _, err := s.repos.Queries.DeleteBackstory(ctx, input); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *CharacterService) GetBackstoryItems(ctx context.Context, input db.GetBackstoryItemsParams) ([]model.BackstoryItemModel, error) {
+	items, err := s.repos.Queries.GetBackstoryItems(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return model.ToBackstoryItemModels(items), nil
+}
+
+func (s *CharacterService) GetBackstoryItem(ctx context.Context, input db.GetBackstoryItemParams) (model.BackstoryItemModel, error) {
+	item, err := s.repos.Queries.GetBackstoryItem(ctx, input)
+	if err != nil {
+		return model.BackstoryItemModel{}, err
+	}
+
+	return model.ToBackstoryItemModel(item), nil
+}
+
+func (s *CharacterService) CreateBackstoryItem(ctx context.Context, input db.CreateBackstoryItemParams) (model.BackstoryItemModel, error) {
+	item, err := s.repos.Queries.CreateBackstoryItem(ctx, input)
+	if err != nil {
+		return model.BackstoryItemModel{}, err
+	}
+
+	return model.ToBackstoryItemModel(item), nil
+}
+
+func (s *CharacterService) UpdateBackstoryItem(ctx context.Context, input db.UpdateBackstoryItemParams) (model.BackstoryItemModel, error) {
+	item, err := s.repos.Queries.UpdateBackstoryItem(ctx, input)
+	if err != nil {
+		return model.BackstoryItemModel{}, err
+	}
+
+	return model.ToBackstoryItemModel(item), nil
+}
+
+func (s *CharacterService) DeleteBackstoryItem(ctx context.Context, input db.DeleteBackstoryItemParams) error {
+	_, err := s.repos.Queries.DeleteBackstoryItem(ctx, input)
+	return err
+}
+
 // DerivedStats
 func (s *CharacterService) GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error) {
 	derivedStats, err := s.repos.Queries.GetDerivedStats(ctx, input)

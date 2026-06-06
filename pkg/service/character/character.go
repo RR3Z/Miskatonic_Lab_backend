@@ -34,6 +34,15 @@ type ICharacter interface {
 	UpsertFinances(ctx context.Context, input db.UpsertFinancesParams) (db.Finance, error)
 	DeleteFinances(ctx context.Context, input db.DeleteFinancesParams) error
 
+	GetBackstory(ctx context.Context, input db.GetBackstoryByCharacterParams) (model.BackstoryModel, error)
+	UpsertBackstory(ctx context.Context, input db.UpsertBackstoryParams) (model.BackstoryModel, error)
+	DeleteBackstory(ctx context.Context, input db.DeleteBackstoryParams) error
+	GetBackstoryItems(ctx context.Context, input db.GetBackstoryItemsParams) ([]model.BackstoryItemModel, error)
+	GetBackstoryItem(ctx context.Context, input db.GetBackstoryItemParams) (model.BackstoryItemModel, error)
+	CreateBackstoryItem(ctx context.Context, input db.CreateBackstoryItemParams) (model.BackstoryItemModel, error)
+	UpdateBackstoryItem(ctx context.Context, input db.UpdateBackstoryItemParams) (model.BackstoryItemModel, error)
+	DeleteBackstoryItem(ctx context.Context, input db.DeleteBackstoryItemParams) error
+
 	GetDerivedStats(ctx context.Context, input db.GetDerivedStatsParams) (db.DerivedStat, error)
 	UpsertDerivedStats(ctx context.Context, input db.UpsertDerivedStatsParams) (db.DerivedStat, error)
 	DeleteDerivedStats(ctx context.Context, input db.DeleteDerivedStatsParams) error

@@ -27,6 +27,15 @@ func ToBackstoryItemModel(item db.BackstoryItem) BackstoryItemModel {
 	}
 }
 
+func ToBackstoryItemModels(items []db.BackstoryItem) []BackstoryItemModel {
+	models := make([]BackstoryItemModel, len(items))
+	for i, item := range items {
+		models[i] = ToBackstoryItemModel(item)
+	}
+
+	return models
+}
+
 type BackstoryModel struct {
 	ID          pgtype.UUID `json:"id"`
 	CharacterID pgtype.UUID `json:"character_id"`
@@ -39,16 +48,11 @@ type BackstoryModel struct {
 }
 
 func ToBackstoryModel(b db.Backstory, items []db.BackstoryItem) BackstoryModel {
-	itemModels := make([]BackstoryItemModel, len(items))
-	for i, item := range items {
-		itemModels[i] = ToBackstoryItemModel(item)
-	}
-
 	return BackstoryModel{
 		ID:                  b.ID,
 		CharacterID:         b.CharacterID,
 		PersonalDescription: b.PersonalDescription,
-		Items:               itemModels,
+		Items:               ToBackstoryItemModels(items),
 		CreatedAt:           b.CreatedAt,
 		UpdatedAt:           b.UpdatedAt,
 	}

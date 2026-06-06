@@ -83,6 +83,22 @@ func (h *Handler) InitRoutes() *chi.Mux {
 					r.Delete("/", AppHandler(h.deleteLuck).ServeHTTP)
 				})
 
+				r.Route("/backstory", func(r chi.Router) {
+					r.Get("/", AppHandler(h.getBackstory).ServeHTTP)
+					r.Put("/", AppHandler(h.upsertBackstory).ServeHTTP)
+					r.Delete("/", AppHandler(h.deleteBackstory).ServeHTTP)
+
+					r.Route("/items", func(r chi.Router) {
+						r.Get("/", AppHandler(h.getBackstoryItems).ServeHTTP)
+						r.Post("/", AppHandler(h.createBackstoryItem).ServeHTTP)
+
+						r.Route("/{itemID}", func(r chi.Router) {
+							r.Get("/", AppHandler(h.getBackstoryItem).ServeHTTP)
+							r.Put("/", AppHandler(h.updateBackstoryItem).ServeHTTP)
+							r.Delete("/", AppHandler(h.deleteBackstoryItem).ServeHTTP)
+						})
+					})
+				})
 
 				r.Route("/finances", func(r chi.Router) {
 					r.Get("/", AppHandler(h.getFinances).ServeHTTP)
