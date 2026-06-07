@@ -1,0 +1,156 @@
+package tests
+
+import (
+	"testing"
+
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/stretchr/testify/require"
+)
+
+func testUUID(value string) pgtype.UUID {
+	var uuid pgtype.UUID
+	err := uuid.Scan(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return uuid
+}
+
+func invalidUUID() pgtype.UUID {
+	return pgtype.UUID{}
+}
+
+func testTimestamptz(value string) pgtype.Timestamptz {
+	var ts pgtype.Timestamptz
+	err := ts.Scan(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return ts
+}
+
+func strPtr(value string) *string {
+	return &value
+}
+
+func int16Ptr(value int16) *int16 {
+	return &value
+}
+
+func testCharacter() db.Character {
+	return db.Character{
+		ID:         testUUID("11111111-1111-1111-1111-111111111111"),
+		UserID:     "user_1",
+		Name:       "Dr. Armitage",
+		PlayerName: strPtr("Roger"),
+		Occupation: strPtr("Antiquarian"),
+		Age:        int16Ptr(42),
+		Sex:        strPtr("male"),
+		Residence:  strPtr("Arkham"),
+		Birthplace: strPtr("Boston"),
+		CreatedAt:  testTimestamptz("2026-06-07 12:00:00+03"),
+		UpdatedAt:  testTimestamptz("2026-06-07 13:00:00+03"),
+	}
+}
+
+func testBackstory() db.Backstory {
+	return db.Backstory{
+		ID:                  testUUID("22222222-2222-2222-2222-222222222222"),
+		CharacterID:         testUUID("11111111-1111-1111-1111-111111111111"),
+		PersonalDescription: strPtr("A careful scholar with tired eyes."),
+		CreatedAt:           testTimestamptz("2026-06-07 12:00:00+03"),
+		UpdatedAt:           testTimestamptz("2026-06-07 13:00:00+03"),
+	}
+}
+
+func testBackstoryItem() db.BackstoryItem {
+	return db.BackstoryItem{
+		ID:          testUUID("33333333-3333-3333-3333-333333333333"),
+		BackstoryID: testUUID("22222222-2222-2222-2222-222222222222"),
+		Section:     "ideology_beliefs",
+		Title:       "The old motto",
+		Text:        "Knowledge has a price.",
+		CreatedAt:   testTimestamptz("2026-06-07 12:00:00+03"),
+		UpdatedAt:   testTimestamptz("2026-06-07 13:00:00+03"),
+	}
+}
+
+func testSkillRow() db.GetSkillsRow {
+	return db.GetSkillsRow{
+		ID:           testUUID("44444444-4444-4444-4444-444444444444"),
+		CharacterID:  testUUID("11111111-1111-1111-1111-111111111111"),
+		Name:         "Library Use",
+		CategoryID:   testUUID("55555555-5555-5555-5555-555555555555"),
+		BaseValue:    20,
+		Value:        65,
+		Checked:      true,
+		Specialized:  false,
+		SpecialtyID:  invalidUUID(),
+		CreatedAt:    testTimestamptz("2026-06-07 12:00:00+03"),
+		UpdatedAt:    testTimestamptz("2026-06-07 13:00:00+03"),
+		CategoryName: "Investigation",
+	}
+}
+
+func testSpecializedSkillRow() db.GetSkillsRow {
+	base := int16(1)
+	row := testSkillRow()
+	row.ID = testUUID("66666666-6666-6666-6666-666666666666")
+	row.Name = "Science"
+	row.Specialized = true
+	row.SpecialtyPkID = testUUID("77777777-7777-7777-7777-777777777777")
+	row.SpecialtyName = strPtr("Astronomy")
+	row.SpecialtyDescription = strPtr("Study of celestial bodies.")
+	row.SpecialtyBaseValue = &base
+	row.SpecialtyCreatedAt = testTimestamptz("2026-06-07 14:00:00+03")
+	row.SpecialtyUpdatedAt = testTimestamptz("2026-06-07 15:00:00+03")
+
+	return row
+}
+
+func testFinance() db.Finance {
+	return db.Finance{
+		ID:                  testUUID("88888888-8888-8888-8888-888888888888"),
+		CharacterID:         testUUID("11111111-1111-1111-1111-111111111111"),
+		SpendingLimit:       strPtr("$50"),
+		Cash:                strPtr("$120"),
+		Assets:              strPtr("Books and a battered Ford."),
+		CreditRatingSkillID: invalidUUID(),
+		CreatedAt:           testTimestamptz("2026-06-07 12:00:00+03"),
+		UpdatedAt:           testTimestamptz("2026-06-07 13:00:00+03"),
+	}
+}
+
+func requireSameShortCharacter(t *testing.T, expected db.Character, actual model.CharacterModel) {
+	t.Helper()
+
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.UserID, actual.UserID)
+	require.Equal(t, expected.Name, actual.Name)
+	require.Equal(t, expected.PlayerName, actual.PlayerName)
+	require.Equal(t, expected.Occupation, actual.Occupation)
+	require.Equal(t, expected.Age, actual.Age)
+	require.Equal(t, expected.Sex, actual.Sex)
+	require.Equal(t, expected.Residence, actual.Residence)
+	require.Equal(t, expected.Birthplace, actual.Birthplace)
+	require.Equal(t, expected.CreatedAt.Time, actual.CreatedAt.Time)
+	require.Equal(t, expected.UpdatedAt.Time, actual.UpdatedAt.Time)
+}
+
+func requireSameSkill(t *testing.T, expected db.GetSkillsRow, actual model.SkillModel) {
+	t.Helper()
+
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.Name, actual.Name)
+	require.Equal(t, expected.BaseValue, actual.BaseValue)
+	require.Equal(t, expected.Value, actual.Value)
+	require.Equal(t, expected.Checked, actual.Checked)
+	require.Equal(t, expected.CategoryName, actual.Category)
+	require.Equal(t, expected.Specialized, actual.Specialized)
+	require.Equal(t, expected.CreatedAt.Time, actual.CreatedAt.Time)
+	require.Equal(t, expected.UpdatedAt.Time, actual.UpdatedAt.Time)
+}
