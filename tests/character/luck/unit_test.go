@@ -72,6 +72,48 @@ func TestUpsertLuckRejectsPartialStartingLuckBelowExistingCurrentLuck(t *testing
 	require.Equal(t, 1, dbtx.QueryRowCalls)
 }
 
+func TestUpsertLuckAllowsPartialCurrentLuckWithinExistingStartingLuck(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForLuck()
+	input := testUpsertLuckInput(nil, luckInt16(6))
+	existingLuck := testLuckState()
+	existingLuck.StartingLuck = 10
+	existingLuck.CurrentLuck = 4
+	expectedLuck := testLuckState()
+	expectedLuck.StartingLuck = 10
+	expectedLuck.CurrentLuck = 6
+	dbtx.QueryRowResults = []FakeLuckQueryRowResult{
+		{Data: luckRowData(existingLuck)},
+		{Data: luckRowData(expectedLuck)},
+	}
+
+	luck, err := characterService.UpsertLuck(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 2, dbtx.QueryRowCalls)
+	requireSameLuckState(t, expectedLuck, luck)
+}
+
+func TestUpsertLuckAllowsPartialStartingLuckAboveExistingCurrentLuck(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForLuck()
+	input := testUpsertLuckInput(luckInt16(10), nil)
+	existingLuck := testLuckState()
+	existingLuck.StartingLuck = 5
+	existingLuck.CurrentLuck = 7
+	expectedLuck := testLuckState()
+	expectedLuck.StartingLuck = 10
+	expectedLuck.CurrentLuck = 7
+	dbtx.QueryRowResults = []FakeLuckQueryRowResult{
+		{Data: luckRowData(existingLuck)},
+		{Data: luckRowData(expectedLuck)},
+	}
+
+	luck, err := characterService.UpsertLuck(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 2, dbtx.QueryRowCalls)
+	requireSameLuckState(t, expectedLuck, luck)
+}
+
 func TestUpsertLuckReturnsExistingStateReadError(t *testing.T) {
 	dbtx, characterService := newTestCharacterServiceForLuck()
 	expectedErr := errors.New("get existing luck failed")
@@ -81,6 +123,20 @@ func TestUpsertLuckReturnsExistingStateReadError(t *testing.T) {
 
 	require.ErrorIs(t, err, expectedErr)
 	require.Equal(t, 1, dbtx.QueryRowCalls)
+}
+
+func TestUpsertLuckAllowsNilNumericInputWithoutReadingExistingState(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForLuck()
+	input := testUpsertLuckInput(nil, nil)
+	expectedLuck := testLuckState()
+	dbtx.QueryRowData = luckRowData(expectedLuck)
+
+	luck, err := characterService.UpsertLuck(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 1, dbtx.QueryRowCalls)
+	require.Equal(t, []any{input.UserID, input.CharacterID, input.StartingLuck, input.CurrentLuck}, dbtx.LastQueryRowArgs)
+	requireSameLuckState(t, expectedLuck, luck)
 }
 
 func TestUpsertLuckAllowsPartialInputWhenExistingStateIsMissing(t *testing.T) {

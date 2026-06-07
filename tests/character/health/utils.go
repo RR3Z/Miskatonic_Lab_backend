@@ -41,6 +41,10 @@ func healthInt16(value int16) *int16 {
 	return &value
 }
 
+func healthBool(value bool) *bool {
+	return &value
+}
+
 func testHealthTimestamptz() pgtype.Timestamptz {
 	var value pgtype.Timestamptz
 	err := value.Scan("2026-06-07 12:00:00+03")
@@ -68,6 +72,10 @@ func requireSameHealthState(t *testing.T, expected db.HealthState, actual db.Hea
 	require.Equal(t, expected.CharacterID, actual.CharacterID)
 	require.Equal(t, expected.MaxHp, actual.MaxHp)
 	require.Equal(t, expected.CurrentHp, actual.CurrentHp)
+	require.Equal(t, expected.MajorWound, actual.MajorWound)
+	require.Equal(t, expected.Unconscious, actual.Unconscious)
+	require.Equal(t, expected.Dying, actual.Dying)
+	require.Equal(t, expected.Dead, actual.Dead)
 	require.Equal(t, expected.CreatedAt.Time, actual.CreatedAt.Time)
 	require.Equal(t, expected.UpdatedAt.Time, actual.UpdatedAt.Time)
 }

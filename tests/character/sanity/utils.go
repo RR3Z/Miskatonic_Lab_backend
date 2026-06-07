@@ -41,6 +41,10 @@ func sanityInt16(value int16) *int16 {
 	return &value
 }
 
+func sanityBool(value bool) *bool {
+	return &value
+}
+
 func testSanityTimestamptz() pgtype.Timestamptz {
 	var value pgtype.Timestamptz
 	err := value.Scan("2026-06-07 12:00:00+03")

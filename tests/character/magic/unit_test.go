@@ -77,6 +77,48 @@ func TestUpsertMagicRejectsPartialMaxMpBelowExistingCurrentMp(t *testing.T) {
 	require.Equal(t, 1, dbtx.QueryRowCalls)
 }
 
+func TestUpsertMagicAllowsPartialCurrentMpWithinExistingMaxMp(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForMagic()
+	input := testUpsertMagicInput(nil, magicInt16(6))
+	existingMagic := testMagicState()
+	existingMagic.MaxMp = 10
+	existingMagic.CurrentMp = 4
+	expectedMagic := testMagicState()
+	expectedMagic.MaxMp = 10
+	expectedMagic.CurrentMp = 6
+	dbtx.QueryRowResults = []FakeMagicQueryRowResult{
+		{Data: magicRowData(existingMagic)},
+		{Data: magicRowData(expectedMagic)},
+	}
+
+	magic, err := characterService.UpsertMagic(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 2, dbtx.QueryRowCalls)
+	requireSameMagicState(t, expectedMagic, magic)
+}
+
+func TestUpsertMagicAllowsPartialMaxMpAboveExistingCurrentMp(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForMagic()
+	input := testUpsertMagicInput(magicInt16(10), nil)
+	existingMagic := testMagicState()
+	existingMagic.MaxMp = 5
+	existingMagic.CurrentMp = 7
+	expectedMagic := testMagicState()
+	expectedMagic.MaxMp = 10
+	expectedMagic.CurrentMp = 7
+	dbtx.QueryRowResults = []FakeMagicQueryRowResult{
+		{Data: magicRowData(existingMagic)},
+		{Data: magicRowData(expectedMagic)},
+	}
+
+	magic, err := characterService.UpsertMagic(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 2, dbtx.QueryRowCalls)
+	requireSameMagicState(t, expectedMagic, magic)
+}
+
 func TestUpsertMagicReturnsExistingStateReadError(t *testing.T) {
 	dbtx, characterService := newTestCharacterServiceForMagic()
 	expectedErr := errors.New("get existing magic failed")
@@ -86,6 +128,20 @@ func TestUpsertMagicReturnsExistingStateReadError(t *testing.T) {
 
 	require.ErrorIs(t, err, expectedErr)
 	require.Equal(t, 1, dbtx.QueryRowCalls)
+}
+
+func TestUpsertMagicAllowsNilNumericInputWithoutReadingExistingState(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForMagic()
+	input := testUpsertMagicInput(nil, nil)
+	expectedMagic := testMagicState()
+	dbtx.QueryRowData = magicRowData(expectedMagic)
+
+	magic, err := characterService.UpsertMagic(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 1, dbtx.QueryRowCalls)
+	require.Equal(t, []any{input.UserID, input.CharacterID, input.MaxMp, input.CurrentMp}, dbtx.LastQueryRowArgs)
+	requireSameMagicState(t, expectedMagic, magic)
 }
 
 // EXISTING_DATA -> MaxMP = nil, CurrentMP = 6

@@ -72,6 +72,48 @@ func TestUpsertHealthRejectsPartialMaxHpBelowExistingCurrentHp(t *testing.T) {
 	require.Equal(t, 1, dbtx.QueryRowCalls)
 }
 
+func TestUpsertHealthAllowsPartialCurrentHpWithinExistingMaxHp(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForHealth()
+	input := testUpsertHealthInput(nil, healthInt16(6))
+	existingHealth := testHealthState()
+	existingHealth.MaxHp = 10
+	existingHealth.CurrentHp = 4
+	expectedHealth := testHealthState()
+	expectedHealth.MaxHp = 10
+	expectedHealth.CurrentHp = 6
+	dbtx.QueryRowResults = []FakeHealthQueryRowResult{
+		{Data: healthRowData(existingHealth)},
+		{Data: healthRowData(expectedHealth)},
+	}
+
+	health, err := characterService.UpsertHealth(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 2, dbtx.QueryRowCalls)
+	requireSameHealthState(t, expectedHealth, health)
+}
+
+func TestUpsertHealthAllowsPartialMaxHpAboveExistingCurrentHp(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForHealth()
+	input := testUpsertHealthInput(healthInt16(10), nil)
+	existingHealth := testHealthState()
+	existingHealth.MaxHp = 5
+	existingHealth.CurrentHp = 7
+	expectedHealth := testHealthState()
+	expectedHealth.MaxHp = 10
+	expectedHealth.CurrentHp = 7
+	dbtx.QueryRowResults = []FakeHealthQueryRowResult{
+		{Data: healthRowData(existingHealth)},
+		{Data: healthRowData(expectedHealth)},
+	}
+
+	health, err := characterService.UpsertHealth(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 2, dbtx.QueryRowCalls)
+	requireSameHealthState(t, expectedHealth, health)
+}
+
 func TestUpsertHealthReturnsExistingStateReadError(t *testing.T) {
 	dbtx, characterService := newTestCharacterServiceForHealth()
 	expectedErr := errors.New("get existing health failed")
@@ -81,6 +123,54 @@ func TestUpsertHealthReturnsExistingStateReadError(t *testing.T) {
 
 	require.ErrorIs(t, err, expectedErr)
 	require.Equal(t, 1, dbtx.QueryRowCalls)
+}
+
+func TestUpsertHealthAllowsNilNumericInputWithoutReadingExistingState(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForHealth()
+	input := testUpsertHealthInput(nil, nil)
+	expectedHealth := testHealthState()
+	dbtx.QueryRowData = healthRowData(expectedHealth)
+
+	health, err := characterService.UpsertHealth(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 1, dbtx.QueryRowCalls)
+	require.Equal(t, []any{
+		input.UserID,
+		input.CharacterID,
+		input.MaxHp,
+		input.CurrentHp,
+		input.MajorWound,
+		input.Unconscious,
+		input.Dying,
+		input.Dead,
+	}, dbtx.LastQueryRowArgs)
+	requireSameHealthState(t, expectedHealth, health)
+}
+
+func TestUpsertHealthAllowsBoolOnlyInputWithoutReadingExistingState(t *testing.T) {
+	dbtx, characterService := newTestCharacterServiceForHealth()
+	input := testUpsertHealthInput(nil, nil)
+	input.MajorWound = healthBool(true)
+	expectedHealth := testHealthState()
+	expectedHealth.MajorWound = true
+	dbtx.QueryRowData = healthRowData(expectedHealth)
+
+	health, err := characterService.UpsertHealth(context.Background(), input)
+
+	require.NoError(t, err)
+	require.Equal(t, 1, dbtx.QueryRowCalls)
+	require.Equal(t, []any{
+		input.UserID,
+		input.CharacterID,
+		input.MaxHp,
+		input.CurrentHp,
+		input.MajorWound,
+		input.Unconscious,
+		input.Dying,
+		input.Dead,
+	}, dbtx.LastQueryRowArgs)
+	requireSameHealthState(t, expectedHealth, health)
 }
 
 func TestUpsertHealthAllowsPartialInputWhenExistingStateIsMissing(t *testing.T) {
