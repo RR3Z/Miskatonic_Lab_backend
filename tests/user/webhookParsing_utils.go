@@ -51,6 +51,12 @@ func performSignedClerkUserWebhook(t *testing.T, router http.Handler, payload cl
 	body, err := json.Marshal(payload)
 	require.NoError(t, err)
 
+	return performSignedClerkUserWebhookBody(t, router, body)
+}
+
+func performSignedClerkUserWebhookBody(t *testing.T, router http.Handler, body []byte) *httptest.ResponseRecorder {
+	t.Helper()
+
 	request := httptest.NewRequest(http.MethodPost, "/webhooks/clerk/user", bytes.NewReader(body))
 	signClerkWebhookRequest(t, request, body)
 
@@ -87,6 +93,13 @@ func testUserCreatedPayload(data clerkWebhookUserFields) clerkWebhookPayload {
 func testUserUpdatedPayload(data clerkWebhookUserFields) clerkWebhookPayload {
 	return clerkWebhookPayload{
 		Type: "user.updated",
+		Data: data,
+	}
+}
+
+func testUserDeletedPayload(data clerkWebhookUserFields) clerkWebhookPayload {
+	return clerkWebhookPayload{
+		Type: "user.deleted",
 		Data: data,
 	}
 }
