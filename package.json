@@ -6,6 +6,7 @@
     "migrate:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 version",
     "sqlc:generate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 generate",
     "sqlc:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 version",
+    "test:pretty": "gotestsum --format testname -- ./tests/...",
     "user:create": "go run ./cmd/create-user"
   }
 }
