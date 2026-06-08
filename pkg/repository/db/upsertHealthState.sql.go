@@ -33,24 +33,25 @@ INSERT INTO health_states (
 )
 SELECT
     c.id,
-    COALESCE(input.max_hp, 1),
-    COALESCE(input.current_hp, 1),
-    COALESCE(input.major_wound, FALSE),
-    COALESCE(input.unconscious, FALSE),
-    COALESCE(input.dying, FALSE),
-    COALESCE(input.dead, FALSE)
+    COALESCE(input.max_hp, h.max_hp, 1),
+    COALESCE(input.current_hp, h.current_hp, 1),
+    COALESCE(input.major_wound, h.major_wound, FALSE),
+    COALESCE(input.unconscious, h.unconscious, FALSE),
+    COALESCE(input.dying, h.dying, FALSE),
+    COALESCE(input.dead, h.dead, FALSE)
 FROM characters c
 CROSS JOIN input
+LEFT JOIN health_states h ON h.character_id = c.id
 WHERE c.user_id = $1
   AND c.id = $2
 ON CONFLICT (character_id) DO UPDATE
 SET
-    max_hp = COALESCE((SELECT max_hp FROM input), health_states.max_hp),
-    current_hp = COALESCE((SELECT current_hp FROM input), health_states.current_hp),
-    major_wound = COALESCE((SELECT major_wound FROM input), health_states.major_wound),
-    unconscious = COALESCE((SELECT unconscious FROM input), health_states.unconscious),
-    dying = COALESCE((SELECT dying FROM input), health_states.dying),
-    dead = COALESCE((SELECT dead FROM input), health_states.dead),
+    max_hp = EXCLUDED.max_hp,
+    current_hp = EXCLUDED.current_hp,
+    major_wound = EXCLUDED.major_wound,
+    unconscious = EXCLUDED.unconscious,
+    dying = EXCLUDED.dying,
+    dead = EXCLUDED.dead,
     updated_at = NOW()
 RETURNING id, character_id, max_hp, current_hp, major_wound, unconscious, dying, dead, created_at, updated_at
 `

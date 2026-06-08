@@ -12,15 +12,16 @@ INSERT INTO luck_states (
 )
 SELECT
     c.id,
-    COALESCE(input.starting_luck, 1),
-    COALESCE(input.current_luck, 1)
+    COALESCE(input.starting_luck, l.starting_luck, 1),
+    COALESCE(input.current_luck, l.current_luck, 1)
 FROM characters c
 CROSS JOIN input
+LEFT JOIN luck_states l ON l.character_id = c.id
 WHERE c.user_id = sqlc.arg(user_id)
   AND c.id = sqlc.arg(character_id)
 ON CONFLICT (character_id) DO UPDATE
 SET
-    starting_luck = COALESCE((SELECT starting_luck FROM input), luck_states.starting_luck),
-    current_luck = COALESCE((SELECT current_luck FROM input), luck_states.current_luck),
+    starting_luck = EXCLUDED.starting_luck,
+    current_luck = EXCLUDED.current_luck,
     updated_at = NOW()
 RETURNING *;

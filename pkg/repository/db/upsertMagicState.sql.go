@@ -25,16 +25,17 @@ INSERT INTO magic_states (
 )
 SELECT
     c.id,
-    COALESCE(input.max_mp, 1),
-    COALESCE(input.current_mp, 1)
+    COALESCE(input.max_mp, m.max_mp, 1),
+    COALESCE(input.current_mp, m.current_mp, 1)
 FROM characters c
 CROSS JOIN input
+LEFT JOIN magic_states m ON m.character_id = c.id
 WHERE c.user_id = $1
   AND c.id = $2
 ON CONFLICT (character_id) DO UPDATE
 SET
-    max_mp = COALESCE((SELECT max_mp FROM input), magic_states.max_mp),
-    current_mp = COALESCE((SELECT current_mp FROM input), magic_states.current_mp),
+    max_mp = EXCLUDED.max_mp,
+    current_mp = EXCLUDED.current_mp,
     updated_at = NOW()
 RETURNING id, character_id, max_mp, current_mp, created_at, updated_at
 `
