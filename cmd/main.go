@@ -7,7 +7,7 @@ import (
 
 	MiskatonicLab "github.com/RR3Z/Miskatonic_Lab_backend"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/publishers"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	EventsLogging "github.com/RR3Z/Miskatonic_Lab_backend/pkg/observability/logging"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
@@ -63,7 +63,7 @@ func run() int {
 	clerk.SetKey(clerkSecretKey)
 
 	// Logging
-	publisher := events.NewSyncPublisher()
+	publisher := publishers.NewSyncPublisher()
 	publisher.Subscribe(EventsLogging.NewCharacterEventLogger(slog.Default()))
 
 	// Launch Server

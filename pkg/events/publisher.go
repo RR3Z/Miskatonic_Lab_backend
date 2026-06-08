@@ -1,33 +1,30 @@
 package events
 
-import "context"
+import (
+	"context"
+	"reflect"
+)
 
 type EventPublisher interface {
 	Publish(ctx context.Context, event Event)
 }
 
-// Implements EventPublisher
-type NoopPublisher struct{}
-
-func (p *NoopPublisher) Publish(ctx context.Context, event Event) {}
-
-// Implements EventPublisher
-type SyncPublisher struct {
-	handlers []EventHandler
+type EventSubscriber interface {
+	Subscribe(handler EventHandler)
+	SubscribeEvent(event Event, handler EventHandler)
 }
 
-func NewSyncPublisher() *SyncPublisher {
-	return &SyncPublisher{
-		handlers: []EventHandler{},
+type EventSubscriberPublisher interface {
+	EventPublisher
+	EventSubscriber
+}
+
+func EventTypeOf(event Event) reflect.Type {
+	t := reflect.TypeOf(event)
+
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
 	}
-}
 
-func (p *SyncPublisher) Subscribe(handler EventHandler) {
-	p.handlers = append(p.handlers, handler)
-}
-
-func (p *SyncPublisher) Publish(ctx context.Context, event Event) {
-	for _, handler := range p.handlers {
-		handler.Handle(ctx, event)
-	}
+	return t
 }
