@@ -2,6 +2,8 @@ package tests
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -116,6 +118,15 @@ func createCharacterTestUser(t *testing.T, subject *characterIntegrationSubject)
 	return testUser
 }
 
+func createCharacterTestCharacter(t *testing.T, subject *characterIntegrationSubject, userID string) db.Character {
+	t.Helper()
+
+	character, err := subject.queries.CreateCharacter(context.Background(), testCreateCharacterParams(userID))
+	require.NoError(t, err)
+
+	return character
+}
+
 func cleanupCharacterTestUser(t *testing.T, queries *db.Queries, userID string) {
 	t.Helper()
 
@@ -124,7 +135,12 @@ func cleanupCharacterTestUser(t *testing.T, queries *db.Queries, userID string) 
 }
 
 func uniqueCharacterIntegrationSuffix() string {
-	return strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(atomic.AddInt64(&characterIntegrationSequence, 1), 10)
+	randomBytes := make([]byte, 8)
+	if _, err := rand.Read(randomBytes); err != nil {
+		return strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(atomic.AddInt64(&characterIntegrationSequence, 1), 10)
+	}
+
+	return strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(atomic.AddInt64(&characterIntegrationSequence, 1), 10) + "_" + hex.EncodeToString(randomBytes)
 }
 
 func testCreateCharacterParams(userID string) db.CreateCharacterParams {
