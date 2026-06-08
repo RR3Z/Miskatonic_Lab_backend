@@ -101,7 +101,8 @@ func TestClerkWebhookUserParsingFallsBackToLocalEmailWhenNoEmailsExist(t *testin
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
 	require.Equal(t, "user_1@users.local", userService.LastUpsertUserInput.Email)
-	require.Equal(t, "user_1", userService.LastUpsertUserInput.Username)
+	require.Equal(t, expectedSyntheticClerkWebhookUsername("user_1"), userService.LastUpsertUserInput.Username)
+	require.NotEqual(t, "user_1", userService.LastUpsertUserInput.Username)
 }
 
 func TestClerkWebhookUserParsingUsesSameRulesForUpdatedEvent(t *testing.T) {

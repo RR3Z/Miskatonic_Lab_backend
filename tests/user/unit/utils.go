@@ -2,10 +2,13 @@ package tests
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -119,4 +122,9 @@ func testClerkUserFields() clerkWebhookUserFields {
 
 func stringPtr(value string) *string {
 	return &value
+}
+
+func expectedSyntheticClerkWebhookUsername(userID string) string {
+	hash := sha256.Sum256([]byte(strings.TrimSpace(userID)))
+	return "user_" + hex.EncodeToString(hash[:])[:12]
 }
