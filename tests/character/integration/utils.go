@@ -16,6 +16,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
@@ -171,4 +172,13 @@ func requirePostgresErrorCode(t *testing.T, err error, code string) {
 	var pgErr *pgconn.PgError
 	require.ErrorAs(t, err, &pgErr)
 	require.Equal(t, code, pgErr.Code)
+}
+
+func characterTestUUID(value string) pgtype.UUID {
+	var uuid pgtype.UUID
+	if err := uuid.Scan(value); err != nil {
+		panic(err)
+	}
+
+	return uuid
 }
