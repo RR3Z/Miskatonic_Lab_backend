@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -200,15 +202,24 @@ func parseClerkWebhookUsername(userData ClerkWebhookUserData) string {
 		return strings.TrimSpace(*userData.Username)
 	}
 
-	email := parseClerkWebhookEmail(userData)
+	email := parseClerkWebhookProvidedEmail(userData)
 	if email != "" {
 		return strings.Split(email, "@")[0]
 	}
 
-	return userData.ID
+	return syntheticClerkWebhookUsername(userData.ID)
 }
 
 func parseClerkWebhookEmail(userData ClerkWebhookUserData) string {
+	email := parseClerkWebhookProvidedEmail(userData)
+	if email != "" {
+		return email
+	}
+
+	return userData.ID + "@users.local"
+}
+
+func parseClerkWebhookProvidedEmail(userData ClerkWebhookUserData) string {
 	if userData.PrimaryEmailAddressID != nil {
 		for _, email := range userData.EmailAddresses {
 			if email.ID == *userData.PrimaryEmailAddressID {
@@ -221,5 +232,10 @@ func parseClerkWebhookEmail(userData ClerkWebhookUserData) string {
 		return userData.EmailAddresses[0].EmailAddress
 	}
 
-	return userData.ID + "@users.local"
+	return ""
+}
+
+func syntheticClerkWebhookUsername(userID string) string {
+	hash := sha256.Sum256([]byte(strings.TrimSpace(userID)))
+	return "user_" + hex.EncodeToString(hash[:])[:12]
 }
