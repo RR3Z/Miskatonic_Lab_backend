@@ -7,6 +7,7 @@ import (
 
 	MiskatonicLab "github.com/RR3Z/Miskatonic_Lab_backend"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/publishers"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	EventsLogging "github.com/RR3Z/Miskatonic_Lab_backend/pkg/observability/logging"
@@ -63,12 +64,16 @@ func run() int {
 	clerk.SetKey(clerkSecretKey)
 
 	// Logging
-	publisher := publishers.NewSyncPublisher()
-	publisher.Subscribe(EventsLogging.NewCharacterEventLogger(slog.Default()))
+	syncPublisher := publishers.NewSyncPublisher()
+	asyncPublisher := publishers.NewAsyncPublisher(100, slog.Default())
+	asyncPublisher.Start(ctx, 4)
+
+	eventBus := events.NewEventBus(syncPublisher, asyncPublisher)
+	eventBus.SubscribeAllSync(EventsLogging.NewCharacterEventLogger(slog.Default()))
 
 	// Launch Server
 	repos := repository.NewRepository(dbConnection)
-	service := service.NewService(repos, publisher)
+	service := service.NewService(repos, eventBus)
 	handlers := handler.NewHandler(service)
 
 	serverPort := os.Getenv("PORT")
