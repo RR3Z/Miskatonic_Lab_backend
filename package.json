@@ -7,6 +7,7 @@
     "sqlc:generate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 generate",
     "sqlc:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 version",
     "test:pretty": "gotestsum --format testname -- ./tests/...",
+    "test:clerk": "powershell -NoProfile -Command \"$env:CLERK_INTEGRATION_TESTS='1'; go test ./tests/user/integration -v\"",
     "user:create": "go run ./cmd/create-user"
   }
 }
