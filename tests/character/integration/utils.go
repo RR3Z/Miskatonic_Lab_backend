@@ -182,3 +182,141 @@ func characterTestUUID(value string) pgtype.UUID {
 
 	return uuid
 }
+
+func characterInt16(value int16) *int16 {
+	return &value
+}
+
+func requireCharacteristicValue(t *testing.T, actual *int16, expected int16) {
+	t.Helper()
+
+	require.NotNil(t, actual)
+	require.Equal(t, expected, *actual)
+}
+
+func requireDerivedStatValue(t *testing.T, actual *int16, expected int16) {
+	t.Helper()
+
+	require.NotNil(t, actual)
+	require.Equal(t, expected, *actual)
+}
+
+func createSkillTestCategory(t *testing.T, subject *characterIntegrationSubject, name string) (pgtype.UUID, string) {
+	t.Helper()
+
+	var id pgtype.UUID
+	uniqueName := name + " " + uniqueCharacterIntegrationSuffix()
+	err := subject.pool.QueryRow(context.Background(),
+		"INSERT INTO skills_categories (name) VALUES ($1) RETURNING id",
+		uniqueName,
+	).Scan(&id)
+	require.NoError(t, err)
+
+	return id, uniqueName
+}
+
+func createSkillTestSpecialty(t *testing.T, subject *characterIntegrationSubject, name string, description string, baseValue int16) (pgtype.UUID, string) {
+	t.Helper()
+
+	var id pgtype.UUID
+	uniqueName := name + " " + uniqueCharacterIntegrationSuffix()
+	err := subject.pool.QueryRow(context.Background(),
+		"INSERT INTO skills_specialties (name, description, base_value) VALUES ($1, $2, $3) RETURNING id",
+		uniqueName,
+		description,
+		baseValue,
+	).Scan(&id)
+	require.NoError(t, err)
+
+	return id, uniqueName
+}
+
+func testCreateSkillParams(userID string, characterID pgtype.UUID, categoryID pgtype.UUID, name string) db.CreateCharacterSkillParams {
+	return db.CreateCharacterSkillParams{
+		UserID:      userID,
+		CharacterID: characterID,
+		Name:        name,
+		CategoryID:  categoryID,
+		BaseValue:   10,
+		Value:       35,
+		Checked:     false,
+		Specialized: false,
+		SpecialtyID: pgtype.UUID{},
+	}
+}
+
+func testUpdateSkillParams(userID string, characterID pgtype.UUID, skillID pgtype.UUID, categoryID pgtype.UUID, name string) db.UpdateCharacterSkillParams {
+	return db.UpdateCharacterSkillParams{
+		UserID:      userID,
+		CharacterID: characterID,
+		SkillID:     skillID,
+		Name:        name,
+		CategoryID:  categoryID,
+		BaseValue:   15,
+		Value:       45,
+		Checked:     true,
+		Specialized: false,
+		SpecialtyID: pgtype.UUID{},
+	}
+}
+
+func createFinanceTestCreditRatingSkill(t *testing.T, subject *characterIntegrationSubject, userID string, characterID pgtype.UUID) db.CreateCharacterSkillRow {
+	t.Helper()
+
+	return createFinanceTestSkill(t, subject, userID, characterID, "Credit Rating")
+}
+
+func createFinanceTestSkill(t *testing.T, subject *characterIntegrationSubject, userID string, characterID pgtype.UUID, name string) db.CreateCharacterSkillRow {
+	t.Helper()
+
+	categoryID, _ := createSkillTestCategory(t, subject, "Credit Rating")
+	skill, err := subject.queries.CreateCharacterSkill(context.Background(), db.CreateCharacterSkillParams{
+		UserID:      userID,
+		CharacterID: characterID,
+		Name:        name,
+		CategoryID:  categoryID,
+		BaseValue:   0,
+		Value:       35,
+		Checked:     false,
+		Specialized: false,
+		SpecialtyID: pgtype.UUID{},
+	})
+	require.NoError(t, err)
+
+	return skill
+}
+
+func financeString(value string) *string {
+	return &value
+}
+
+func requireFinanceString(t *testing.T, actual *string, expected string) {
+	t.Helper()
+
+	require.NotNil(t, actual)
+	require.Equal(t, expected, *actual)
+}
+
+func createBackstoryTestBackstory(t *testing.T, subject *characterIntegrationSubject, userID string, characterID pgtype.UUID) db.Backstory {
+	t.Helper()
+
+	backstory, err := subject.queries.UpsertBackstory(context.Background(), db.UpsertBackstoryParams{
+		UserID:              userID,
+		CharacterID:         characterID,
+		PersonalDescription: backstoryString("Test backstory"),
+	})
+	require.NoError(t, err)
+
+	return backstory
+}
+
+func backstoryString(value string) *string {
+	return &value
+}
+
+func requireBackstoryString(t *testing.T, actual *string, expected string) {
+	t.Helper()
+
+	require.NotNil(t, actual)
+	require.Equal(t, expected, *actual)
+}

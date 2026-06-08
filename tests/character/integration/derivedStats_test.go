@@ -425,10 +425,3 @@ func TestDerivedStatsTableDeletingCharacterCascadesStats(t *testing.T) {
 	})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
 }
-
-func requireDerivedStatValue(t *testing.T, actual *int16, expected int16) {
-	t.Helper()
-
-	require.NotNil(t, actual)
-	require.Equal(t, expected, *actual)
-}

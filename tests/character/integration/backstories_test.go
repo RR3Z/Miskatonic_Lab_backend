@@ -783,27 +783,3 @@ func TestBackstoriesTableDeletingCharacterCascadesBackstoryAndItems(t *testing.T
 	})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
 }
-
-func createBackstoryTestBackstory(t *testing.T, subject *characterIntegrationSubject, userID string, characterID pgtype.UUID) db.Backstory {
-	t.Helper()
-
-	backstory, err := subject.queries.UpsertBackstory(context.Background(), db.UpsertBackstoryParams{
-		UserID:              userID,
-		CharacterID:         characterID,
-		PersonalDescription: backstoryString("Test backstory"),
-	})
-	require.NoError(t, err)
-
-	return backstory
-}
-
-func backstoryString(value string) *string {
-	return &value
-}
-
-func requireBackstoryString(t *testing.T, actual *string, expected string) {
-	t.Helper()
-
-	require.NotNil(t, actual)
-	require.Equal(t, expected, *actual)
-}

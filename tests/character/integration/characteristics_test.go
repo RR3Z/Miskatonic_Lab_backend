@@ -312,14 +312,3 @@ func TestCharacteristicsTableDeletingCharacterCascadesCharacteristics(t *testing
 	})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
 }
-
-func characterInt16(value int16) *int16 {
-	return &value
-}
-
-func requireCharacteristicValue(t *testing.T, actual *int16, expected int16) {
-	t.Helper()
-
-	require.NotNil(t, actual)
-	require.Equal(t, expected, *actual)
-}
