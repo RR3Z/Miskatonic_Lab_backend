@@ -1,0 +1,434 @@
+package tests
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	"github.com/jackc/pgx/v5"
+	"github.com/stretchr/testify/require"
+)
+
+func TestDerivedStatsTableUpsertCreatesGetsAndPartiallyUpdatesStats(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	createdStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(8),
+		Physique:    characterInt16(1),
+		DamageBonus: characterInt16(2),
+		DodgeValue:  characterInt16(40),
+	})
+	require.NoError(t, err)
+
+	require.True(t, createdStats.ID.Valid)
+	require.Equal(t, character.ID, createdStats.CharacterID)
+	requireDerivedStatValue(t, createdStats.Speed, 8)
+	requireDerivedStatValue(t, createdStats.Physique, 1)
+	requireDerivedStatValue(t, createdStats.DamageBonus, 2)
+	requireDerivedStatValue(t, createdStats.DodgeValue, 40)
+	require.True(t, createdStats.CreatedAt.Valid)
+	require.True(t, createdStats.UpdatedAt.Valid)
+
+	fetchedStats, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, createdStats.ID, fetchedStats.ID)
+
+	time.Sleep(5 * time.Millisecond)
+
+	updatedStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(9),
+		DodgeValue:  characterInt16(45),
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, createdStats.ID, updatedStats.ID)
+	requireDerivedStatValue(t, updatedStats.Speed, 9)
+	requireDerivedStatValue(t, updatedStats.Physique, 1)
+	requireDerivedStatValue(t, updatedStats.DamageBonus, 2)
+	requireDerivedStatValue(t, updatedStats.DodgeValue, 45)
+	require.True(t, updatedStats.UpdatedAt.Time.After(createdStats.UpdatedAt.Time) || updatedStats.UpdatedAt.Time.Equal(createdStats.UpdatedAt.Time))
+}
+
+func TestDerivedStatsTableUpsertAllowsAllNilValuesOnInsert(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	stats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+
+	require.True(t, stats.ID.Valid)
+	require.Equal(t, character.ID, stats.CharacterID)
+	require.Nil(t, stats.Speed)
+	require.Nil(t, stats.Physique)
+	require.Nil(t, stats.DamageBonus)
+	require.Nil(t, stats.DodgeValue)
+}
+
+func TestDerivedStatsTableNilUpdateDoesNotOverwriteExistingValues(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	createdStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(8),
+		Physique:    characterInt16(1),
+		DamageBonus: characterInt16(2),
+		DodgeValue:  characterInt16(40),
+	})
+	require.NoError(t, err)
+
+	updatedStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, createdStats.ID, updatedStats.ID)
+	requireDerivedStatValue(t, updatedStats.Speed, 8)
+	requireDerivedStatValue(t, updatedStats.Physique, 1)
+	requireDerivedStatValue(t, updatedStats.DamageBonus, 2)
+	requireDerivedStatValue(t, updatedStats.DodgeValue, 40)
+}
+
+func TestDerivedStatsTablePartialUpdateAfterNilInsertOnlySetsProvidedValues(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	createdStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	require.Nil(t, createdStats.Speed)
+	require.Nil(t, createdStats.Physique)
+	require.Nil(t, createdStats.DamageBonus)
+	require.Nil(t, createdStats.DodgeValue)
+
+	updatedStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Physique:    characterInt16(1),
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, createdStats.ID, updatedStats.ID)
+	require.Nil(t, updatedStats.Speed)
+	requireDerivedStatValue(t, updatedStats.Physique, 1)
+	require.Nil(t, updatedStats.DamageBonus)
+	require.Nil(t, updatedStats.DodgeValue)
+}
+
+func TestDerivedStatsTableAllowsZeroValues(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	stats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(0),
+		Physique:    characterInt16(0),
+		DamageBonus: characterInt16(0),
+		DodgeValue:  characterInt16(0),
+	})
+	require.NoError(t, err)
+
+	requireDerivedStatValue(t, stats.Speed, 0)
+	requireDerivedStatValue(t, stats.Physique, 0)
+	requireDerivedStatValue(t, stats.DamageBonus, 0)
+	requireDerivedStatValue(t, stats.DodgeValue, 0)
+}
+
+func TestDerivedStatsTableRequiresCharacterOwnerForUpsertGetAndDelete(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	owner := createCharacterTestUser(t, subject)
+	otherUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, owner.ID)
+
+	_, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      otherUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(8),
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	createdStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      owner.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(8),
+	})
+	require.NoError(t, err)
+
+	_, err = subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      otherUser.ID,
+		CharacterID: character.ID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	_, err = subject.queries.DeleteDerivedStats(context.Background(), db.DeleteDerivedStatsParams{
+		UserID:      otherUser.ID,
+		CharacterID: character.ID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	deletedStats, err := subject.queries.DeleteDerivedStats(context.Background(), db.DeleteDerivedStatsParams{
+		UserID:      owner.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, createdStats.ID, deletedStats.ID)
+}
+
+func TestDerivedStatsTableUnauthorizedUpsertDoesNotMutateExistingStats(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	owner := createCharacterTestUser(t, subject)
+	otherUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, owner.ID)
+
+	createdStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      owner.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(8),
+		DodgeValue:  characterInt16(40),
+	})
+	require.NoError(t, err)
+
+	_, err = subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      otherUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(1),
+		DodgeValue:  characterInt16(5),
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	fetchedStats, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      owner.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, createdStats.ID, fetchedStats.ID)
+	requireDerivedStatValue(t, fetchedStats.Speed, 8)
+	requireDerivedStatValue(t, fetchedStats.DodgeValue, 40)
+}
+
+func TestDerivedStatsTableReturnsNoRowsBeforeUpsert(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	_, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	_, err = subject.queries.DeleteDerivedStats(context.Background(), db.DeleteDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+}
+
+func TestDerivedStatsTableKeepsStatsScopedToRequestedCharacter(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	firstCharacter := createCharacterTestCharacter(t, subject, testUser.ID)
+	secondCharacter := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	firstStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: firstCharacter.ID,
+		Speed:       characterInt16(8),
+	})
+	require.NoError(t, err)
+
+	secondStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: secondCharacter.ID,
+		Speed:       characterInt16(10),
+	})
+	require.NoError(t, err)
+
+	fetchedFirstStats, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: firstCharacter.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, firstStats.ID, fetchedFirstStats.ID)
+	requireDerivedStatValue(t, fetchedFirstStats.Speed, 8)
+
+	fetchedSecondStats, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: secondCharacter.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, secondStats.ID, fetchedSecondStats.ID)
+	requireDerivedStatValue(t, fetchedSecondStats.Speed, 10)
+}
+
+func TestDerivedStatsTableReturnsNoRowsForMissingCharacter(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	missingCharacterID := characterTestUUID("dddddddd-dddd-dddd-dddd-dddddddddddd")
+
+	_, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: missingCharacterID,
+		Speed:       characterInt16(8),
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	_, err = subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: missingCharacterID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	_, err = subject.queries.DeleteDerivedStats(context.Background(), db.DeleteDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: missingCharacterID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+}
+
+func TestDerivedStatsTableDeleteReturnsDeletedValuesAndAllowsRecreate(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	createdStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(8),
+		DodgeValue:  characterInt16(40),
+	})
+	require.NoError(t, err)
+
+	deletedStats, err := subject.queries.DeleteDerivedStats(context.Background(), db.DeleteDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, createdStats.ID, deletedStats.ID)
+	requireDerivedStatValue(t, deletedStats.Speed, 8)
+	requireDerivedStatValue(t, deletedStats.DodgeValue, 40)
+
+	recreatedStats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(10),
+	})
+	require.NoError(t, err)
+
+	require.NotEqual(t, deletedStats.ID, recreatedStats.ID)
+	requireDerivedStatValue(t, recreatedStats.Speed, 10)
+}
+
+func TestDerivedStatsTableRejectsNegativeValues(t *testing.T) {
+	tests := []struct {
+		name   string
+		params func(userID string, character db.Character) db.UpsertDerivedStatsParams
+	}{
+		{
+			name: "speed",
+			params: func(userID string, character db.Character) db.UpsertDerivedStatsParams {
+				return db.UpsertDerivedStatsParams{
+					UserID:      userID,
+					CharacterID: character.ID,
+					Speed:       characterInt16(-1),
+				}
+			},
+		},
+		{
+			name: "physique",
+			params: func(userID string, character db.Character) db.UpsertDerivedStatsParams {
+				return db.UpsertDerivedStatsParams{
+					UserID:      userID,
+					CharacterID: character.ID,
+					Physique:    characterInt16(-1),
+				}
+			},
+		},
+		{
+			name: "damage bonus",
+			params: func(userID string, character db.Character) db.UpsertDerivedStatsParams {
+				return db.UpsertDerivedStatsParams{
+					UserID:      userID,
+					CharacterID: character.ID,
+					DamageBonus: characterInt16(-1),
+				}
+			},
+		},
+		{
+			name: "dodge value",
+			params: func(userID string, character db.Character) db.UpsertDerivedStatsParams {
+				return db.UpsertDerivedStatsParams{
+					UserID:      userID,
+					CharacterID: character.ID,
+					DodgeValue:  characterInt16(-1),
+				}
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			subject := newCharacterIntegrationSubject(t)
+			testUser := createCharacterTestUser(t, subject)
+			character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+			_, err := subject.queries.UpsertDerivedStats(context.Background(), tc.params(testUser.ID, character))
+			requirePostgresErrorCode(t, err, "23514")
+		})
+	}
+}
+
+func TestDerivedStatsTableDeletingCharacterCascadesStats(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	_, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Speed:       characterInt16(8),
+	})
+	require.NoError(t, err)
+
+	_, err = subject.queries.DeleteCharacter(context.Background(), db.DeleteCharacterParams{
+		UserID: testUser.ID,
+		ID:     character.ID,
+	})
+	require.NoError(t, err)
+
+	_, err = subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+}
+
+func requireDerivedStatValue(t *testing.T, actual *int16, expected int16) {
+	t.Helper()
+
+	require.NotNil(t, actual)
+	require.Equal(t, expected, *actual)
+}
