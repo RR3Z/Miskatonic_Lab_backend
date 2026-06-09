@@ -187,6 +187,10 @@ func characterInt16(value int16) *int16 {
 	return &value
 }
 
+func characterString(value string) *string {
+	return &value
+}
+
 func requireCharacteristicValue(t *testing.T, actual *int16, expected int16) {
 	t.Helper()
 
@@ -195,6 +199,13 @@ func requireCharacteristicValue(t *testing.T, actual *int16, expected int16) {
 }
 
 func requireDerivedStatValue(t *testing.T, actual *int16, expected int16) {
+	t.Helper()
+
+	require.NotNil(t, actual)
+	require.Equal(t, expected, *actual)
+}
+
+func requireDerivedStatString(t *testing.T, actual *string, expected string) {
 	t.Helper()
 
 	require.NotNil(t, actual)

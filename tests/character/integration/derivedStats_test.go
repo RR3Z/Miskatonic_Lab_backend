@@ -20,7 +20,7 @@ func TestDerivedStatsTableUpsertCreatesGetsAndPartiallyUpdatesStats(t *testing.T
 		CharacterID: character.ID,
 		Speed:       characterInt16(8),
 		Physique:    characterInt16(1),
-		DamageBonus: characterInt16(2),
+		DamageBonus: characterString("+1d6"),
 		DodgeValue:  characterInt16(40),
 	})
 	require.NoError(t, err)
@@ -29,7 +29,7 @@ func TestDerivedStatsTableUpsertCreatesGetsAndPartiallyUpdatesStats(t *testing.T
 	require.Equal(t, character.ID, createdStats.CharacterID)
 	requireDerivedStatValue(t, createdStats.Speed, 8)
 	requireDerivedStatValue(t, createdStats.Physique, 1)
-	requireDerivedStatValue(t, createdStats.DamageBonus, 2)
+	requireDerivedStatString(t, createdStats.DamageBonus, "+1d6")
 	requireDerivedStatValue(t, createdStats.DodgeValue, 40)
 	require.True(t, createdStats.CreatedAt.Valid)
 	require.True(t, createdStats.UpdatedAt.Valid)
@@ -54,7 +54,7 @@ func TestDerivedStatsTableUpsertCreatesGetsAndPartiallyUpdatesStats(t *testing.T
 	require.Equal(t, createdStats.ID, updatedStats.ID)
 	requireDerivedStatValue(t, updatedStats.Speed, 9)
 	requireDerivedStatValue(t, updatedStats.Physique, 1)
-	requireDerivedStatValue(t, updatedStats.DamageBonus, 2)
+	requireDerivedStatString(t, updatedStats.DamageBonus, "+1d6")
 	requireDerivedStatValue(t, updatedStats.DodgeValue, 45)
 	require.True(t, updatedStats.UpdatedAt.Time.After(createdStats.UpdatedAt.Time) || updatedStats.UpdatedAt.Time.Equal(createdStats.UpdatedAt.Time))
 }
@@ -88,7 +88,7 @@ func TestDerivedStatsTableNilUpdateDoesNotOverwriteExistingValues(t *testing.T) 
 		CharacterID: character.ID,
 		Speed:       characterInt16(8),
 		Physique:    characterInt16(1),
-		DamageBonus: characterInt16(2),
+		DamageBonus: characterString("+1d6"),
 		DodgeValue:  characterInt16(40),
 	})
 	require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestDerivedStatsTableNilUpdateDoesNotOverwriteExistingValues(t *testing.T) 
 	require.Equal(t, createdStats.ID, updatedStats.ID)
 	requireDerivedStatValue(t, updatedStats.Speed, 8)
 	requireDerivedStatValue(t, updatedStats.Physique, 1)
-	requireDerivedStatValue(t, updatedStats.DamageBonus, 2)
+	requireDerivedStatString(t, updatedStats.DamageBonus, "+1d6")
 	requireDerivedStatValue(t, updatedStats.DodgeValue, 40)
 }
 
@@ -145,14 +145,14 @@ func TestDerivedStatsTableAllowsZeroValues(t *testing.T) {
 		CharacterID: character.ID,
 		Speed:       characterInt16(0),
 		Physique:    characterInt16(0),
-		DamageBonus: characterInt16(0),
+		DamageBonus: characterString("0"),
 		DodgeValue:  characterInt16(0),
 	})
 	require.NoError(t, err)
 
 	requireDerivedStatValue(t, stats.Speed, 0)
 	requireDerivedStatValue(t, stats.Physique, 0)
-	requireDerivedStatValue(t, stats.DamageBonus, 0)
+	requireDerivedStatString(t, stats.DamageBonus, "0")
 	requireDerivedStatValue(t, stats.DodgeValue, 0)
 }
 
@@ -342,7 +342,44 @@ func TestDerivedStatsTableDeleteReturnsDeletedValuesAndAllowsRecreate(t *testing
 	requireDerivedStatValue(t, recreatedStats.Speed, 10)
 }
 
-func TestDerivedStatsTableRejectsNegativeValues(t *testing.T) {
+func TestDerivedStatsTableAllowsNegativePhysiqueAndDamageBonusValues(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+	stats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Physique:    characterInt16(-2),
+		DamageBonus: characterString("-2"),
+	})
+	require.NoError(t, err)
+
+	requireDerivedStatValue(t, stats.Physique, -2)
+	requireDerivedStatString(t, stats.DamageBonus, "-2")
+}
+
+func TestDerivedStatsTableAllowsDiceDamageBonusValues(t *testing.T) {
+	tests := []string{"+1d4", "+1d6", "+2d6", "+10d6"}
+
+	for _, damageBonus := range tests {
+		t.Run(damageBonus, func(t *testing.T) {
+			subject := newCharacterIntegrationSubject(t)
+			testUser := createCharacterTestUser(t, subject)
+			character := createCharacterTestCharacter(t, subject, testUser.ID)
+
+			stats, err := subject.queries.UpsertDerivedStats(context.Background(), db.UpsertDerivedStatsParams{
+				UserID:      testUser.ID,
+				CharacterID: character.ID,
+				DamageBonus: characterString(damageBonus),
+			})
+			require.NoError(t, err)
+			requireDerivedStatString(t, stats.DamageBonus, damageBonus)
+		})
+	}
+}
+
+func TestDerivedStatsTableRejectsInvalidValues(t *testing.T) {
 	tests := []struct {
 		name   string
 		params func(userID string, character db.Character) db.UpsertDerivedStatsParams
@@ -358,22 +395,12 @@ func TestDerivedStatsTableRejectsNegativeValues(t *testing.T) {
 			},
 		},
 		{
-			name: "physique",
-			params: func(userID string, character db.Character) db.UpsertDerivedStatsParams {
-				return db.UpsertDerivedStatsParams{
-					UserID:      userID,
-					CharacterID: character.ID,
-					Physique:    characterInt16(-1),
-				}
-			},
-		},
-		{
 			name: "damage bonus",
 			params: func(userID string, character db.Character) db.UpsertDerivedStatsParams {
 				return db.UpsertDerivedStatsParams{
 					UserID:      userID,
 					CharacterID: character.ID,
-					DamageBonus: characterInt16(-1),
+					DamageBonus: characterString("not-a-damage-bonus"),
 				}
 			},
 		},
