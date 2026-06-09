@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
+	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -14,11 +16,17 @@ import (
 )
 
 type CharacterService struct {
-	repos *repository.Repository
+	repos     *repository.Repository
+	publisher events.EventPublisher
 }
 
-func NewCharacterService(repos *repository.Repository) *CharacterService {
-	return &CharacterService{repos: repos}
+func NewCharacterService(repos *repository.Repository, publisher ...events.EventPublisher) *CharacterService {
+	service := &CharacterService{repos: repos}
+	if len(publisher) > 0 {
+		service.publisher = publisher[0]
+	}
+
+	return service
 }
 
 // Characters
@@ -162,7 +170,7 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input db.UpdateC
 
 	characteristics, shouldRecalculate := s.getCharacteristicsForDerivedStatsRecalculation(ctx, input.UserID, input.ID)
 	if shouldRecalculate {
-		_ = s.recalculateDerivedStats(ctx, character.UserID, character.ID, character.Age, characteristics)
+		s.recalculateDerivedStats(ctx, character.UserID, character.ID, character.Age, characteristics, "character_update")
 	}
 
 	return model.ToShortCharacterModel(character), nil
@@ -498,7 +506,7 @@ func (s *CharacterService) UpsertCharacteristics(ctx context.Context, input db.U
 		ID:     input.CharacterID,
 	})
 	if err == nil {
-		_ = s.recalculateDerivedStats(ctx, input.UserID, input.CharacterID, character.Age, characteristics)
+		s.recalculateDerivedStats(ctx, input.UserID, input.CharacterID, character.Age, characteristics, "characteristics_upsert")
 	}
 
 	return characteristics, nil
@@ -737,9 +745,16 @@ func (s *CharacterService) recalculateDerivedStats(
 	characterID pgtype.UUID,
 	age *int16,
 	characteristics db.Characteristic,
-) error {
-	if !canCalculateDerivedStats(age, characteristics) {
-		return nil
+	source string,
+) {
+	if reason, canCalculate := derivedStatsRecalculationReadiness(age, characteristics); !canCalculate {
+		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsAutoRecalculateSkipped{
+			UserID:      userID,
+			CharacterID: characterID.String(),
+			Source:      source,
+			Reason:      reason,
+		})
+		return
 	}
 
 	derivedStatsInput := calculators.CalculateDerivedStats(
@@ -750,17 +765,31 @@ func (s *CharacterService) recalculateDerivedStats(
 	)
 
 	_, err := s.UpsertDerivedStats(ctx, derivedStatsInput)
-	return err
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsAutoRecalculateFailed{
+			UserID:      userID,
+			CharacterID: characterID.String(),
+			Source:      source,
+			Err:         err,
+		})
+		return
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsAutoRecalculateSucceeded{
+		UserID:      userID,
+		CharacterID: characterID.String(),
+		Source:      source,
+	})
 }
 
-func canCalculateDerivedStats(age *int16, characteristics db.Characteristic) bool {
+func derivedStatsRecalculationReadiness(age *int16, characteristics db.Characteristic) (string, bool) {
 	if age == nil {
-		return false
+		return "age_missing", false
 	}
 
 	if characteristics.Strength == nil || characteristics.Size == nil || characteristics.Dexterity == nil {
-		return false
+		return "required_characteristics_missing", false
 	}
 
-	return true
+	return "", true
 }

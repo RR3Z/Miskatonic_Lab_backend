@@ -12,7 +12,7 @@ type Service struct {
 }
 
 func NewService(repos *repository.Repository, publisher events.EventPublisher) *Service {
-	characterService := characterServices.NewCharacterService(repos)
+	characterService := characterServices.NewCharacterService(repos, publisher)
 
 	return &Service{
 		User:      NewUserService(repos),
