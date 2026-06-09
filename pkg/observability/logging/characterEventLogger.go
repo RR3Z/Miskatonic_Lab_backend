@@ -129,6 +129,13 @@ func (l *CharacterEventLogger) Handle(ctx context.Context, event events.Event) {
 	case characterEvents.CharacterDerivedStatsUpsertFailed:
 		l.logCharacterDerivedStatsUpsertFailed(ctx, e)
 
+	case characterEvents.CharacterDerivedStatsAutoRecalculateSucceeded:
+		l.logCharacterDerivedStatsAutoRecalculateSucceeded(ctx, e)
+	case characterEvents.CharacterDerivedStatsAutoRecalculateSkipped:
+		l.logCharacterDerivedStatsAutoRecalculateSkipped(ctx, e)
+	case characterEvents.CharacterDerivedStatsAutoRecalculateFailed:
+		l.logCharacterDerivedStatsAutoRecalculateFailed(ctx, e)
+
 	case characterEvents.CharacterDerivedStatsDeleteSucceeded:
 		l.logCharacterDerivedStatsDeleteSucceeded(ctx, e)
 	case characterEvents.CharacterDerivedStatsDeleteFailed:
@@ -532,6 +539,33 @@ func (l *CharacterEventLogger) logCharacterDerivedStatsUpsertFailed(ctx context.
 		"event", event.EventName(),
 		"user_id", event.UserID,
 		"character_id", event.CharacterID,
+		"error", event.Err,
+	)
+}
+
+func (l *CharacterEventLogger) logCharacterDerivedStatsAutoRecalculateSucceeded(ctx context.Context, event characterEvents.CharacterDerivedStatsAutoRecalculateSucceeded) {
+	l.logger.InfoContext(ctx, "character derived stats auto recalculated",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"source", event.Source,
+	)
+}
+func (l *CharacterEventLogger) logCharacterDerivedStatsAutoRecalculateSkipped(ctx context.Context, event characterEvents.CharacterDerivedStatsAutoRecalculateSkipped) {
+	l.logger.WarnContext(ctx, "character derived stats auto recalculation skipped",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"source", event.Source,
+		"reason", event.Reason,
+	)
+}
+func (l *CharacterEventLogger) logCharacterDerivedStatsAutoRecalculateFailed(ctx context.Context, event characterEvents.CharacterDerivedStatsAutoRecalculateFailed) {
+	l.logger.ErrorContext(ctx, "failed to auto recalculate character derived stats",
+		"event", event.EventName(),
+		"user_id", event.UserID,
+		"character_id", event.CharacterID,
+		"source", event.Source,
 		"error", event.Err,
 	)
 }
