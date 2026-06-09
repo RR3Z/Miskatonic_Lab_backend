@@ -5,7 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 )
@@ -451,4 +453,161 @@ func TestDerivedStatsTableDeletingCharacterCascadesStats(t *testing.T) {
 		CharacterID: character.ID,
 	})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
+}
+
+func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithoutAge(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character, err := subject.queries.CreateCharacter(context.Background(), db.CreateCharacterParams{
+		UserID: testUser.ID,
+		Name:   "Ageless Investigator",
+	})
+	require.NoError(t, err)
+
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool))
+
+	characteristics, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Strength:    characterInt16(60),
+		Size:        characterInt16(40),
+		Dexterity:   characterInt16(70),
+	})
+	require.NoError(t, err)
+	requireCharacteristicValue(t, characteristics.Strength, 60)
+
+	_, err = subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+}
+
+func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithoutFormulaCharacteristics(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool))
+
+	characteristics, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Strength:    characterInt16(60),
+		Size:        characterInt16(40),
+	})
+	require.NoError(t, err)
+	requireCharacteristicValue(t, characteristics.Strength, 60)
+	require.Nil(t, characteristics.Dexterity)
+
+	_, err = subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+}
+
+func TestCharacterServiceUpsertCharacteristicsRecalculatesDerivedStats(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool))
+
+	_, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Strength:    characterInt16(60),
+		Size:        characterInt16(40),
+		Dexterity:   characterInt16(70),
+	})
+	require.NoError(t, err)
+
+	stats, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	requireDerivedStatValue(t, stats.Speed, 9)
+	requireDerivedStatValue(t, stats.Physique, 0)
+	requireDerivedStatString(t, stats.DamageBonus, "0")
+	requireDerivedStatValue(t, stats.DodgeValue, 35)
+}
+
+func TestCharacterServiceUpdateCharacterAgeRecalculatesDerivedStats(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool))
+
+	_, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Strength:    characterInt16(60),
+		Size:        characterInt16(40),
+		Dexterity:   characterInt16(70),
+	})
+	require.NoError(t, err)
+
+	age := int16(80)
+	_, err = service.UpdateCharacter(context.Background(), db.UpdateCharacterParams{
+		UserID:     testUser.ID,
+		ID:         character.ID,
+		Name:       character.Name,
+		PlayerName: character.PlayerName,
+		Occupation: character.Occupation,
+		Age:        &age,
+		Sex:        character.Sex,
+		Residence:  character.Residence,
+		Birthplace: character.Birthplace,
+	})
+	require.NoError(t, err)
+
+	stats, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	requireDerivedStatValue(t, stats.Speed, 4)
+}
+
+func TestCharacterServiceUpdateCharacterSkipsDerivedStatsRecalculationWithoutAge(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool))
+
+	_, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Strength:    characterInt16(60),
+		Size:        characterInt16(40),
+		Dexterity:   characterInt16(70),
+	})
+	require.NoError(t, err)
+
+	_, err = service.UpdateCharacter(context.Background(), db.UpdateCharacterParams{
+		UserID:     testUser.ID,
+		ID:         character.ID,
+		Name:       character.Name,
+		PlayerName: character.PlayerName,
+		Occupation: character.Occupation,
+		Age:        nil,
+		Sex:        character.Sex,
+		Residence:  character.Residence,
+		Birthplace: character.Birthplace,
+	})
+	require.NoError(t, err)
+
+	updatedCharacter, err := subject.queries.GetCharacter(context.Background(), db.GetCharacterParams{
+		UserID: testUser.ID,
+		ID:     character.ID,
+	})
+	require.NoError(t, err)
+	require.Nil(t, updatedCharacter.Age)
+
+	stats, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	requireDerivedStatValue(t, stats.Speed, 9)
 }
