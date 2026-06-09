@@ -16,7 +16,7 @@ WITH input AS (
     SELECT
         $3::smallint AS speed,
         $4::smallint AS physique,
-        $5::smallint AS damage_bonus,
+        $5::varchar(16) AS damage_bonus,
         $6::smallint AS dodge_value
 )
 
@@ -52,7 +52,7 @@ type UpsertDerivedStatsParams struct {
 	CharacterID pgtype.UUID `json:"character_id"`
 	Speed       *int16      `json:"speed"`
 	Physique    *int16      `json:"physique"`
-	DamageBonus *int16      `json:"damage_bonus"`
+	DamageBonus *string     `json:"damage_bonus"`
 	DodgeValue  *int16      `json:"dodge_value"`
 }
 

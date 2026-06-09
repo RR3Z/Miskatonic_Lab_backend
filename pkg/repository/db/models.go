@@ -60,7 +60,7 @@ type DerivedStat struct {
 	CharacterID pgtype.UUID        `json:"character_id"`
 	Speed       *int16             `json:"speed"`
 	Physique    *int16             `json:"physique"`
-	DamageBonus *int16             `json:"damage_bonus"`
+	DamageBonus *string            `json:"damage_bonus"`
 	DodgeValue  *int16             `json:"dodge_value"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`

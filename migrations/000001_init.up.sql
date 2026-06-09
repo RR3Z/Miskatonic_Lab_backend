@@ -81,8 +81,8 @@ CREATE TABLE derived_stats (
     character_id UUID NOT NULL UNIQUE,
 
     speed SMALLINT CHECK (speed >= 0),
-    physique SMALLINT CHECK (physique >= 0),
-    damage_bonus SMALLINT CHECK (damage_bonus >= 0),
+    physique SMALLINT,
+    damage_bonus VARCHAR(16),
     dodge_value SMALLINT CHECK (dodge_value >= 0),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

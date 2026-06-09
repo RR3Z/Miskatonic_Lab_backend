@@ -3,7 +3,7 @@ WITH input AS (
     SELECT
         sqlc.narg('speed')::smallint AS speed,
         sqlc.narg('physique')::smallint AS physique,
-        sqlc.narg('damage_bonus')::smallint AS damage_bonus,
+        sqlc.narg('damage_bonus')::varchar(16) AS damage_bonus,
         sqlc.narg('dodge_value')::smallint AS dodge_value
 )
 
