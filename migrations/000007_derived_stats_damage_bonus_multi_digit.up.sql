@@ -1,10 +1,5 @@
 ALTER TABLE derived_stats
-    DROP CONSTRAINT IF EXISTS derived_stats_physique_check,
-    DROP CONSTRAINT IF EXISTS derived_stats_damage_bonus_check;
-
-ALTER TABLE derived_stats
-    ALTER COLUMN damage_bonus TYPE VARCHAR(16)
-    USING damage_bonus::text;
+    DROP CONSTRAINT IF EXISTS chk_derived_stats_damage_bonus_format;
 
 ALTER TABLE derived_stats
     ADD CONSTRAINT chk_derived_stats_damage_bonus_format
