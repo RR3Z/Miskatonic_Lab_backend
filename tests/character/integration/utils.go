@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -33,6 +34,24 @@ type characterTestUser struct {
 	ID       string
 	Username string
 	Email    string
+}
+
+type characterEventRecorder struct {
+	events []events.Event
+}
+
+func (r *characterEventRecorder) Publish(_ context.Context, event events.Event) {
+	r.events = append(r.events, event)
+}
+
+func requireLastCharacterEvent[T events.Event](t *testing.T, recorder *characterEventRecorder) T {
+	t.Helper()
+
+	require.NotEmpty(t, recorder.events)
+	event, ok := recorder.events[len(recorder.events)-1].(T)
+	require.True(t, ok)
+
+	return event
 }
 
 func newCharacterIntegrationSubject(t *testing.T) *characterIntegrationSubject {
