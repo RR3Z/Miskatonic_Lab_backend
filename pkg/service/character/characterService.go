@@ -8,7 +8,9 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/calculators"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type CharacterService struct {
@@ -156,6 +158,11 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input db.UpdateC
 	character, err := s.repos.Queries.UpdateCharacter(ctx, input)
 	if err != nil {
 		return model.CharacterModel{}, err
+	}
+
+	characteristics, shouldRecalculate := s.getCharacteristicsForDerivedStatsRecalculation(ctx, input.UserID, input.ID)
+	if shouldRecalculate {
+		_ = s.recalculateDerivedStats(ctx, character.UserID, character.ID, character.Age, characteristics)
 	}
 
 	return model.ToShortCharacterModel(character), nil
@@ -646,6 +653,14 @@ func (s *CharacterService) UpsertCharacteristics(ctx context.Context, input db.U
 		return db.Characteristic{}, err
 	}
 
+	character, err := s.repos.Queries.GetCharacter(ctx, db.GetCharacterParams{
+		UserID: input.UserID,
+		ID:     input.CharacterID,
+	})
+	if err == nil {
+		_ = s.recalculateDerivedStats(ctx, input.UserID, input.CharacterID, character.Age, characteristics)
+	}
+
 	return characteristics, nil
 }
 
@@ -697,4 +712,55 @@ func (s *CharacterService) UpdateNote(ctx context.Context, input db.UpdateNotePa
 func (s *CharacterService) DeleteNote(ctx context.Context, input db.DeleteNoteParams) error {
 	_, err := s.repos.Queries.DeleteNote(ctx, input)
 	return err
+}
+
+// Helpers
+func (s *CharacterService) getCharacteristicsForDerivedStatsRecalculation(
+	ctx context.Context,
+	userID string,
+	characterID pgtype.UUID,
+) (db.Characteristic, bool) {
+	characteristics, err := s.repos.Queries.GetCharacteristics(ctx, db.GetCharacteristicsParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		return db.Characteristic{}, false
+	}
+
+	return characteristics, true
+}
+
+func (s *CharacterService) recalculateDerivedStats(
+	ctx context.Context,
+	userID string,
+	characterID pgtype.UUID,
+	age *int16,
+	characteristics db.Characteristic,
+) error {
+	if !canCalculateDerivedStats(age, characteristics) {
+		return nil
+	}
+
+	derivedStatsInput := calculators.CalculateDerivedStats(
+		userID,
+		characterID,
+		*age,
+		characteristics,
+	)
+
+	_, err := s.UpsertDerivedStats(ctx, derivedStatsInput)
+	return err
+}
+
+func canCalculateDerivedStats(age *int16, characteristics db.Characteristic) bool {
+	if age == nil {
+		return false
+	}
+
+	if characteristics.Strength == nil || characteristics.Size == nil || characteristics.Dexterity == nil {
+		return false
+	}
+
+	return true
 }
