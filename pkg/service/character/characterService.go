@@ -199,46 +199,6 @@ func (s *CharacterService) UpsertHealth(ctx context.Context, input db.UpsertHeal
 	return health, nil
 }
 
-func (s *CharacterService) validateHealthState(ctx context.Context, input db.UpsertHealthStateParams) error {
-	if input.MaxHp != nil && input.CurrentHp != nil {
-		if *input.CurrentHp > *input.MaxHp {
-			return myErrors.ErrCurrentHealthExceedsMax
-		}
-		return nil
-	}
-
-	if input.MaxHp == nil && input.CurrentHp == nil {
-		return nil
-	}
-
-	existing, err := s.repos.Queries.GetHealthState(ctx, db.GetHealthStateParams{
-		UserID:      input.UserID,
-		CharacterID: input.CharacterID,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-
-	maxHp := existing.MaxHp
-	if input.MaxHp != nil {
-		maxHp = *input.MaxHp
-	}
-
-	currentHp := existing.CurrentHp
-	if input.CurrentHp != nil {
-		currentHp = *input.CurrentHp
-	}
-
-	if currentHp > maxHp {
-		return myErrors.ErrCurrentHealthExceedsMax
-	}
-
-	return nil
-}
-
 func (s *CharacterService) DeleteHealth(ctx context.Context, input db.DeleteHealthStateParams) error {
 	if _, err := s.repos.Queries.DeleteHealthState(ctx, input); err != nil {
 		return err
@@ -268,46 +228,6 @@ func (s *CharacterService) UpsertSanity(ctx context.Context, input db.UpsertSani
 	}
 
 	return sanity, nil
-}
-
-func (s *CharacterService) validateSanityState(ctx context.Context, input db.UpsertSanityStateParams) error {
-	if input.MaxSanity != nil && input.CurrentSanity != nil {
-		if *input.CurrentSanity > *input.MaxSanity {
-			return myErrors.ErrCurrentSanityExceedsMax
-		}
-		return nil
-	}
-
-	if input.MaxSanity == nil && input.CurrentSanity == nil {
-		return nil
-	}
-
-	existing, err := s.repos.Queries.GetSanityState(ctx, db.GetSanityStateParams{
-		UserID:      input.UserID,
-		CharacterID: input.CharacterID,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-
-	maxSanity := existing.MaxSanity
-	if input.MaxSanity != nil {
-		maxSanity = *input.MaxSanity
-	}
-
-	currentSanity := existing.CurrentSanity
-	if input.CurrentSanity != nil {
-		currentSanity = *input.CurrentSanity
-	}
-
-	if currentSanity > maxSanity {
-		return myErrors.ErrCurrentSanityExceedsMax
-	}
-
-	return nil
 }
 
 func (s *CharacterService) DeleteSanity(ctx context.Context, input db.DeleteSanityStateParams) error {
@@ -341,46 +261,6 @@ func (s *CharacterService) UpsertMagic(ctx context.Context, input db.UpsertMagic
 	return magic, nil
 }
 
-func (s *CharacterService) validateMagicState(ctx context.Context, input db.UpsertMagicStateParams) error {
-	if input.MaxMp != nil && input.CurrentMp != nil {
-		if *input.CurrentMp > *input.MaxMp {
-			return myErrors.ErrCurrentMagicExceedsMax
-		}
-		return nil
-	}
-
-	if input.MaxMp == nil && input.CurrentMp == nil {
-		return nil
-	}
-
-	existing, err := s.repos.Queries.GetMagicState(ctx, db.GetMagicStateParams{
-		UserID:      input.UserID,
-		CharacterID: input.CharacterID,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-
-	maxMp := existing.MaxMp
-	if input.MaxMp != nil {
-		maxMp = *input.MaxMp
-	}
-
-	currentMp := existing.CurrentMp
-	if input.CurrentMp != nil {
-		currentMp = *input.CurrentMp
-	}
-
-	if currentMp > maxMp {
-		return myErrors.ErrCurrentMagicExceedsMax
-	}
-
-	return nil
-}
-
 func (s *CharacterService) DeleteMagic(ctx context.Context, input db.DeleteMagicStateParams) error {
 	if _, err := s.repos.Queries.DeleteMagicState(ctx, input); err != nil {
 		return err
@@ -410,46 +290,6 @@ func (s *CharacterService) UpsertLuck(ctx context.Context, input db.UpsertLuckSt
 	}
 
 	return luck, nil
-}
-
-func (s *CharacterService) validateLuckState(ctx context.Context, input db.UpsertLuckStateParams) error {
-	if input.StartingLuck != nil && input.CurrentLuck != nil {
-		if *input.CurrentLuck > *input.StartingLuck {
-			return myErrors.ErrCurrentLuckExceedsStarting
-		}
-		return nil
-	}
-
-	if input.StartingLuck == nil && input.CurrentLuck == nil {
-		return nil
-	}
-
-	existing, err := s.repos.Queries.GetLuckState(ctx, db.GetLuckStateParams{
-		UserID:      input.UserID,
-		CharacterID: input.CharacterID,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-
-	startingLuck := existing.StartingLuck
-	if input.StartingLuck != nil {
-		startingLuck = *input.StartingLuck
-	}
-
-	currentLuck := existing.CurrentLuck
-	if input.CurrentLuck != nil {
-		currentLuck = *input.CurrentLuck
-	}
-
-	if currentLuck > startingLuck {
-		return myErrors.ErrCurrentLuckExceedsStarting
-	}
-
-	return nil
 }
 
 func (s *CharacterService) DeleteLuck(ctx context.Context, input db.DeleteLuckStateParams) error {
@@ -715,6 +555,166 @@ func (s *CharacterService) DeleteNote(ctx context.Context, input db.DeleteNotePa
 }
 
 // Helpers
+func (s *CharacterService) validateMagicState(ctx context.Context, input db.UpsertMagicStateParams) error {
+	if input.MaxMp != nil && input.CurrentMp != nil {
+		if *input.CurrentMp > *input.MaxMp {
+			return myErrors.ErrCurrentMagicExceedsMax
+		}
+		return nil
+	}
+
+	if input.MaxMp == nil && input.CurrentMp == nil {
+		return nil
+	}
+
+	existing, err := s.repos.Queries.GetMagicState(ctx, db.GetMagicStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	maxMp := existing.MaxMp
+	if input.MaxMp != nil {
+		maxMp = *input.MaxMp
+	}
+
+	currentMp := existing.CurrentMp
+	if input.CurrentMp != nil {
+		currentMp = *input.CurrentMp
+	}
+
+	if currentMp > maxMp {
+		return myErrors.ErrCurrentMagicExceedsMax
+	}
+
+	return nil
+}
+
+func (s *CharacterService) validateLuckState(ctx context.Context, input db.UpsertLuckStateParams) error {
+	if input.StartingLuck != nil && input.CurrentLuck != nil {
+		if *input.CurrentLuck > *input.StartingLuck {
+			return myErrors.ErrCurrentLuckExceedsStarting
+		}
+		return nil
+	}
+
+	if input.StartingLuck == nil && input.CurrentLuck == nil {
+		return nil
+	}
+
+	existing, err := s.repos.Queries.GetLuckState(ctx, db.GetLuckStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	startingLuck := existing.StartingLuck
+	if input.StartingLuck != nil {
+		startingLuck = *input.StartingLuck
+	}
+
+	currentLuck := existing.CurrentLuck
+	if input.CurrentLuck != nil {
+		currentLuck = *input.CurrentLuck
+	}
+
+	if currentLuck > startingLuck {
+		return myErrors.ErrCurrentLuckExceedsStarting
+	}
+
+	return nil
+}
+
+func (s *CharacterService) validateHealthState(ctx context.Context, input db.UpsertHealthStateParams) error {
+	if input.MaxHp != nil && input.CurrentHp != nil {
+		if *input.CurrentHp > *input.MaxHp {
+			return myErrors.ErrCurrentHealthExceedsMax
+		}
+		return nil
+	}
+
+	if input.MaxHp == nil && input.CurrentHp == nil {
+		return nil
+	}
+
+	existing, err := s.repos.Queries.GetHealthState(ctx, db.GetHealthStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	maxHp := existing.MaxHp
+	if input.MaxHp != nil {
+		maxHp = *input.MaxHp
+	}
+
+	currentHp := existing.CurrentHp
+	if input.CurrentHp != nil {
+		currentHp = *input.CurrentHp
+	}
+
+	if currentHp > maxHp {
+		return myErrors.ErrCurrentHealthExceedsMax
+	}
+
+	return nil
+}
+
+func (s *CharacterService) validateSanityState(ctx context.Context, input db.UpsertSanityStateParams) error {
+	if input.MaxSanity != nil && input.CurrentSanity != nil {
+		if *input.CurrentSanity > *input.MaxSanity {
+			return myErrors.ErrCurrentSanityExceedsMax
+		}
+		return nil
+	}
+
+	if input.MaxSanity == nil && input.CurrentSanity == nil {
+		return nil
+	}
+
+	existing, err := s.repos.Queries.GetSanityState(ctx, db.GetSanityStateParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	maxSanity := existing.MaxSanity
+	if input.MaxSanity != nil {
+		maxSanity = *input.MaxSanity
+	}
+
+	currentSanity := existing.CurrentSanity
+	if input.CurrentSanity != nil {
+		currentSanity = *input.CurrentSanity
+	}
+
+	if currentSanity > maxSanity {
+		return myErrors.ErrCurrentSanityExceedsMax
+	}
+
+	return nil
+}
+
 func (s *CharacterService) getCharacteristicsForDerivedStatsRecalculation(
 	ctx context.Context,
 	userID string,
