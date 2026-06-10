@@ -127,6 +127,23 @@ type Note struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Room struct {
+	ID         pgtype.UUID        `json:"id"`
+	OwnerID    string             `json:"owner_id"`
+	MaxPlayers int32              `json:"max_players"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+type RoomMember struct {
+	ID          pgtype.UUID        `json:"id"`
+	RoomID      pgtype.UUID        `json:"room_id"`
+	UserID      string             `json:"user_id"`
+	CharacterID pgtype.UUID        `json:"character_id"`
+	Role        string             `json:"role"`
+	JoinedAt    pgtype.Timestamptz `json:"joined_at"`
+}
+
 type SanityState struct {
 	ID            pgtype.UUID        `json:"id"`
 	CharacterID   pgtype.UUID        `json:"character_id"`
