@@ -15,6 +15,7 @@ sql:
       - 'pkg/repository/queries/backstory'
       - 'pkg/repository/queries/skills'
       - 'pkg/repository/queries/derivedStats'
+      - 'pkg/repository/queries/diceRoll'
     gen:
       go:
         package: 'db'

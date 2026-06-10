@@ -66,6 +66,17 @@ type DerivedStat struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
+type DiceRoll struct {
+	ID          pgtype.UUID        `json:"id"`
+	CharacterID pgtype.UUID        `json:"character_id"`
+	UserID      string             `json:"user_id"`
+	Expression  string             `json:"expression"`
+	Result      int32              `json:"result"`
+	Rolls       []int32            `json:"rolls"`
+	Modifiers   []int32            `json:"modifiers"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
 type Finance struct {
 	ID                  pgtype.UUID        `json:"id"`
 	CharacterID         pgtype.UUID        `json:"character_id"`
