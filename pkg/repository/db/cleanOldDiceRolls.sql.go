@@ -13,16 +13,24 @@ import (
 
 const cleanOldDiceRolls = `-- name: CleanOldDiceRolls :exec
 DELETE FROM dice_rolls dr
-WHERE dr.character_id = $1
+USING characters c
+WHERE c.id = dr.character_id
+  AND c.user_id = $1
+  AND dr.character_id = $2
   AND dr.id NOT IN (
       SELECT id FROM dice_rolls
-      WHERE character_id = $1
+      WHERE character_id = $2
       ORDER BY created_at DESC
       LIMIT 50
   )
 `
 
-func (q *Queries) CleanOldDiceRolls(ctx context.Context, characterID pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, cleanOldDiceRolls, characterID)
+type CleanOldDiceRollsParams struct {
+	UserID      string      `json:"user_id"`
+	CharacterID pgtype.UUID `json:"character_id"`
+}
+
+func (q *Queries) CleanOldDiceRolls(ctx context.Context, arg CleanOldDiceRollsParams) error {
+	_, err := q.db.Exec(ctx, cleanOldDiceRolls, arg.UserID, arg.CharacterID)
 	return err
 }
