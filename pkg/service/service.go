@@ -15,10 +15,11 @@ type Service struct {
 
 func NewService(repos *repository.Repository, publisher events.EventPublisher) *Service {
 	characterService := character.NewCharacterService(repos, publisher)
+	diceRollerService := diceRoller.NewDiceRollerService(repos)
 
 	return &Service{
 		User:       NewUserService(repos),
 		Character:  character.NewEventPublishingCharacterService(characterService, publisher),
-		DiceRoller: diceRoller.NewDiceRollerService(repos),
+		DiceRoller: diceRoller.NewEventPublishingDiceRollerService(diceRollerService, publisher),
 	}
 }
