@@ -12,19 +12,18 @@ import (
 )
 
 const createDiceRoll = `-- name: CreateDiceRoll :one
-INSERT INTO dice_rolls (character_id, user_id, expression, result, rolls, modifiers)
-SELECT c.id, c.user_id, $1, $2, $3, $4
+INSERT INTO dice_rolls (character_id, user_id, expression, result, details)
+SELECT c.id, c.user_id, $1, $2, $3
 FROM characters c
-WHERE c.id = $5
-  AND c.user_id = $6
-RETURNING id, character_id, user_id, expression, result, rolls, modifiers, created_at
+WHERE c.id = $4
+  AND c.user_id = $5
+RETURNING id, character_id, user_id, expression, result, details, created_at
 `
 
 type CreateDiceRollParams struct {
 	Expression  string      `json:"expression"`
 	Result      int32       `json:"result"`
-	Rolls       []int32     `json:"rolls"`
-	Modifiers   []int32     `json:"modifiers"`
+	Details     []byte      `json:"details"`
 	CharacterID pgtype.UUID `json:"character_id"`
 	UserID      string      `json:"user_id"`
 }
@@ -33,8 +32,7 @@ func (q *Queries) CreateDiceRoll(ctx context.Context, arg CreateDiceRollParams) 
 	row := q.db.QueryRow(ctx, createDiceRoll,
 		arg.Expression,
 		arg.Result,
-		arg.Rolls,
-		arg.Modifiers,
+		arg.Details,
 		arg.CharacterID,
 		arg.UserID,
 	)
@@ -45,8 +43,7 @@ func (q *Queries) CreateDiceRoll(ctx context.Context, arg CreateDiceRollParams) 
 		&i.UserID,
 		&i.Expression,
 		&i.Result,
-		&i.Rolls,
-		&i.Modifiers,
+		&i.Details,
 		&i.CreatedAt,
 	)
 	return i, err

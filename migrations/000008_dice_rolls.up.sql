@@ -5,8 +5,7 @@ CREATE TABLE dice_rolls (
 
     expression  TEXT NOT NULL,
     result      INT NOT NULL,
-    rolls       INT[] NOT NULL,
-    modifiers   INT[] NOT NULL DEFAULT '{}',
+    details     JSONB NOT NULL DEFAULT '[]',
     
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

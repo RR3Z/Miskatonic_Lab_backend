@@ -18,7 +18,7 @@ WHERE c.id = dr.character_id
   AND c.user_id = $1
   AND dr.character_id = $2
   AND dr.id = $3
-RETURNING dr.id, dr.character_id, dr.user_id, dr.expression, dr.result, dr.rolls, dr.modifiers, dr.created_at
+RETURNING dr.id, dr.character_id, dr.user_id, dr.expression, dr.result, dr.details, dr.created_at
 `
 
 type DeleteDiceRollParams struct {
@@ -36,8 +36,7 @@ func (q *Queries) DeleteDiceRoll(ctx context.Context, arg DeleteDiceRollParams) 
 		&i.UserID,
 		&i.Expression,
 		&i.Result,
-		&i.Rolls,
-		&i.Modifiers,
+		&i.Details,
 		&i.CreatedAt,
 	)
 	return i, err

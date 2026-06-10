@@ -12,7 +12,7 @@ import (
 )
 
 const getDiceRoll = `-- name: GetDiceRoll :one
-SELECT dr.id, dr.character_id, dr.user_id, dr.expression, dr.result, dr.rolls, dr.modifiers, dr.created_at
+SELECT dr.id, dr.character_id, dr.user_id, dr.expression, dr.result, dr.details, dr.created_at
 FROM dice_rolls dr
 JOIN characters c ON c.id = dr.character_id
 WHERE c.user_id = $1
@@ -35,8 +35,7 @@ func (q *Queries) GetDiceRoll(ctx context.Context, arg GetDiceRollParams) (DiceR
 		&i.UserID,
 		&i.Expression,
 		&i.Result,
-		&i.Rolls,
-		&i.Modifiers,
+		&i.Details,
 		&i.CreatedAt,
 	)
 	return i, err

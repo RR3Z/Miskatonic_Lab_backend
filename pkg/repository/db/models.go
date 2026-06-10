@@ -72,8 +72,7 @@ type DiceRoll struct {
 	UserID      string             `json:"user_id"`
 	Expression  string             `json:"expression"`
 	Result      int32              `json:"result"`
-	Rolls       []int32            `json:"rolls"`
-	Modifiers   []int32            `json:"modifiers"`
+	Details     []byte             `json:"details"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
