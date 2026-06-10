@@ -3,7 +3,6 @@ package tests
 import (
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller/parser"
 	"github.com/stretchr/testify/require"
 )
@@ -208,11 +207,4 @@ func TestParseDiceRollerFormula_SingleDieWithLeadingPlus(t *testing.T) {
 	require.Equal(t, 3, components[0].Count)
 }
 
-//nolint:unused
-func diceComponent(isDice bool, sides, count int) diceRoller.DiceRollFormulaComponent {
-	return diceRoller.DiceRollFormulaComponent{
-		IsDice: isDice,
-		Sides:  sides,
-		Count:  count,
-	}
-}
+
