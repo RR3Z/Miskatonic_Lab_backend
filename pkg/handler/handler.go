@@ -128,6 +128,11 @@ func (h *Handler) InitRoutes() *chi.Mux {
 				})
 			})
 		})
+
+		r.Route("/dice-roll/{characterID}", func(r chi.Router) {
+			r.Post("/", AppHandler(h.makeRoll).ServeHTTP)
+			r.Get("/lasts", AppHandler(h.getLastDiceRolls).ServeHTTP)
+		})
 	})
 
 	return router
