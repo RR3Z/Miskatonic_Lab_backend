@@ -3,12 +3,12 @@ package tests
 import (
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller/parser"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/dice"
 	"github.com/stretchr/testify/require"
 )
 
 func TestParseDiceRollerFormula_SimpleDice(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("3d6")
+	components, err := dice.ParseDiceRollerFormula("3d6")
 	require.NoError(t, err)
 	require.Len(t, components, 1)
 	require.True(t, components[0].IsDice)
@@ -17,7 +17,7 @@ func TestParseDiceRollerFormula_SimpleDice(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_SingleDieWithoutCount(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("d20")
+	components, err := dice.ParseDiceRollerFormula("d20")
 	require.NoError(t, err)
 	require.Len(t, components, 1)
 	require.True(t, components[0].IsDice)
@@ -26,7 +26,7 @@ func TestParseDiceRollerFormula_SingleDieWithoutCount(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_NegativeDie(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("-d6")
+	components, err := dice.ParseDiceRollerFormula("-d6")
 	require.NoError(t, err)
 	require.Len(t, components, 1)
 	require.True(t, components[0].IsDice)
@@ -35,7 +35,7 @@ func TestParseDiceRollerFormula_NegativeDie(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_NegativeMultipleDice(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("-3d6")
+	components, err := dice.ParseDiceRollerFormula("-3d6")
 	require.NoError(t, err)
 	require.Len(t, components, 1)
 	require.True(t, components[0].IsDice)
@@ -44,7 +44,7 @@ func TestParseDiceRollerFormula_NegativeMultipleDice(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_PlainModifier(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("5")
+	components, err := dice.ParseDiceRollerFormula("5")
 	require.NoError(t, err)
 	require.Len(t, components, 1)
 	require.False(t, components[0].IsDice)
@@ -52,7 +52,7 @@ func TestParseDiceRollerFormula_PlainModifier(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_NegativeModifier(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("-5")
+	components, err := dice.ParseDiceRollerFormula("-5")
 	require.NoError(t, err)
 	require.Len(t, components, 1)
 	require.False(t, components[0].IsDice)
@@ -60,7 +60,7 @@ func TestParseDiceRollerFormula_NegativeModifier(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_DicePlusModifier(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("3d6+2")
+	components, err := dice.ParseDiceRollerFormula("3d6+2")
 	require.NoError(t, err)
 	require.Len(t, components, 2)
 
@@ -73,7 +73,7 @@ func TestParseDiceRollerFormula_DicePlusModifier(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_DiceMinusModifier(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("3d6-2")
+	components, err := dice.ParseDiceRollerFormula("3d6-2")
 	require.NoError(t, err)
 	require.Len(t, components, 2)
 
@@ -86,7 +86,7 @@ func TestParseDiceRollerFormula_DiceMinusModifier(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_MultipleDiceTypes(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("2d8+1d4")
+	components, err := dice.ParseDiceRollerFormula("2d8+1d4")
 	require.NoError(t, err)
 	require.Len(t, components, 2)
 
@@ -100,7 +100,7 @@ func TestParseDiceRollerFormula_MultipleDiceTypes(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_MultipleModifiers(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("1d20+5+3")
+	components, err := dice.ParseDiceRollerFormula("1d20+5+3")
 	require.NoError(t, err)
 	require.Len(t, components, 3)
 
@@ -116,7 +116,7 @@ func TestParseDiceRollerFormula_MultipleModifiers(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_MixedDiceAndModifiers(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("3d6-2d4+5")
+	components, err := dice.ParseDiceRollerFormula("3d6-2d4+5")
 	require.NoError(t, err)
 	require.Len(t, components, 3)
 
@@ -133,7 +133,7 @@ func TestParseDiceRollerFormula_MixedDiceAndModifiers(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_HandlesSpaces(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("3d6 + 2")
+	components, err := dice.ParseDiceRollerFormula("3d6 + 2")
 	require.NoError(t, err)
 	require.Len(t, components, 2)
 	require.True(t, components[0].IsDice)
@@ -144,7 +144,7 @@ func TestParseDiceRollerFormula_HandlesSpaces(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_AlreadyNormalizedDoubleNegative(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("3d6+-2")
+	components, err := dice.ParseDiceRollerFormula("3d6+-2")
 	require.NoError(t, err)
 	require.Len(t, components, 2)
 	require.True(t, components[0].IsDice)
@@ -155,42 +155,42 @@ func TestParseDiceRollerFormula_AlreadyNormalizedDoubleNegative(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_EmptyString(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("")
+	components, err := dice.ParseDiceRollerFormula("")
 	require.NoError(t, err)
 	require.Empty(t, components)
 }
 
 func TestParseDiceRollerFormula_WhitespaceOnly(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("   ")
+	components, err := dice.ParseDiceRollerFormula("   ")
 	require.NoError(t, err)
 	require.Empty(t, components)
 }
 
 func TestParseDiceRollerFormula_ErrorInvalidDiceCount(t *testing.T) {
-	_, err := parser.ParseDiceRollerFormula("xd6")
+	_, err := dice.ParseDiceRollerFormula("xd6")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "wrong amount of dices")
 }
 
 func TestParseDiceRollerFormula_ErrorInvalidDiceSides(t *testing.T) {
-	_, err := parser.ParseDiceRollerFormula("3dx")
+	_, err := dice.ParseDiceRollerFormula("3dx")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "wrong amount of dice sides")
 }
 
 func TestParseDiceRollerFormula_ErrorInvalidModifier(t *testing.T) {
-	_, err := parser.ParseDiceRollerFormula("3d6+abc")
+	_, err := dice.ParseDiceRollerFormula("3d6+abc")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "wrong modifier value")
 }
 
 func TestParseDiceRollerFormula_ErrorPercentileNotSupported(t *testing.T) {
-	_, err := parser.ParseDiceRollerFormula("d%")
+	_, err := dice.ParseDiceRollerFormula("d%")
 	require.Error(t, err)
 }
 
 func TestParseDiceRollerFormula_ZeroCountDie(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("0d6")
+	components, err := dice.ParseDiceRollerFormula("0d6")
 	require.NoError(t, err)
 	require.Len(t, components, 1)
 	require.True(t, components[0].IsDice)
@@ -199,7 +199,7 @@ func TestParseDiceRollerFormula_ZeroCountDie(t *testing.T) {
 }
 
 func TestParseDiceRollerFormula_SingleDieWithLeadingPlus(t *testing.T) {
-	components, err := parser.ParseDiceRollerFormula("+3d6")
+	components, err := dice.ParseDiceRollerFormula("+3d6")
 	require.NoError(t, err)
 	require.Len(t, components, 1)
 	require.True(t, components[0].IsDice)

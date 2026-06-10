@@ -1,16 +1,10 @@
-package parser
+package dice
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 )
-
-type DiceRollFormulaComponent struct {
-	IsDice bool
-	Sides  int
-	Count  int
-}
 
 func ParseDiceRollerFormula(formula string) ([]DiceRollFormulaComponent, error) {
 	formula = prepareFormulaForParsing(formula)
@@ -64,13 +58,9 @@ func ParseDiceRollerFormula(formula string) ([]DiceRollFormulaComponent, error) 
 }
 
 func prepareFormulaForParsing(formula string) string {
-	// Remove spaces
 	formula = strings.TrimSpace(formula)
 	formula = strings.ReplaceAll(formula, " ", "")
-
-	// Negative Modifiers
 	formula = strings.ReplaceAll(formula, "+-", "-")
 	formula = strings.ReplaceAll(formula, "-", "+-")
-
 	return formula
 }
