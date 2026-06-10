@@ -3,6 +3,7 @@ package diceRoller
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -51,6 +52,14 @@ func (s *DiceRollerService) MakeRoll(ctx context.Context, input DiceRollInput) (
 	})
 	if err != nil {
 		return db.DiceRoll{}, err
+	}
+
+	// Cleanup from old rolls
+	if err := s.repos.Queries.CleanOldDiceRolls(ctx, db.CleanOldDiceRollsParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	}); err != nil {
+		slog.Warn("failed to clean old dice rolls", "character_id", input.CharacterID, "error", err)
 	}
 
 	return diceRoll, nil
