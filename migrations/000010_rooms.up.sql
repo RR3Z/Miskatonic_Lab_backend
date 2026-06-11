@@ -3,7 +3,9 @@ CREATE TABLE rooms (
 
     owner_id    TEXT NOT NULL,
 
-    max_players INT NOT NULL DEFAULT 7,
+    max_players INT NOT NULL DEFAULT 7 CHECK (max_players > 0),
+
+    invite_token TEXT NOT NULL UNIQUE,
 
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
