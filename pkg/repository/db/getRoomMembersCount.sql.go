@@ -12,18 +12,11 @@ import (
 )
 
 const getRoomMembersCount = `-- name: GetRoomMembersCount :one
-SELECT COUNT(*)::int FROM room_members rm
-WHERE rm.room_id = $1
-  AND EXISTS (SELECT 1 FROM room_members m WHERE m.room_id = $1 AND m.user_id = $2)
+SELECT COUNT(*)::int FROM room_members WHERE room_id = $1
 `
 
-type GetRoomMembersCountParams struct {
-	RoomID pgtype.UUID `json:"room_id"`
-	UserID string      `json:"user_id"`
-}
-
-func (q *Queries) GetRoomMembersCount(ctx context.Context, arg GetRoomMembersCountParams) (int32, error) {
-	row := q.db.QueryRow(ctx, getRoomMembersCount, arg.RoomID, arg.UserID)
+func (q *Queries) GetRoomMembersCount(ctx context.Context, roomID pgtype.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, getRoomMembersCount, roomID)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err

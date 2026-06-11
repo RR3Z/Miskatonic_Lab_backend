@@ -128,11 +128,12 @@ type Note struct {
 }
 
 type Room struct {
-	ID         pgtype.UUID        `json:"id"`
-	OwnerID    string             `json:"owner_id"`
-	MaxPlayers int32              `json:"max_players"`
-	CreatedAt  pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+	ID          pgtype.UUID        `json:"id"`
+	OwnerID     string             `json:"owner_id"`
+	MaxPlayers  int32              `json:"max_players"`
+	InviteToken string             `json:"invite_token"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type RoomMember struct {
