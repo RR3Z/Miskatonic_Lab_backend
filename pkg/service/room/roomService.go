@@ -95,7 +95,6 @@ func (s *RoomService) TransferOwnership(ctx context.Context, params db.TransferR
 	defer tx.Rollback(ctx)
 
 	queries := s.repos.Queries.WithTx(tx)
-
 	room, err := queries.TransferRoomOwnership(ctx, params)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -131,7 +130,6 @@ func (s *RoomService) JoinRoom(ctx context.Context, metaParams db.GetRoomMetaDat
 	defer tx.Rollback(ctx)
 
 	queries := s.repos.Queries.WithTx(tx)
-
 	meta, err := queries.GetRoomMetaData(ctx, metaParams)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

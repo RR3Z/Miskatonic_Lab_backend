@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
@@ -21,6 +22,15 @@ func NewHandler(services *service.Service) *Handler {
 }
 
 func (h *Handler) InitRoutes() *chi.Mux {
+	return h.initRoutes(middleware.AuthMiddleware)
+}
+
+// FOR TESTS
+func (h *Handler) InitRoutesWithAuth(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
+	return h.initRoutes(authMiddleware)
+}
+
+func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
 	router := chi.NewRouter()
 
 	allowedOrigins := config.ParseAllowedOrigins(os.Getenv("CORS_ALLOWED_ORIGINS"))
@@ -33,7 +43,9 @@ func (h *Handler) InitRoutes() *chi.Mux {
 	router.Post("/webhooks/clerk/user", AppHandler(h.handleUserClerkWebhook).ServeHTTP)
 
 	router.Route("/api", func(r chi.Router) {
-		r.Use(middleware.AuthMiddleware)
+		if authMiddleware != nil {
+			r.Use(authMiddleware)
+		}
 
 		r.Get("/me", AppHandler(h.getUserByID).ServeHTTP)
 
