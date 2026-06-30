@@ -21,12 +21,68 @@ type AppError struct {
 	Status  int
 	Code    string
 	Message string
+	Details []ErrorDetail
 	Err     error
 }
 
 type AppErrorResponse struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code    string        `json:"code"`
+	Message string        `json:"message"`
+	Details []ErrorDetail `json:"details,omitempty"`
+}
+
+type ErrorDetail struct {
+	Type   string `json:"type"`
+	Target string `json:"target,omitempty"`
+	Reason string `json:"reason"`
+}
+
+func ValidationDetail(target string, reason string) ErrorDetail {
+	return ErrorDetail{
+		Type:   "validation",
+		Target: target,
+		Reason: reason,
+	}
+}
+
+func ParseDetail(target string, reason string) ErrorDetail {
+	return ErrorDetail{
+		Type:   "parse",
+		Target: target,
+		Reason: reason,
+	}
+}
+
+func ResourceStateDetail(target string, reason string) ErrorDetail {
+	return ErrorDetail{
+		Type:   "resource_state",
+		Target: target,
+		Reason: reason,
+	}
+}
+
+func PermissionDetail(target string, reason string) ErrorDetail {
+	return ErrorDetail{
+		Type:   "permission",
+		Target: target,
+		Reason: reason,
+	}
+}
+
+func ConstraintDetail(target string, reason string) ErrorDetail {
+	return ErrorDetail{
+		Type:   "constraint",
+		Target: target,
+		Reason: reason,
+	}
+}
+
+func ConflictDetail(target string, reason string) ErrorDetail {
+	return ErrorDetail{
+		Type:   "conflict",
+		Target: target,
+		Reason: reason,
+	}
 }
 
 func (e *AppError) StatusCode() int {
@@ -52,6 +108,7 @@ func (e *AppError) Response() AppErrorResponse {
 	return AppErrorResponse{
 		Code:    code,
 		Message: message,
+		Details: e.Details,
 	}
 }
 

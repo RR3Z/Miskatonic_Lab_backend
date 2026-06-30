@@ -42,6 +42,29 @@ func TestAppHandlerDefaultsErrorCodeWhenMissing(t *testing.T) {
 	require.JSONEq(t, `{"code":"common.invalid_request","message":"invalid request body"}`, recorder.Body.String())
 }
 
+func TestAppHandlerWritesErrorDetails(t *testing.T) {
+	subject := handler.AppHandler(func(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+		return &myErrors.AppError{
+			Status:  http.StatusBadRequest,
+			Code:    "character.name_required",
+			Message: "name is required",
+			Details: []myErrors.ErrorDetail{
+				myErrors.ValidationDetail("body.name", "required"),
+			},
+		}
+	})
+
+	recorder := httptest.NewRecorder()
+	subject.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/test", nil))
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.JSONEq(t, `{
+		"code":"character.name_required",
+		"message":"name is required",
+		"details":[{"type":"validation","target":"body.name","reason":"required"}]
+	}`, recorder.Body.String())
+}
+
 func TestAppHandlerStopsAfterError(t *testing.T) {
 	continued := false
 	subject := handler.AppHandler(func(w http.ResponseWriter, r *http.Request) *myErrors.AppError {

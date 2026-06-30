@@ -27,6 +27,7 @@ func MapPostgresError(err error) *AppError {
 			Status:  http.StatusConflict,
 			Code:    CodeUniqueViolation,
 			Message: "resource already exists",
+			Details: postgresErrorDetails(pgErr, "unique constraint violated"),
 			Err:     err,
 		}
 	case PostgresForeignKeyViolation:
@@ -34,6 +35,7 @@ func MapPostgresError(err error) *AppError {
 			Status:  http.StatusBadRequest,
 			Code:    CodeForeignKey,
 			Message: "referenced resource does not exist",
+			Details: postgresErrorDetails(pgErr, "foreign key constraint violated"),
 			Err:     err,
 		}
 	case PostgresCheckViolation:
@@ -41,6 +43,7 @@ func MapPostgresError(err error) *AppError {
 			Status:  http.StatusBadRequest,
 			Code:    CodeCheckViolation,
 			Message: "request violates a data constraint",
+			Details: postgresErrorDetails(pgErr, "check constraint violated"),
 			Err:     err,
 		}
 	case PostgresNotNullViolation:
@@ -48,6 +51,7 @@ func MapPostgresError(err error) *AppError {
 			Status:  http.StatusBadRequest,
 			Code:    CodeNotNullViolation,
 			Message: "required value is missing",
+			Details: postgresErrorDetails(pgErr, "required value is missing"),
 			Err:     err,
 		}
 	case PostgresValueTooLong:
@@ -55,6 +59,7 @@ func MapPostgresError(err error) *AppError {
 			Status:  http.StatusBadRequest,
 			Code:    CodeValueTooLong,
 			Message: "value is too long",
+			Details: postgresErrorDetails(pgErr, "value exceeds allowed length"),
 			Err:     err,
 		}
 	default:
@@ -62,7 +67,26 @@ func MapPostgresError(err error) *AppError {
 			Status:  http.StatusBadRequest,
 			Code:    CodeConstraint,
 			Message: "request violates a database constraint",
+			Details: postgresErrorDetails(pgErr, "database constraint violated"),
 			Err:     err,
 		}
 	}
+}
+
+func postgresErrorDetails(pgErr *pgconn.PgError, reason string) []ErrorDetail {
+	if pgErr == nil {
+		return nil
+	}
+
+	if pgErr.ColumnName != "" {
+		return []ErrorDetail{ConstraintDetail("database.column."+pgErr.ColumnName, reason)}
+	}
+	if pgErr.ConstraintName != "" {
+		return []ErrorDetail{ConstraintDetail("database.constraint."+pgErr.ConstraintName, reason)}
+	}
+	if pgErr.TableName != "" {
+		return []ErrorDetail{ConstraintDetail("database.table."+pgErr.TableName, reason)}
+	}
+
+	return nil
 }

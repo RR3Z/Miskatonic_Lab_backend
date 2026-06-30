@@ -18,6 +18,13 @@ Example:
 ```json
 {
   "code": "room.not_owner",
-  "message": "only the room owner can perform this action"
+  "message": "only the room owner can perform this action",
+  "details": [
+    {
+      "type": "permission",
+      "target": "room",
+      "reason": "not_owner"
+    }
+  ]
 }
 ```
