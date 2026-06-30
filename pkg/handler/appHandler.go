@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
@@ -14,8 +15,11 @@ func (h AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if appErr == nil {
 		return
 	}
+	appErr = errors.NormalizeAppError(appErr)
 
 	middleware.SetAppError(r.Context(), appErr)
 
-	http.Error(w, appErr.Message, appErr.Status)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(appErr.StatusCode())
+	_ = json.NewEncoder(w).Encode(appErr.Response())
 }

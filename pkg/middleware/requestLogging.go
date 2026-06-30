@@ -60,6 +60,9 @@ func RequestLoggingMiddleware(logger *slog.Logger) func(http.Handler) http.Handl
 			if state.AppErr != nil && state.AppErr.Err != nil {
 				attrs = append(attrs, "error", state.AppErr.Err)
 			}
+			if state.AppErr != nil && state.AppErr.Response().Code != "" {
+				attrs = append(attrs, "error_code", state.AppErr.Response().Code)
+			}
 
 			message := "request completed"
 			if rw.status >= 400 {
