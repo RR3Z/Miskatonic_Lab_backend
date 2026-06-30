@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
+	roomHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/go-chi/chi/v5"
@@ -23,11 +24,6 @@ func NewHandler(services *service.Service) *Handler {
 
 func (h *Handler) InitRoutes() *chi.Mux {
 	return h.initRoutes(middleware.AuthMiddleware)
-}
-
-// FOR TESTS
-func (h *Handler) InitRoutesWithAuth(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
-	return h.initRoutes(authMiddleware)
 }
 
 func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
@@ -147,23 +143,14 @@ func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *ch
 		})
 
 		r.Route("/rooms", func(r chi.Router) {
-			r.Post("/", AppHandler(h.createRoom).ServeHTTP)
-
-			r.Route("/{roomID}", func(r chi.Router) {
-				r.Get("/", AppHandler(h.getRoom).ServeHTTP) // TODO: что за getRoom? Понять что там происходит
-				r.Put("/", AppHandler(h.updateRoom).ServeHTTP)
-				r.Delete("/", AppHandler(h.deleteRoom).ServeHTTP)
-				r.Put("/owner", AppHandler(h.transferRoomOwnership).ServeHTTP)
-
-				r.Post("/join", AppHandler(h.joinRoom).ServeHTTP)
-				r.Delete("/leave", AppHandler(h.leaveRoom).ServeHTTP)
-				r.Delete("/kick/{userID}", AppHandler(h.kickMember).ServeHTTP)
-
-				r.Put("/character", AppHandler(h.selectCharacter).ServeHTTP)
-				r.Put("/members/{userID}/role", AppHandler(h.changeRole).ServeHTTP)
-			})
+			roomHandler.New(h.services.Room).RegisterRoutes(r)
 		})
 	})
 
 	return router
+}
+
+// FOR TESTS
+func (h *Handler) InitRoutesWithAuth(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
+	return h.initRoutes(authMiddleware)
 }

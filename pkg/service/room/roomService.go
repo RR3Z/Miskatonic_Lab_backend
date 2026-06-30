@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5"
@@ -20,7 +20,15 @@ func NewRoomService(repos *repository.Repository) *RoomService {
 	return &RoomService{repos: repos}
 }
 
-func (s *RoomService) CreateRoom(ctx context.Context, params db.CreateRoomParams) (model.RoomModel, error) {
+func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.RoomModel, error) {
+	maxPlayers := DefaultMaxPlayers
+	if input.MaxPlayers != nil {
+		maxPlayers = *input.MaxPlayers
+	}
+	if maxPlayers < 1 {
+		return model.RoomModel{}, ErrInvalidInput
+	}
+
 	tx, err := s.repos.DB.Begin(ctx)
 	if err != nil {
 		return model.RoomModel{}, err
@@ -32,17 +40,20 @@ func (s *RoomService) CreateRoom(ctx context.Context, params db.CreateRoomParams
 	if err != nil {
 		return model.RoomModel{}, err
 	}
-	params.InviteToken = inviteToken
 
-	room, err := queries.CreateRoom(ctx, params)
+	room, err := queries.CreateRoom(ctx, db.CreateRoomParams{
+		OwnerID:     input.OwnerID,
+		MaxPlayers:  maxPlayers,
+		InviteToken: inviteToken,
+	})
 	if err != nil {
 		return model.RoomModel{}, err
 	}
 
 	member, err := queries.AddMember(ctx, db.AddMemberParams{
 		RoomID: room.ID,
-		UserID: params.OwnerID,
-		Role:   "gm",
+		UserID: input.OwnerID,
+		Role:   RoleGM,
 	})
 	if err != nil {
 		return model.RoomModel{}, err
@@ -55,8 +66,11 @@ func (s *RoomService) CreateRoom(ctx context.Context, params db.CreateRoomParams
 	return model.ToRoomModel(room, []db.RoomMember{member}), nil
 }
 
-func (s *RoomService) GetRoom(ctx context.Context, params db.GetRoomByIDParams) (model.RoomModel, error) {
-	room, err := s.repos.Queries.GetRoomByID(ctx, params)
+func (s *RoomService) GetRoom(ctx context.Context, input model.GetRoomInput) (model.RoomModel, error) {
+	room, err := s.repos.Queries.GetRoomByID(ctx, db.GetRoomByIDParams{
+		ID:     input.RoomID,
+		UserID: input.UserID,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.RoomModel{}, ErrRoomNotFound
@@ -65,8 +79,8 @@ func (s *RoomService) GetRoom(ctx context.Context, params db.GetRoomByIDParams) 
 	}
 
 	members, err := s.repos.Queries.ListMembersByRoomID(ctx, db.ListMembersByRoomIDParams{
-		RoomID: params.ID,
-		UserID: params.UserID,
+		RoomID: input.RoomID,
+		UserID: input.UserID,
 	})
 	if err != nil {
 		return model.RoomModel{}, err
@@ -75,8 +89,28 @@ func (s *RoomService) GetRoom(ctx context.Context, params db.GetRoomByIDParams) 
 	return model.ToRoomModel(room, members), nil
 }
 
-func (s *RoomService) UpdateRoom(ctx context.Context, params db.UpdateRoomParams) (model.RoomModel, error) {
-	room, err := s.repos.Queries.UpdateRoom(ctx, params)
+func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInput) (model.RoomModel, error) {
+	if input.MaxPlayers < 1 {
+		return model.RoomModel{}, ErrInvalidInput
+	}
+
+	if err := s.EnsureOwner(ctx, input.RoomID, input.OwnerID); err != nil {
+		return model.RoomModel{}, err
+	}
+
+	count, err := s.repos.Queries.GetRoomMembersCount(ctx, input.RoomID)
+	if err != nil {
+		return model.RoomModel{}, err
+	}
+	if input.MaxPlayers < count {
+		return model.RoomModel{}, ErrInvalidInput
+	}
+
+	room, err := s.repos.Queries.UpdateRoom(ctx, db.UpdateRoomParams{
+		ID:         input.RoomID,
+		OwnerID:    input.OwnerID,
+		MaxPlayers: input.MaxPlayers,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.RoomModel{}, ErrNotOwner
@@ -87,7 +121,11 @@ func (s *RoomService) UpdateRoom(ctx context.Context, params db.UpdateRoomParams
 	return model.ToRoomModel(room, nil), nil
 }
 
-func (s *RoomService) TransferOwnership(ctx context.Context, params db.TransferRoomOwnershipParams) (model.RoomModel, error) {
+func (s *RoomService) TransferOwnership(ctx context.Context, input model.TransferOwnershipInput) (model.RoomModel, error) {
+	if input.NewOwnerID == "" {
+		return model.RoomModel{}, ErrInvalidInput
+	}
+
 	tx, err := s.repos.DB.Begin(ctx)
 	if err != nil {
 		return model.RoomModel{}, err
@@ -95,7 +133,11 @@ func (s *RoomService) TransferOwnership(ctx context.Context, params db.TransferR
 	defer tx.Rollback(ctx)
 
 	queries := s.repos.Queries.WithTx(tx)
-	room, err := queries.TransferRoomOwnership(ctx, params)
+	room, err := queries.TransferRoomOwnership(ctx, db.TransferRoomOwnershipParams{
+		ID:         input.RoomID,
+		OwnerID:    input.OwnerID,
+		NewOwnerID: input.NewOwnerID,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.RoomModel{}, ErrNotOwner
@@ -110,8 +152,11 @@ func (s *RoomService) TransferOwnership(ctx context.Context, params db.TransferR
 	return model.ToRoomModel(room, nil), nil
 }
 
-func (s *RoomService) DeleteRoom(ctx context.Context, params db.DeleteRoomParams) error {
-	_, err := s.repos.Queries.DeleteRoom(ctx, params)
+func (s *RoomService) DeleteRoom(ctx context.Context, input model.DeleteRoomInput) error {
+	_, err := s.repos.Queries.DeleteRoom(ctx, db.DeleteRoomParams{
+		ID:      input.RoomID,
+		OwnerID: input.OwnerID,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotOwner
@@ -122,7 +167,11 @@ func (s *RoomService) DeleteRoom(ctx context.Context, params db.DeleteRoomParams
 	return nil
 }
 
-func (s *RoomService) JoinRoom(ctx context.Context, metaParams db.GetRoomMetaDataParams, memberParams db.GetMemberParams) (model.RoomMemberModel, error) {
+func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMemberModel, error) {
+	if input.InviteToken == "" {
+		return model.RoomMemberModel{}, ErrInvalidInput
+	}
+
 	tx, err := s.repos.DB.Begin(ctx)
 	if err != nil {
 		return model.RoomMemberModel{}, err
@@ -130,7 +179,10 @@ func (s *RoomService) JoinRoom(ctx context.Context, metaParams db.GetRoomMetaDat
 	defer tx.Rollback(ctx)
 
 	queries := s.repos.Queries.WithTx(tx)
-	meta, err := queries.GetRoomMetaData(ctx, metaParams)
+	meta, err := queries.GetRoomMetaData(ctx, db.GetRoomMetaDataParams{
+		ID:          input.RoomID,
+		InviteToken: input.InviteToken,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.RoomMemberModel{}, ErrRoomNotFound
@@ -138,7 +190,10 @@ func (s *RoomService) JoinRoom(ctx context.Context, metaParams db.GetRoomMetaDat
 		return model.RoomMemberModel{}, err
 	}
 
-	_, err = queries.GetMember(ctx, memberParams)
+	_, err = queries.GetMember(ctx, db.GetMemberParams{
+		RoomID: input.RoomID,
+		UserID: input.UserID,
+	})
 	if err == nil {
 		return model.RoomMemberModel{}, ErrAlreadyMember
 	}
@@ -146,7 +201,7 @@ func (s *RoomService) JoinRoom(ctx context.Context, metaParams db.GetRoomMetaDat
 		return model.RoomMemberModel{}, err
 	}
 
-	count, err := queries.GetRoomMembersCount(ctx, metaParams.ID)
+	count, err := queries.GetRoomMembersCount(ctx, input.RoomID)
 	if err != nil {
 		return model.RoomMemberModel{}, err
 	}
@@ -156,9 +211,9 @@ func (s *RoomService) JoinRoom(ctx context.Context, metaParams db.GetRoomMetaDat
 	}
 
 	member, err := queries.AddMember(ctx, db.AddMemberParams{
-		RoomID: memberParams.RoomID,
-		UserID: memberParams.UserID,
-		Role:   "player",
+		RoomID: input.RoomID,
+		UserID: input.UserID,
+		Role:   RolePlayer,
 	})
 	if err != nil {
 		return model.RoomMemberModel{}, err
@@ -171,8 +226,11 @@ func (s *RoomService) JoinRoom(ctx context.Context, metaParams db.GetRoomMetaDat
 	return model.ToRoomMemberModel(member), nil
 }
 
-func (s *RoomService) LeaveRoom(ctx context.Context, params db.RemoveMemberParams) error {
-	_, err := s.repos.Queries.RemoveMember(ctx, params)
+func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput) error {
+	_, err := s.repos.Queries.RemoveMember(ctx, db.RemoveMemberParams{
+		RoomID: input.RoomID,
+		UserID: input.UserID,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotMember
@@ -184,8 +242,11 @@ func (s *RoomService) LeaveRoom(ctx context.Context, params db.RemoveMemberParam
 	return nil
 }
 
-func (s *RoomService) KickMember(ctx context.Context, actor db.GetRoomByIDParams, target db.RemoveMemberParams) error {
-	room, err := s.repos.Queries.GetRoomByID(ctx, actor)
+func (s *RoomService) KickMember(ctx context.Context, input model.KickMemberInput) error {
+	room, err := s.repos.Queries.GetRoomByID(ctx, db.GetRoomByIDParams{
+		ID:     input.RoomID,
+		UserID: input.ActorUserID,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotMember
@@ -193,15 +254,18 @@ func (s *RoomService) KickMember(ctx context.Context, actor db.GetRoomByIDParams
 		return err
 	}
 
-	if room.OwnerID != actor.UserID {
+	if room.OwnerID != input.ActorUserID {
 		return ErrNotOwner
 	}
 
-	if target.UserID == actor.UserID {
+	if input.TargetUserID == input.ActorUserID {
 		return ErrCannotKickOwner
 	}
 
-	_, err = s.repos.Queries.RemoveMember(ctx, target)
+	_, err = s.repos.Queries.RemoveMember(ctx, db.RemoveMemberParams{
+		RoomID: input.RoomID,
+		UserID: input.TargetUserID,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotMember
@@ -212,8 +276,16 @@ func (s *RoomService) KickMember(ctx context.Context, actor db.GetRoomByIDParams
 	return nil
 }
 
-func (s *RoomService) SelectCharacter(ctx context.Context, params db.UpdateMemberCharacterParams) (model.RoomMemberModel, error) {
-	member, err := s.repos.Queries.UpdateMemberCharacter(ctx, params)
+func (s *RoomService) SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMemberModel, error) {
+	if err := s.EnsureMember(ctx, input.RoomID, input.UserID); err != nil {
+		return model.RoomMemberModel{}, err
+	}
+
+	member, err := s.repos.Queries.UpdateMemberCharacter(ctx, db.UpdateMemberCharacterParams{
+		RoomID:      input.RoomID,
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.RoomMemberModel{}, ErrCharacterNotOwned
@@ -225,20 +297,20 @@ func (s *RoomService) SelectCharacter(ctx context.Context, params db.UpdateMembe
 	return model.ToRoomMemberModel(member), nil
 }
 
-func (s *RoomService) ChangeRole(ctx context.Context, actor db.GetRoomByIDParams, target db.UpdateMemberRoleParams) (model.RoomMemberModel, error) {
-	room, err := s.repos.Queries.GetRoomByID(ctx, actor)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.RoomMemberModel{}, ErrNotMember
-		}
+func (s *RoomService) ChangeRole(ctx context.Context, input model.ChangeRoleInput) (model.RoomMemberModel, error) {
+	if !IsValidRole(input.Role) {
+		return model.RoomMemberModel{}, ErrInvalidInput
+	}
+
+	if err := s.EnsureOwner(ctx, input.RoomID, input.ActorUserID); err != nil {
 		return model.RoomMemberModel{}, err
 	}
 
-	if room.OwnerID != actor.UserID {
-		return model.RoomMemberModel{}, ErrNotOwner
-	}
-
-	member, err := s.repos.Queries.UpdateMemberRole(ctx, target)
+	member, err := s.repos.Queries.UpdateMemberRole(ctx, db.UpdateMemberRoleParams{
+		RoomID: input.RoomID,
+		UserID: input.TargetUserID,
+		Role:   input.Role,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.RoomMemberModel{}, ErrNotMember
