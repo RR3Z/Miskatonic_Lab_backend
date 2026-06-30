@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
@@ -15,10 +16,11 @@ func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
 	subject := newRoomIntegrationSubject(t)
 	owner := createRoomTestUser(t, subject)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+	maxPlayers := int32(3)
 
-	roomModel, err := service.CreateRoom(context.Background(), db.CreateRoomParams{
+	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{
 		OwnerID:    owner.ID,
-		MaxPlayers: 3,
+		MaxPlayers: &maxPlayers,
 	})
 	require.NoError(t, err)
 	require.True(t, roomModel.ID.Valid)
@@ -34,6 +36,23 @@ func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
 	require.Equal(t, "gm", member.Role)
 }
 
+func TestRoomServiceCreateRoomDefaultsAndValidatesMaxPlayers(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: owner.ID})
+	require.NoError(t, err)
+	require.Equal(t, roomService.DefaultMaxPlayers, roomModel.MaxPlayers)
+
+	invalidMaxPlayers := int32(0)
+	_, err = service.CreateRoom(context.Background(), model.CreateRoomInput{
+		OwnerID:    owner.ID,
+		MaxPlayers: &invalidMaxPlayers,
+	})
+	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+}
+
 func TestRoomServiceJoinRoomRequiresInviteAndCapacity(t *testing.T) {
 	subject := newRoomIntegrationSubject(t)
 	owner := createRoomTestUser(t, subject)
@@ -47,15 +66,13 @@ func TestRoomServiceJoinRoomRequiresInviteAndCapacity(t *testing.T) {
 
 	_, err = service.JoinRoom(
 		context.Background(),
-		db.GetRoomMetaDataParams{ID: room.ID, InviteToken: "wrong_token"},
-		db.GetMemberParams{RoomID: room.ID, UserID: firstPlayer.ID},
+		model.JoinRoomInput{RoomID: room.ID, InviteToken: "wrong_token", UserID: firstPlayer.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrRoomNotFound)
 
 	memberModel, err := service.JoinRoom(
 		context.Background(),
-		db.GetRoomMetaDataParams{ID: room.ID, InviteToken: room.InviteToken},
-		db.GetMemberParams{RoomID: room.ID, UserID: firstPlayer.ID},
+		model.JoinRoomInput{RoomID: room.ID, InviteToken: room.InviteToken, UserID: firstPlayer.ID},
 	)
 	require.NoError(t, err)
 	require.Equal(t, firstPlayer.ID, memberModel.UserID)
@@ -63,17 +80,21 @@ func TestRoomServiceJoinRoomRequiresInviteAndCapacity(t *testing.T) {
 
 	_, err = service.JoinRoom(
 		context.Background(),
-		db.GetRoomMetaDataParams{ID: room.ID, InviteToken: room.InviteToken},
-		db.GetMemberParams{RoomID: room.ID, UserID: firstPlayer.ID},
+		model.JoinRoomInput{RoomID: room.ID, InviteToken: room.InviteToken, UserID: firstPlayer.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrAlreadyMember)
 
 	_, err = service.JoinRoom(
 		context.Background(),
-		db.GetRoomMetaDataParams{ID: room.ID, InviteToken: room.InviteToken},
-		db.GetMemberParams{RoomID: room.ID, UserID: secondPlayer.ID},
+		model.JoinRoomInput{RoomID: room.ID, InviteToken: room.InviteToken, UserID: secondPlayer.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrRoomFull)
+
+	_, err = service.JoinRoom(
+		context.Background(),
+		model.JoinRoomInput{RoomID: room.ID, UserID: secondPlayer.ID},
+	)
+	require.ErrorIs(t, err, roomService.ErrInvalidInput)
 }
 
 func TestRoomServiceTransferOwnershipDoesNotChangeRole(t *testing.T) {
@@ -86,8 +107,8 @@ func TestRoomServiceTransferOwnershipDoesNotChangeRole(t *testing.T) {
 	addRoomTestMember(t, subject, room.ID, memberUser.ID, "player")
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
-	transferred, err := service.TransferOwnership(context.Background(), db.TransferRoomOwnershipParams{
-		ID:         room.ID,
+	transferred, err := service.TransferOwnership(context.Background(), model.TransferOwnershipInput{
+		RoomID:     room.ID,
 		OwnerID:    owner.ID,
 		NewOwnerID: memberUser.ID,
 	})
@@ -98,12 +119,43 @@ func TestRoomServiceTransferOwnershipDoesNotChangeRole(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "player", member.Role)
 
-	_, err = service.TransferOwnership(context.Background(), db.TransferRoomOwnershipParams{
-		ID:         room.ID,
+	_, err = service.TransferOwnership(context.Background(), model.TransferOwnershipInput{
+		RoomID:     room.ID,
 		OwnerID:    memberUser.ID,
 		NewOwnerID: outsider.ID,
 	})
 	require.ErrorIs(t, err, roomService.ErrNotOwner)
+
+	_, err = service.TransferOwnership(context.Background(), model.TransferOwnershipInput{
+		RoomID:  room.ID,
+		OwnerID: owner.ID,
+	})
+	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+}
+
+func TestRoomServiceUpdateRoomValidatesMaxPlayersAgainstCurrentMembers(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	memberUser := createRoomTestUser(t, subject)
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.RolePlayer)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	_, err := service.UpdateRoom(context.Background(), model.UpdateRoomInput{
+		RoomID:     room.ID,
+		OwnerID:    owner.ID,
+		MaxPlayers: 1,
+	})
+	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+
+	updated, err := service.UpdateRoom(context.Background(), model.UpdateRoomInput{
+		RoomID:     room.ID,
+		OwnerID:    owner.ID,
+		MaxPlayers: 2,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int32(2), updated.MaxPlayers)
 }
 
 func TestRoomServiceMapsNoRowsForMembershipOperations(t *testing.T) {
@@ -114,37 +166,77 @@ func TestRoomServiceMapsNoRowsForMembershipOperations(t *testing.T) {
 	addRoomTestMember(t, subject, room.ID, owner.ID, "gm")
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
-	err := service.LeaveRoom(context.Background(), db.RemoveMemberParams{RoomID: room.ID, UserID: memberUser.ID})
+	err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{RoomID: room.ID, UserID: memberUser.ID})
 	require.ErrorIs(t, err, roomService.ErrNotMember)
 
 	err = service.KickMember(
 		context.Background(),
-		db.GetRoomByIDParams{ID: room.ID, UserID: memberUser.ID},
-		db.RemoveMemberParams{RoomID: room.ID, UserID: owner.ID},
+		model.KickMemberInput{RoomID: room.ID, ActorUserID: memberUser.ID, TargetUserID: owner.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrNotMember)
 
 	err = service.KickMember(
 		context.Background(),
-		db.GetRoomByIDParams{ID: room.ID, UserID: owner.ID},
-		db.RemoveMemberParams{RoomID: room.ID, UserID: owner.ID},
+		model.KickMemberInput{RoomID: room.ID, ActorUserID: owner.ID, TargetUserID: owner.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrCannotKickOwner)
 
 	_, err = service.ChangeRole(
 		context.Background(),
-		db.GetRoomByIDParams{ID: room.ID, UserID: owner.ID},
-		db.UpdateMemberRoleParams{RoomID: room.ID, UserID: memberUser.ID, Role: "gm"},
+		model.ChangeRoleInput{RoomID: room.ID, ActorUserID: owner.ID, TargetUserID: memberUser.ID, Role: roomService.RoleGM},
 	)
 	require.ErrorIs(t, err, roomService.ErrNotMember)
 
-	_, err = service.SelectCharacter(context.Background(), db.UpdateMemberCharacterParams{
+	_, err = service.ChangeRole(
+		context.Background(),
+		model.ChangeRoleInput{RoomID: room.ID, ActorUserID: owner.ID, TargetUserID: memberUser.ID, Role: "keeper"},
+	)
+	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+
+	_, err = service.SelectCharacter(context.Background(), model.SelectCharacterInput{
 		RoomID:      room.ID,
 		UserID:      memberUser.ID,
 		CharacterID: roomTestUUID("33333333-3333-3333-3333-333333333333"),
 	})
-	require.ErrorIs(t, err, roomService.ErrCharacterNotOwned)
+	require.ErrorIs(t, err, roomService.ErrNotMember)
 
 	_, err = subject.queries.GetMember(context.Background(), db.GetMemberParams{RoomID: room.ID, UserID: memberUser.ID})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
+}
+
+func TestRoomServiceSelectCharacterRejectsCharacterNotOwnedForMember(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	memberUser := createRoomTestUser(t, subject)
+	otherUser := createRoomTestUser(t, subject)
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.RolePlayer)
+	otherCharacter := createRoomTestCharacter(t, subject, otherUser.ID)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	_, err := service.SelectCharacter(context.Background(), model.SelectCharacterInput{
+		RoomID:      room.ID,
+		UserID:      memberUser.ID,
+		CharacterID: otherCharacter.ID,
+	})
+	require.ErrorIs(t, err, roomService.ErrCharacterNotOwned)
+}
+
+func TestRoomServiceReusablePermissionChecks(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	memberUser := createRoomTestUser(t, subject)
+	outsider := createRoomTestUser(t, subject)
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.RolePlayer)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	require.NoError(t, service.EnsureMember(context.Background(), room.ID, memberUser.ID))
+	require.NoError(t, service.EnsureCanPublishRoomEvent(context.Background(), room.ID, memberUser.ID))
+	require.ErrorIs(t, service.EnsureMember(context.Background(), room.ID, outsider.ID), roomService.ErrNotMember)
+	require.NoError(t, service.EnsureOwner(context.Background(), room.ID, owner.ID))
+	require.ErrorIs(t, service.EnsureOwner(context.Background(), room.ID, memberUser.ID), roomService.ErrNotOwner)
+	require.ErrorIs(t, service.EnsureOwner(context.Background(), room.ID, outsider.ID), roomService.ErrNotMember)
 }

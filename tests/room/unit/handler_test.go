@@ -9,8 +9,7 @@ import (
 	"testing"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	roomModels "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -19,36 +18,49 @@ import (
 )
 
 func TestCreateRoomDefaultsMaxPlayersAndPassesUserID(t *testing.T) {
-	roomService := &fakeRoomHandlerService{room: model.RoomModel{OwnerID: "user_1", MaxPlayers: 7}}
+	roomService := &fakeRoomHandlerService{room: roomModels.RoomModel{OwnerID: "user_1", MaxPlayers: 7}}
 	router := newRoomHandlerTestRouter(roomService)
 
 	recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/", `{}`)
 
 	require.Equal(t, http.StatusCreated, recorder.Code)
 	require.Equal(t, 1, roomService.createCalls)
-	require.Equal(t, "user_1", roomService.createParams.OwnerID)
-	require.Equal(t, int32(7), roomService.createParams.MaxPlayers)
+	require.Equal(t, "user_1", roomService.createInput.OwnerID)
+	require.Nil(t, roomService.createInput.MaxPlayers)
 }
 
-func TestCreateRoomRejectsInvalidBodyAndMaxPlayers(t *testing.T) {
+func TestCreateRoomRejectsInvalidBodyBeforeService(t *testing.T) {
+	roomService := &fakeRoomHandlerService{}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/", `{"max_players":`)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Zero(t, roomService.createCalls)
+}
+
+func TestCreateRoomPassesMaxPlayersValidationToService(t *testing.T) {
 	tests := []struct {
-		name string
-		body string
+		name       string
+		body       string
+		maxPlayers int32
 	}{
-		{name: "invalid json", body: `{"max_players":`},
-		{name: "zero max players", body: `{"max_players":0}`},
-		{name: "negative max players", body: `{"max_players":-1}`},
+		{name: "zero max players", body: `{"max_players":0}`, maxPlayers: 0},
+		{name: "negative max players", body: `{"max_players":-1}`, maxPlayers: -1},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			roomService := &fakeRoomHandlerService{}
+			roomService := &fakeRoomHandlerService{err: room.ErrInvalidInput}
 			router := newRoomHandlerTestRouter(roomService)
 
 			recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/", tt.body)
 
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
-			require.Zero(t, roomService.createCalls)
+			require.Equal(t, 1, roomService.createCalls)
+			require.NotNil(t, roomService.createInput.MaxPlayers)
+			require.Equal(t, tt.maxPlayers, *roomService.createInput.MaxPlayers)
+			require.JSONEq(t, `{"code":"room.invalid_input","message":"invalid room input"}`, recorder.Body.String())
 		})
 	}
 }
@@ -86,20 +98,19 @@ func TestRoomRoutesRejectInvalidRoomID(t *testing.T) {
 
 func TestJoinRoomRequiresInviteTokenAndPassesParams(t *testing.T) {
 	roomID := testRoomUnitUUID("11111111-1111-1111-1111-111111111111")
-	roomService := &fakeRoomHandlerService{member: model.RoomMemberModel{RoomID: roomID, UserID: "user_1"}}
+	roomService := &fakeRoomHandlerService{member: roomModels.RoomMemberModel{RoomID: roomID, UserID: "user_1"}}
 	router := newRoomHandlerTestRouter(roomService)
 
 	recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/11111111-1111-1111-1111-111111111111/join", `{"invite_token":"token_1"}`)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, 1, roomService.joinCalls)
-	require.Equal(t, roomID, roomService.joinMeta.ID)
-	require.Equal(t, "token_1", roomService.joinMeta.InviteToken)
-	require.Equal(t, roomID, roomService.joinMember.RoomID)
-	require.Equal(t, "user_1", roomService.joinMember.UserID)
+	require.Equal(t, roomID, roomService.joinInput.RoomID)
+	require.Equal(t, "token_1", roomService.joinInput.InviteToken)
+	require.Equal(t, "user_1", roomService.joinInput.UserID)
 }
 
-func TestJoinRoomRejectsMissingOrBlankInviteToken(t *testing.T) {
+func TestJoinRoomPassesMissingOrBlankInviteTokenToService(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
@@ -110,39 +121,48 @@ func TestJoinRoomRejectsMissingOrBlankInviteToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			roomService := &fakeRoomHandlerService{}
+			roomService := &fakeRoomHandlerService{err: room.ErrInvalidInput}
 			router := newRoomHandlerTestRouter(roomService)
 
 			recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/11111111-1111-1111-1111-111111111111/join", tt.body)
 
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
-			require.Zero(t, roomService.joinCalls)
+			require.Equal(t, 1, roomService.joinCalls)
+			require.Empty(t, roomService.joinInput.InviteToken)
+			require.JSONEq(t, `{"code":"room.invalid_input","message":"invalid room input"}`, recorder.Body.String())
 		})
 	}
 }
 
-func TestTransferOwnershipRequiresUserIDAndMapsNotOwner(t *testing.T) {
-	router := newRoomHandlerTestRouter(&fakeRoomHandlerService{})
+func TestTransferOwnershipPassesMissingUserIDToServiceAndMapsNotOwner(t *testing.T) {
+	roomService := &fakeRoomHandlerService{err: room.ErrInvalidInput}
+	router := newRoomHandlerTestRouter(roomService)
 	recorder := performRoomRequest(router, http.MethodPut, "/api/rooms/11111111-1111-1111-1111-111111111111/owner", `{}`)
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, 1, roomService.transferCalls)
+	require.Empty(t, roomService.transferInput.NewOwnerID)
+	require.JSONEq(t, `{"code":"room.invalid_input","message":"invalid room input"}`, recorder.Body.String())
 
-	roomService := &fakeRoomHandlerService{err: room.ErrNotOwner}
+	roomService = &fakeRoomHandlerService{err: room.ErrNotOwner}
 	router = newRoomHandlerTestRouter(roomService)
 	recorder = performRoomRequest(router, http.MethodPut, "/api/rooms/11111111-1111-1111-1111-111111111111/owner", `{"user_id":"user_2"}`)
 	require.Equal(t, http.StatusForbidden, recorder.Code)
 	require.Equal(t, 1, roomService.transferCalls)
-	require.Equal(t, "user_1", roomService.transferParams.OwnerID)
-	require.Equal(t, "user_2", roomService.transferParams.NewOwnerID)
+	require.Equal(t, "user_1", roomService.transferInput.OwnerID)
+	require.Equal(t, "user_2", roomService.transferInput.NewOwnerID)
+	require.JSONEq(t, `{"code":"room.not_owner","message":"only the room owner can perform this action"}`, recorder.Body.String())
 }
 
-func TestChangeRoleRejectsInvalidRole(t *testing.T) {
-	roomService := &fakeRoomHandlerService{}
+func TestChangeRolePassesInvalidRoleToService(t *testing.T) {
+	roomService := &fakeRoomHandlerService{err: room.ErrInvalidInput}
 	router := newRoomHandlerTestRouter(roomService)
 
 	recorder := performRoomRequest(router, http.MethodPut, "/api/rooms/11111111-1111-1111-1111-111111111111/members/user_2/role", `{"role":"keeper"}`)
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
-	require.Zero(t, roomService.changeRoleCalls)
+	require.Equal(t, 1, roomService.changeRoleCalls)
+	require.Equal(t, "keeper", roomService.changeRoleInput.Role)
+	require.JSONEq(t, `{"code":"room.invalid_input","message":"invalid room input"}`, recorder.Body.String())
 }
 
 func TestRoomHandlerErrorMappings(t *testing.T) {
@@ -150,18 +170,19 @@ func TestRoomHandlerErrorMappings(t *testing.T) {
 		name       string
 		err        error
 		wantStatus int
+		wantBody   string
 		method     string
 		path       string
 		body       string
 	}{
-		{name: "get room not found", err: room.ErrRoomNotFound, wantStatus: http.StatusNotFound, method: http.MethodGet, path: "/api/rooms/11111111-1111-1111-1111-111111111111/"},
-		{name: "join room full", err: room.ErrRoomFull, wantStatus: http.StatusConflict, method: http.MethodPost, path: "/api/rooms/11111111-1111-1111-1111-111111111111/join", body: `{"invite_token":"token"}`},
-		{name: "join already member", err: room.ErrAlreadyMember, wantStatus: http.StatusConflict, method: http.MethodPost, path: "/api/rooms/11111111-1111-1111-1111-111111111111/join", body: `{"invite_token":"token"}`},
-		{name: "leave not member", err: room.ErrNotMember, wantStatus: http.StatusNotFound, method: http.MethodDelete, path: "/api/rooms/11111111-1111-1111-1111-111111111111/leave"},
-		{name: "kick not owner", err: room.ErrNotOwner, wantStatus: http.StatusForbidden, method: http.MethodDelete, path: "/api/rooms/11111111-1111-1111-1111-111111111111/kick/user_2"},
-		{name: "kick owner self", err: room.ErrCannotKickOwner, wantStatus: http.StatusForbidden, method: http.MethodDelete, path: "/api/rooms/11111111-1111-1111-1111-111111111111/kick/user_2"},
-		{name: "select character not owned", err: room.ErrCharacterNotOwned, wantStatus: http.StatusForbidden, method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/character", body: `{"character_id":"33333333-3333-3333-3333-333333333333"}`},
-		{name: "change role generic", err: errors.New("boom"), wantStatus: http.StatusInternalServerError, method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/members/user_2/role", body: `{"role":"gm"}`},
+		{name: "get room not found", err: room.ErrRoomNotFound, wantStatus: http.StatusNotFound, wantBody: `{"code":"room.not_found","message":"room not found"}`, method: http.MethodGet, path: "/api/rooms/11111111-1111-1111-1111-111111111111/"},
+		{name: "join room full", err: room.ErrRoomFull, wantStatus: http.StatusConflict, wantBody: `{"code":"room.full","message":"room is full"}`, method: http.MethodPost, path: "/api/rooms/11111111-1111-1111-1111-111111111111/join", body: `{"invite_token":"token"}`},
+		{name: "join already member", err: room.ErrAlreadyMember, wantStatus: http.StatusConflict, wantBody: `{"code":"room.already_member","message":"already a member of this room"}`, method: http.MethodPost, path: "/api/rooms/11111111-1111-1111-1111-111111111111/join", body: `{"invite_token":"token"}`},
+		{name: "leave not member", err: room.ErrNotMember, wantStatus: http.StatusNotFound, wantBody: `{"code":"room.not_member","message":"not a member of this room"}`, method: http.MethodDelete, path: "/api/rooms/11111111-1111-1111-1111-111111111111/leave"},
+		{name: "kick not owner", err: room.ErrNotOwner, wantStatus: http.StatusForbidden, wantBody: `{"code":"room.not_owner","message":"only the room owner can perform this action"}`, method: http.MethodDelete, path: "/api/rooms/11111111-1111-1111-1111-111111111111/kick/user_2"},
+		{name: "kick owner self", err: room.ErrCannotKickOwner, wantStatus: http.StatusForbidden, wantBody: `{"code":"room.cannot_kick_owner","message":"cannot kick the room owner"}`, method: http.MethodDelete, path: "/api/rooms/11111111-1111-1111-1111-111111111111/kick/user_2"},
+		{name: "select character not owned", err: room.ErrCharacterNotOwned, wantStatus: http.StatusForbidden, wantBody: `{"code":"room.character_not_owned","message":"character does not belong to you"}`, method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/character", body: `{"character_id":"33333333-3333-3333-3333-333333333333"}`},
+		{name: "change role generic", err: errors.New("boom"), wantStatus: http.StatusInternalServerError, wantBody: `{"code":"common.internal_error","message":"failed to change role"}`, method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/members/user_2/role", body: `{"role":"gm"}`},
 	}
 
 	for _, tt := range tests {
@@ -172,6 +193,7 @@ func TestRoomHandlerErrorMappings(t *testing.T) {
 			recorder := performRoomRequest(router, tt.method, tt.path, tt.body)
 
 			require.Equal(t, tt.wantStatus, recorder.Code)
+			require.JSONEq(t, tt.wantBody, recorder.Body.String())
 		})
 	}
 }
@@ -199,108 +221,114 @@ func performRoomRequest(router http.Handler, method string, target string, body 
 type fakeRoomHandlerService struct {
 	err error
 
-	room   model.RoomModel
-	member model.RoomMemberModel
+	room   roomModels.RoomModel
+	member roomModels.RoomMemberModel
 
-	createCalls  int
-	createParams db.CreateRoomParams
+	createCalls int
+	createInput roomModels.CreateRoomInput
 
-	getCalls  int
-	getParams db.GetRoomByIDParams
+	getCalls int
+	getInput roomModels.GetRoomInput
 
-	updateCalls  int
-	updateParams db.UpdateRoomParams
+	updateCalls int
+	updateInput roomModels.UpdateRoomInput
 
-	transferCalls  int
-	transferParams db.TransferRoomOwnershipParams
+	transferCalls int
+	transferInput roomModels.TransferOwnershipInput
 
-	deleteCalls  int
-	deleteParams db.DeleteRoomParams
+	deleteCalls int
+	deleteInput roomModels.DeleteRoomInput
 
-	joinCalls  int
-	joinMeta   db.GetRoomMetaDataParams
-	joinMember db.GetMemberParams
+	joinCalls int
+	joinInput roomModels.JoinRoomInput
 
-	leaveCalls  int
-	leaveParams db.RemoveMemberParams
+	leaveCalls int
+	leaveInput roomModels.LeaveRoomInput
 
-	kickCalls  int
-	kickActor  db.GetRoomByIDParams
-	kickTarget db.RemoveMemberParams
+	kickCalls int
+	kickInput roomModels.KickMemberInput
 
-	selectCharacterCalls  int
-	selectCharacterParams db.UpdateMemberCharacterParams
+	selectCharacterCalls int
+	selectCharacterInput roomModels.SelectCharacterInput
 
-	changeRoleCalls  int
-	changeRoleActor  db.GetRoomByIDParams
-	changeRoleTarget db.UpdateMemberRoleParams
+	changeRoleCalls int
+	changeRoleInput roomModels.ChangeRoleInput
 }
 
 func (f *fakeRoomHandlerService) totalCalls() int {
 	return f.createCalls + f.getCalls + f.updateCalls + f.transferCalls + f.deleteCalls + f.joinCalls + f.leaveCalls + f.kickCalls + f.selectCharacterCalls + f.changeRoleCalls
 }
 
-func (f *fakeRoomHandlerService) CreateRoom(_ context.Context, params db.CreateRoomParams) (model.RoomModel, error) {
+func (f *fakeRoomHandlerService) CreateRoom(_ context.Context, input roomModels.CreateRoomInput) (roomModels.RoomModel, error) {
 	f.createCalls++
-	f.createParams = params
+	f.createInput = input
 	return f.room, f.err
 }
 
-func (f *fakeRoomHandlerService) GetRoom(_ context.Context, params db.GetRoomByIDParams) (model.RoomModel, error) {
+func (f *fakeRoomHandlerService) GetRoom(_ context.Context, input roomModels.GetRoomInput) (roomModels.RoomModel, error) {
 	f.getCalls++
-	f.getParams = params
+	f.getInput = input
 	return f.room, f.err
 }
 
-func (f *fakeRoomHandlerService) UpdateRoom(_ context.Context, params db.UpdateRoomParams) (model.RoomModel, error) {
+func (f *fakeRoomHandlerService) UpdateRoom(_ context.Context, input roomModels.UpdateRoomInput) (roomModels.RoomModel, error) {
 	f.updateCalls++
-	f.updateParams = params
+	f.updateInput = input
 	return f.room, f.err
 }
 
-func (f *fakeRoomHandlerService) TransferOwnership(_ context.Context, params db.TransferRoomOwnershipParams) (model.RoomModel, error) {
+func (f *fakeRoomHandlerService) TransferOwnership(_ context.Context, input roomModels.TransferOwnershipInput) (roomModels.RoomModel, error) {
 	f.transferCalls++
-	f.transferParams = params
+	f.transferInput = input
 	return f.room, f.err
 }
 
-func (f *fakeRoomHandlerService) DeleteRoom(_ context.Context, params db.DeleteRoomParams) error {
+func (f *fakeRoomHandlerService) DeleteRoom(_ context.Context, input roomModels.DeleteRoomInput) error {
 	f.deleteCalls++
-	f.deleteParams = params
+	f.deleteInput = input
 	return f.err
 }
 
-func (f *fakeRoomHandlerService) JoinRoom(_ context.Context, meta db.GetRoomMetaDataParams, member db.GetMemberParams) (model.RoomMemberModel, error) {
+func (f *fakeRoomHandlerService) JoinRoom(_ context.Context, input roomModels.JoinRoomInput) (roomModels.RoomMemberModel, error) {
 	f.joinCalls++
-	f.joinMeta = meta
-	f.joinMember = member
+	f.joinInput = input
 	return f.member, f.err
 }
 
-func (f *fakeRoomHandlerService) LeaveRoom(_ context.Context, params db.RemoveMemberParams) error {
+func (f *fakeRoomHandlerService) LeaveRoom(_ context.Context, input roomModels.LeaveRoomInput) error {
 	f.leaveCalls++
-	f.leaveParams = params
+	f.leaveInput = input
 	return f.err
 }
 
-func (f *fakeRoomHandlerService) KickMember(_ context.Context, actor db.GetRoomByIDParams, target db.RemoveMemberParams) error {
+func (f *fakeRoomHandlerService) KickMember(_ context.Context, input roomModels.KickMemberInput) error {
 	f.kickCalls++
-	f.kickActor = actor
-	f.kickTarget = target
+	f.kickInput = input
 	return f.err
 }
 
-func (f *fakeRoomHandlerService) SelectCharacter(_ context.Context, params db.UpdateMemberCharacterParams) (model.RoomMemberModel, error) {
+func (f *fakeRoomHandlerService) SelectCharacter(_ context.Context, input roomModels.SelectCharacterInput) (roomModels.RoomMemberModel, error) {
 	f.selectCharacterCalls++
-	f.selectCharacterParams = params
+	f.selectCharacterInput = input
 	return f.member, f.err
 }
 
-func (f *fakeRoomHandlerService) ChangeRole(_ context.Context, actor db.GetRoomByIDParams, target db.UpdateMemberRoleParams) (model.RoomMemberModel, error) {
+func (f *fakeRoomHandlerService) ChangeRole(_ context.Context, input roomModels.ChangeRoleInput) (roomModels.RoomMemberModel, error) {
 	f.changeRoleCalls++
-	f.changeRoleActor = actor
-	f.changeRoleTarget = target
+	f.changeRoleInput = input
 	return f.member, f.err
+}
+
+func (f *fakeRoomHandlerService) EnsureMember(_ context.Context, _ pgtype.UUID, _ string) error {
+	return f.err
+}
+
+func (f *fakeRoomHandlerService) EnsureOwner(_ context.Context, _ pgtype.UUID, _ string) error {
+	return f.err
+}
+
+func (f *fakeRoomHandlerService) EnsureCanPublishRoomEvent(_ context.Context, _ pgtype.UUID, _ string) error {
+	return f.err
 }
 
 func testRoomUnitUUID(value string) pgtype.UUID {
