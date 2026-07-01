@@ -1,9 +1,11 @@
 package diceRollerErrors
 
 import (
+	"errors"
 	"net/http"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
+	serviceDiceRoller "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
 )
 
 func InvalidCharacterIDError(err error) *myErrors.AppError {
@@ -24,6 +26,15 @@ func InvalidExpressionError(err error) *myErrors.AppError {
 	}
 }
 
+func CharacterNotFoundError(err error) *myErrors.AppError {
+	return &myErrors.AppError{
+		Status:  http.StatusNotFound,
+		Code:    "dice.character_not_found",
+		Message: "character not found or not owned",
+		Err:     err,
+	}
+}
+
 func InvalidInputError(message string, err error) *myErrors.AppError {
 	return &myErrors.AppError{
 		Status:  http.StatusBadRequest,
@@ -33,9 +44,16 @@ func InvalidInputError(message string, err error) *myErrors.AppError {
 }
 
 func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
-	return &myErrors.AppError{
-		Status:  http.StatusInternalServerError,
-		Message: fallbackMessage,
-		Err:     err,
+	switch {
+	case errors.Is(err, serviceDiceRoller.ErrInvalidExpression):
+		return InvalidExpressionError(err)
+	case errors.Is(err, serviceDiceRoller.ErrCharacterNotFound):
+		return CharacterNotFoundError(err)
+	default:
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: fallbackMessage,
+			Err:     err,
+		}
 	}
 }
