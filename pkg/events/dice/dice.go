@@ -3,8 +3,10 @@ package dice
 type DiceRollMakeSucceeded struct {
 	UserID      string
 	CharacterID string
+	RollID      string
 	Expression  string
 	Result      int32
+	Details     []byte
 }
 
 type DiceRollMakeFailed struct {

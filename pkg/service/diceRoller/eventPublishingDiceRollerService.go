@@ -34,8 +34,10 @@ func (s *EventPublishingDiceRollerService) MakeRoll(ctx context.Context, input d
 	s.publisher.Publish(ctx, diceEvents.DiceRollMakeSucceeded{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID.String(),
+		RollID:      roll.ID.String(),
 		Expression:  roll.Expression,
 		Result:      roll.Result,
+		Details:     roll.Details,
 	})
 
 	return roll, nil
