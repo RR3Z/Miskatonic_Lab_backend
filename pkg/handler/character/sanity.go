@@ -38,12 +38,18 @@ func (h *CharacterHandler) upsertSanity(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input sanityDTO.UpsertSanityInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req sanityDTO.SanityRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := sanityDTO.UpsertSanityInput{
+		UserID:        userID,
+		CharacterID:   characterID,
+		MaxSanity:     req.MaxSanity,
+		CurrentSanity: req.CurrentSanity,
+		TempInsanity:  req.TempInsanity,
+		IndefInsanity: req.IndefInsanity,
+	}
 
 	sanity, err := h.service.UpsertSanity(r.Context(), input)
 	if err != nil {

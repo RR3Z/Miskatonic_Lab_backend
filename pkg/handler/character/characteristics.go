@@ -38,12 +38,22 @@ func (h *CharacterHandler) upsertCharacteristics(w http.ResponseWriter, r *http.
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input characteristicsDTO.UpsertCharacteristicsInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req characteristicsDTO.CharacteristicsRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := characteristicsDTO.UpsertCharacteristicsInput{
+		Strength:     req.Strength,
+		Constitution: req.Constitution,
+		Size:         req.Size,
+		Dexterity:    req.Dexterity,
+		Appearance:   req.Appearance,
+		Intelligence: req.Intelligence,
+		Power:        req.Power,
+		Education:    req.Education,
+		UserID:       userID,
+		CharacterID:  characterID,
+	}
 
 	characteristics, err := h.service.UpsertCharacteristics(r.Context(), input)
 	if err != nil {

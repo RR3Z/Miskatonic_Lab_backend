@@ -38,12 +38,16 @@ func (h *CharacterHandler) upsertMagic(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input magicDTO.UpsertMagicInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req magicDTO.MagicRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := magicDTO.UpsertMagicInput{
+		UserID:      userID,
+		CharacterID: characterID,
+		MaxMp:       req.MaxMp,
+		CurrentMp:   req.CurrentMp,
+	}
 
 	magic, err := h.service.UpsertMagic(r.Context(), input)
 	if err != nil {

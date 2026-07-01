@@ -64,12 +64,21 @@ func (h *CharacterHandler) createSkill(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input skillsDTO.CreateSkillInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req skillsDTO.SkillRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := skillsDTO.CreateSkillInput{
+		Name:        req.Name,
+		CategoryID:  req.CategoryID,
+		BaseValue:   req.BaseValue,
+		Value:       req.Value,
+		Checked:     req.Checked,
+		Specialized: req.Specialized,
+		SpecialtyID: req.SpecialtyID,
+		UserID:      userID,
+		CharacterID: characterID,
+	}
 
 	skill, err := h.service.CreateSkill(r.Context(), input)
 	if err != nil {
@@ -93,13 +102,22 @@ func (h *CharacterHandler) updateSkill(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}
 
-	var input skillsDTO.UpdateSkillInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req skillsDTO.SkillRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
-	input.SkillID = skillID
+	input := skillsDTO.UpdateSkillInput{
+		Name:        req.Name,
+		CategoryID:  req.CategoryID,
+		BaseValue:   req.BaseValue,
+		Value:       req.Value,
+		Checked:     req.Checked,
+		Specialized: req.Specialized,
+		SpecialtyID: req.SpecialtyID,
+		UserID:      userID,
+		CharacterID: characterID,
+		SkillID:     skillID,
+	}
 
 	skill, err := h.service.UpdateSkill(r.Context(), input)
 	if err != nil {

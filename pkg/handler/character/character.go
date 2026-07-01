@@ -49,11 +49,20 @@ func (h *CharacterHandler) getCharacter(w http.ResponseWriter, r *http.Request) 
 func (h *CharacterHandler) createCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	var input characterDTO.CreateCharacterInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req characterDTO.CharacterRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
+	input := characterDTO.CreateCharacterInput{
+		UserID:     userID,
+		Name:       req.Name,
+		PlayerName: req.PlayerName,
+		Occupation: req.Occupation,
+		Age:        req.Age,
+		Sex:        req.Sex,
+		Residence:  req.Residence,
+		Birthplace: req.Birthplace,
+	}
 
 	character, err := h.service.CreateCharacter(r.Context(), input)
 	if err != nil {
@@ -72,12 +81,21 @@ func (h *CharacterHandler) updateCharacter(w http.ResponseWriter, r *http.Reques
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input characterDTO.UpdateCharacterInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req characterDTO.CharacterRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.ID = characterID
+	input := characterDTO.UpdateCharacterInput{
+		UserID:     userID,
+		ID:         characterID,
+		Name:       req.Name,
+		PlayerName: req.PlayerName,
+		Occupation: req.Occupation,
+		Age:        req.Age,
+		Sex:        req.Sex,
+		Residence:  req.Residence,
+		Birthplace: req.Birthplace,
+	}
 
 	character, err := h.service.UpdateCharacter(r.Context(), input)
 	if err != nil {

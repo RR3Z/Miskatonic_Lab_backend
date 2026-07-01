@@ -38,12 +38,18 @@ func (h *CharacterHandler) upsertFinances(w http.ResponseWriter, r *http.Request
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input financesDTO.UpsertFinancesInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req financesDTO.FinancesRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := financesDTO.UpsertFinancesInput{
+		UserID:              userID,
+		CharacterID:         characterID,
+		SpendingLimit:       req.SpendingLimit,
+		Cash:                req.Cash,
+		Assets:              req.Assets,
+		CreditRatingSkillID: req.CreditRatingSkillID,
+	}
 
 	finances, err := h.service.UpsertFinances(r.Context(), input)
 	if err != nil {

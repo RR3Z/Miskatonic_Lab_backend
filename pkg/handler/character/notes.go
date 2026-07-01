@@ -64,12 +64,16 @@ func (h *CharacterHandler) createNote(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input notesDTO.CreateNoteInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req notesDTO.NoteRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := notesDTO.CreateNoteInput{
+		Title:       req.Title,
+		Body:        req.Body,
+		UserID:      userID,
+		CharacterID: characterID,
+	}
 
 	note, err := h.service.CreateNote(r.Context(), input)
 	if err != nil {
@@ -93,13 +97,17 @@ func (h *CharacterHandler) updateNote(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidPathIDError("invalid note id", err)
 	}
 
-	var input notesDTO.UpdateNoteInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req notesDTO.NoteRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
-	input.NoteID = noteID
+	input := notesDTO.UpdateNoteInput{
+		Title:       req.Title,
+		Body:        req.Body,
+		UserID:      userID,
+		CharacterID: characterID,
+		NoteID:      noteID,
+	}
 
 	note, err := h.service.UpdateNote(r.Context(), input)
 	if err != nil {

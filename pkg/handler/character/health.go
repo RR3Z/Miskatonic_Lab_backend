@@ -38,12 +38,20 @@ func (h *CharacterHandler) upsertHealth(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input healthDTO.UpsertHealthInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req healthDTO.HealthRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := healthDTO.UpsertHealthInput{
+		UserID:      userID,
+		CharacterID: characterID,
+		MaxHp:       req.MaxHp,
+		CurrentHp:   req.CurrentHp,
+		MajorWound:  req.MajorWound,
+		Unconscious: req.Unconscious,
+		Dying:       req.Dying,
+		Dead:        req.Dead,
+	}
 
 	health, err := h.service.UpsertHealth(r.Context(), input)
 	if err != nil {

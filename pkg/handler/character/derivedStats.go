@@ -38,12 +38,18 @@ func (h *CharacterHandler) upsertDerivedStats(w http.ResponseWriter, r *http.Req
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input derivedStatsDTO.UpsertDerivedStatsInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req derivedStatsDTO.DerivedStatsRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := derivedStatsDTO.UpsertDerivedStatsInput{
+		UserID:      userID,
+		CharacterID: characterID,
+		Speed:       req.Speed,
+		Physique:    req.Physique,
+		DamageBonus: req.DamageBonus,
+		DodgeValue:  req.DodgeValue,
+	}
 
 	derivedStats, err := h.service.UpsertDerivedStats(r.Context(), input)
 	if err != nil {

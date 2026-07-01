@@ -38,12 +38,16 @@ func (h *CharacterHandler) upsertLuck(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input luckDTO.UpsertLuckInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req luckDTO.LuckRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := luckDTO.UpsertLuckInput{
+		UserID:       userID,
+		CharacterID:  characterID,
+		StartingLuck: req.StartingLuck,
+		CurrentLuck:  req.CurrentLuck,
+	}
 
 	luck, err := h.service.UpsertLuck(r.Context(), input)
 	if err != nil {

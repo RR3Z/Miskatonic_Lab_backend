@@ -38,12 +38,15 @@ func (h *CharacterHandler) upsertBackstory(w http.ResponseWriter, r *http.Reques
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input backstoriesDTO.UpsertBackstoryInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req backstoriesDTO.BackstoryRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := backstoriesDTO.UpsertBackstoryInput{
+		UserID:              userID,
+		CharacterID:         characterID,
+		PersonalDescription: req.PersonalDescription,
+	}
 
 	backstory, err := h.service.UpsertBackstory(r.Context(), input)
 	if err != nil {
@@ -127,12 +130,17 @@ func (h *CharacterHandler) createBackstoryItem(w http.ResponseWriter, r *http.Re
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input backstoriesDTO.CreateBackstoryItemInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req backstoriesDTO.BackstoryItemRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
+	input := backstoriesDTO.CreateBackstoryItemInput{
+		Section:     req.Section,
+		Title:       req.Title,
+		Text:        req.Text,
+		UserID:      userID,
+		CharacterID: characterID,
+	}
 
 	item, err := h.service.CreateBackstoryItem(r.Context(), input)
 	if err != nil {
@@ -156,13 +164,18 @@ func (h *CharacterHandler) updateBackstoryItem(w http.ResponseWriter, r *http.Re
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
 
-	var input backstoriesDTO.UpdateBackstoryItemInput
-	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
+	var req backstoriesDTO.BackstoryItemRequest
+	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
 		return appErr
 	}
-	input.UserID = userID
-	input.CharacterID = characterID
-	input.BackstoryItemID = itemID
+	input := backstoriesDTO.UpdateBackstoryItemInput{
+		Section:         req.Section,
+		Title:           req.Title,
+		Text:            req.Text,
+		UserID:          userID,
+		CharacterID:     characterID,
+		BackstoryItemID: itemID,
+	}
 
 	item, err := h.service.UpdateBackstoryItem(r.Context(), input)
 	if err != nil {
