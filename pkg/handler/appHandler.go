@@ -1,5 +1,5 @@
 package handler
 
-import "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpadapter"
+import "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpAdapter"
 
-type AppHandler = httpadapter.AppHandler
+type AppHandler = httpAdapter.AppHandler
