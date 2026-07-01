@@ -83,6 +83,7 @@ func MapNotFoundOrServiceError(err error, notFoundMessage, fallbackMessage strin
 	if errors.Is(err, pgx.ErrNoRows) {
 		return &myErrors.AppError{
 			Status:  http.StatusNotFound,
+			Code:    "character.not_found",
 			Message: notFoundMessage,
 			Err:     err,
 		}
@@ -98,6 +99,7 @@ func InvalidCharacterIDError(err error) *myErrors.AppError {
 func InvalidPathIDError(message string, err error) *myErrors.AppError {
 	return &myErrors.AppError{
 		Status:  http.StatusBadRequest,
+		Code:    "character.invalid_id",
 		Message: message,
 		Err:     err,
 	}
@@ -106,6 +108,7 @@ func InvalidPathIDError(message string, err error) *myErrors.AppError {
 func InvalidInputError(message string, err error) *myErrors.AppError {
 	return &myErrors.AppError{
 		Status:  http.StatusBadRequest,
+		Code:    "character.invalid_input",
 		Message: message,
 		Err:     err,
 	}

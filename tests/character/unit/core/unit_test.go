@@ -64,6 +64,33 @@ func TestUpdateCharacterRejectsNameTooLong(t *testing.T) {
 	require.ErrorIs(t, err, characterErrors.ErrNameTooLong)
 }
 
+func TestCreateCharacterRejectsNegativeAgeBeforeRepository(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{})
+	negativeAge := int16(-1)
+
+	_, err := service.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{
+		UserID: "user_1",
+		Name:   "Investigator",
+		Age:    &negativeAge,
+	})
+
+	require.ErrorIs(t, err, characterErrors.ErrAgeNegative)
+}
+
+func TestUpdateCharacterRejectsNegativeAgeBeforeRepository(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{})
+	negativeAge := int16(-1)
+
+	_, err := service.UpdateCharacter(context.Background(), characterDTO.UpdateCharacterInput{
+		UserID: "user_1",
+		ID:     testCoreUUID("11111111-1111-1111-1111-111111111111"),
+		Name:   "Investigator",
+		Age:    &negativeAge,
+	})
+
+	require.ErrorIs(t, err, characterErrors.ErrAgeNegative)
+}
+
 func testCoreUUID(value string) pgtype.UUID {
 	var id pgtype.UUID
 	if err := id.Scan(value); err != nil {

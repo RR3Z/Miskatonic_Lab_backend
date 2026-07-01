@@ -11,7 +11,6 @@ import (
 	handlerErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/user/errors"
 	userHandlerHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/user/helpers"
 	userDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/user"
-	userErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/user/errors"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 	"github.com/clerk/clerk-sdk-go/v2"
 )
@@ -37,18 +36,7 @@ func (h *UserHandler) getMe(w http.ResponseWriter, r *http.Request) *myErrors.Ap
 
 	user, err := h.service.GetUserByID(r.Context(), userDTO.GetUserInput{ID: userID})
 	if err != nil {
-		if errors.Is(err, userErrors.ErrUserNotFound) {
-			return &myErrors.AppError{
-				Status:  http.StatusNotFound,
-				Message: "user not found",
-				Err:     err,
-			}
-		}
-		return &myErrors.AppError{
-			Status:  http.StatusInternalServerError,
-			Message: "failed to get user",
-			Err:     err,
-		}
+		return handlerErrors.MapServiceError(err, "failed to get user")
 	}
 
 	utils.WriteJSON(w, http.StatusOK, user)

@@ -134,6 +134,7 @@ func TestClerkWebhookRejectsDeletedEventWithoutUserID(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.Equal(t, 1, userService.DeleteUserCalls)
+	require.JSONEq(t, `{"code":"user.missing_id","message":"missing clerk user id"}`, recorder.Body.String())
 }
 
 func TestClerkWebhookRejectsUnexpectedEventType(t *testing.T) {
@@ -147,6 +148,7 @@ func TestClerkWebhookRejectsUnexpectedEventType(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.Zero(t, userService.UpsertUserCalls)
 	require.Zero(t, userService.DeleteUserCalls)
+	require.JSONEq(t, `{"code":"user.unexpected_webhook_event","message":"unexpected webhook event type"}`, recorder.Body.String())
 }
 
 func TestClerkWebhookRejectsInvalidJSONPayload(t *testing.T) {
@@ -157,6 +159,7 @@ func TestClerkWebhookRejectsInvalidJSONPayload(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.Zero(t, userService.UpsertUserCalls)
 	require.Zero(t, userService.DeleteUserCalls)
+	require.JSONEq(t, `{"code":"user.invalid_webhook_payload","message":"invalid webhook payload"}`, recorder.Body.String())
 }
 
 func TestClerkWebhookRejectsInvalidSignature(t *testing.T) {
@@ -172,6 +175,7 @@ func TestClerkWebhookRejectsInvalidSignature(t *testing.T) {
 	require.Equal(t, http.StatusUnauthorized, recorder.Code)
 	require.Zero(t, userService.UpsertUserCalls)
 	require.Zero(t, userService.DeleteUserCalls)
+	require.JSONEq(t, `{"code":"user.invalid_webhook_signature","message":"invalid webhook signature"}`, recorder.Body.String())
 }
 
 func TestClerkWebhookReturnsInternalServerErrorWhenUpsertFails(t *testing.T) {

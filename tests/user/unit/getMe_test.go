@@ -68,6 +68,7 @@ func TestGetMeReturnsNotFoundWhenUserMissing(t *testing.T) {
 	router.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusNotFound, recorder.Code)
+	require.JSONEq(t, `{"code":"user.not_found","message":"user not found"}`, recorder.Body.String())
 }
 
 func TestGetMeReturnsInternalErrorWhenServiceFails(t *testing.T) {
@@ -80,4 +81,5 @@ func TestGetMeReturnsInternalErrorWhenServiceFails(t *testing.T) {
 	router.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
+	require.JSONEq(t, `{"code":"common.internal_error","message":"failed to get user"}`, recorder.Body.String())
 }

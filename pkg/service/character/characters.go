@@ -154,6 +154,9 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 	if err := validateRequiredString(input.Name, 255, characterErrors.ErrNameRequired, characterErrors.ErrNameTooLong); err != nil {
 		return characterDTO.CharacterShortModel{}, err
 	}
+	if err := validateNonNegative(characterErrors.ErrAgeNegative, input.Age); err != nil {
+		return characterDTO.CharacterShortModel{}, err
+	}
 
 	character, err := s.repos.Queries.CreateCharacter(ctx, db.CreateCharacterParams{
 		UserID:     input.UserID,
@@ -174,6 +177,9 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 
 func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterDTO.UpdateCharacterInput) (characterDTO.CharacterShortModel, error) {
 	if err := validateRequiredString(input.Name, 255, characterErrors.ErrNameRequired, characterErrors.ErrNameTooLong); err != nil {
+		return characterDTO.CharacterShortModel{}, err
+	}
+	if err := validateNonNegative(characterErrors.ErrAgeNegative, input.Age); err != nil {
 		return characterDTO.CharacterShortModel{}, err
 	}
 

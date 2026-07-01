@@ -18,6 +18,8 @@ func MapCharacterConstraintError(err error) error {
 	}
 
 	switch pgErr.ConstraintName {
+	case "characters_age_check":
+		return ErrAgeNegative
 	case "chk_health_states_current_lte_max":
 		return myErrors.ErrCurrentHealthExceedsMax
 	case "chk_magic_states_current_lte_max":
