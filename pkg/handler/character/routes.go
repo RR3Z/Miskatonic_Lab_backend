@@ -19,10 +19,10 @@ func (h *Handler) RegisterCharacterRoutes(r chi.Router) {
 }
 
 func (h *Handler) characterRoutes(r chi.Router) {
-	r.Post("/character", httpAdapter.AppHandler(h.createCharacter).ServeHTTP)
-	r.Get("/characters", httpAdapter.AppHandler(h.getAllCharacters).ServeHTTP)
+	r.Post("/", httpAdapter.AppHandler(h.createCharacter).ServeHTTP)
+	r.Get("/", httpAdapter.AppHandler(h.getAllCharacters).ServeHTTP)
 
-	r.Route("/character/{characterID}", func(r chi.Router) {
+	r.Route("/{characterID}", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getCharacter).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.updateCharacter).ServeHTTP)
 		r.Delete("/", httpAdapter.AppHandler(h.deleteCharacter).ServeHTTP)
