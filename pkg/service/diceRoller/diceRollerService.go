@@ -40,13 +40,17 @@ func (s *DiceRollerService) GetLastDiceRolls(ctx context.Context, input diceRoll
 }
 
 func (s *DiceRollerService) MakeRoll(ctx context.Context, input diceRollerDTO.MakeRollInput) (diceRollerDTO.DiceRollModel, error) {
-	if err := validateExpressionNotEmpty(input.Formula); err != nil {
+	if err := validateExpression(input.Formula); err != nil {
 		return diceRollerDTO.DiceRollModel{}, err
 	}
 
 	components, err := dice.ParseDiceRollerFormula(input.Formula)
 	if err != nil {
 		return diceRollerDTO.DiceRollModel{}, fmt.Errorf("%w: %v", ErrInvalidExpression, err)
+	}
+
+	if err := validateComponents(components); err != nil {
+		return diceRollerDTO.DiceRollModel{}, err
 	}
 
 	details, result, err := dice.RollDice(components)
