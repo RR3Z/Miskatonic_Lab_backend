@@ -6,19 +6,19 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct {
-	characters characterService.ICharacter
+type CharacterHandler struct {
+	service characterService.ICharacter
 }
 
-func New(characters characterService.ICharacter) *Handler {
-	return &Handler{characters: characters}
+func New(service characterService.ICharacter) *CharacterHandler {
+	return &CharacterHandler{service: service}
 }
 
-func (h *Handler) RegisterCharacterRoutes(r chi.Router) {
+func (h *CharacterHandler) RegisterRoutes(r chi.Router) {
 	h.characterRoutes(r)
 }
 
-func (h *Handler) characterRoutes(r chi.Router) {
+func (h *CharacterHandler) characterRoutes(r chi.Router) {
 	r.Post("/", httpAdapter.AppHandler(h.createCharacter).ServeHTTP)
 	r.Get("/", httpAdapter.AppHandler(h.getAllCharacters).ServeHTTP)
 
@@ -43,7 +43,7 @@ func (h *Handler) characterRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) characteristicsRoutes(r chi.Router) {
+func (h *CharacterHandler) characteristicsRoutes(r chi.Router) {
 	r.Route("/characteristics", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getCharacteristics).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.upsertCharacteristics).ServeHTTP)
@@ -51,7 +51,7 @@ func (h *Handler) characteristicsRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) derivedStatsRoutes(r chi.Router) {
+func (h *CharacterHandler) derivedStatsRoutes(r chi.Router) {
 	r.Route("/derived-stats", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getDerivedStats).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.upsertDerivedStats).ServeHTTP)
@@ -59,7 +59,7 @@ func (h *Handler) derivedStatsRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) healthRoutes(r chi.Router) {
+func (h *CharacterHandler) healthRoutes(r chi.Router) {
 	r.Route("/health", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getHealth).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.upsertHealth).ServeHTTP)
@@ -67,7 +67,7 @@ func (h *Handler) healthRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) magicRoutes(r chi.Router) {
+func (h *CharacterHandler) magicRoutes(r chi.Router) {
 	r.Route("/magic", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getMagic).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.upsertMagic).ServeHTTP)
@@ -75,7 +75,7 @@ func (h *Handler) magicRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) sanityRoutes(r chi.Router) {
+func (h *CharacterHandler) sanityRoutes(r chi.Router) {
 	r.Route("/sanity", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getSanity).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.upsertSanity).ServeHTTP)
@@ -83,7 +83,7 @@ func (h *Handler) sanityRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) luckRoutes(r chi.Router) {
+func (h *CharacterHandler) luckRoutes(r chi.Router) {
 	r.Route("/luck", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getLuck).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.upsertLuck).ServeHTTP)
@@ -91,7 +91,7 @@ func (h *Handler) luckRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) backstoriesRoutes(r chi.Router) {
+func (h *CharacterHandler) backstoriesRoutes(r chi.Router) {
 	r.Route("/backstory", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getBackstory).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.upsertBackstory).ServeHTTP)
@@ -110,7 +110,7 @@ func (h *Handler) backstoriesRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) financesRoutes(r chi.Router) {
+func (h *CharacterHandler) financesRoutes(r chi.Router) {
 	r.Route("/finances", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getFinances).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.upsertFinances).ServeHTTP)
@@ -118,7 +118,7 @@ func (h *Handler) financesRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) skillsRoutes(r chi.Router) {
+func (h *CharacterHandler) skillsRoutes(r chi.Router) {
 	r.Route("/skills", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getSkills).ServeHTTP)
 		r.Post("/", httpAdapter.AppHandler(h.createSkill).ServeHTTP)
@@ -131,7 +131,7 @@ func (h *Handler) skillsRoutes(r chi.Router) {
 	})
 }
 
-func (h *Handler) notesRoutes(r chi.Router) {
+func (h *CharacterHandler) notesRoutes(r chi.Router) {
 	r.Route("/notes", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getNotes).ServeHTTP)
 		r.Post("/", httpAdapter.AppHandler(h.createNote).ServeHTTP)

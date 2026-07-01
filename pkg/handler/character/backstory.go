@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getBackstory(w http.ResponseWriter, r *http.Request) *myErrors
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	backstory, err := h.characters.GetBackstory(r.Context(), model.GetBackstoryInput{
+	backstory, err := h.service.GetBackstory(r.Context(), model.GetBackstoryInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getBackstory(w http.ResponseWriter, r *http.Request) *myErrors
 	return nil
 }
 
-func (h *Handler) upsertBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) upsertBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -44,7 +44,7 @@ func (h *Handler) upsertBackstory(w http.ResponseWriter, r *http.Request) *myErr
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	backstory, err := h.characters.UpsertBackstory(r.Context(), input)
+	backstory, err := h.service.UpsertBackstory(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to upsert character backstory")
 	}
@@ -53,7 +53,7 @@ func (h *Handler) upsertBackstory(w http.ResponseWriter, r *http.Request) *myErr
 	return nil
 }
 
-func (h *Handler) deleteBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -61,7 +61,7 @@ func (h *Handler) deleteBackstory(w http.ResponseWriter, r *http.Request) *myErr
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteBackstory(r.Context(), model.DeleteBackstoryInput{
+	if err := h.service.DeleteBackstory(r.Context(), model.DeleteBackstoryInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {
@@ -72,7 +72,7 @@ func (h *Handler) deleteBackstory(w http.ResponseWriter, r *http.Request) *myErr
 	return nil
 }
 
-func (h *Handler) getBackstoryItems(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getBackstoryItems(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -80,7 +80,7 @@ func (h *Handler) getBackstoryItems(w http.ResponseWriter, r *http.Request) *myE
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	items, err := h.characters.GetBackstoryItems(r.Context(), model.GetBackstoryItemsInput{
+	items, err := h.service.GetBackstoryItems(r.Context(), model.GetBackstoryItemsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -92,7 +92,7 @@ func (h *Handler) getBackstoryItems(w http.ResponseWriter, r *http.Request) *myE
 	return nil
 }
 
-func (h *Handler) getBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -105,7 +105,7 @@ func (h *Handler) getBackstoryItem(w http.ResponseWriter, r *http.Request) *myEr
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
 
-	item, err := h.characters.GetBackstoryItem(r.Context(), model.GetBackstoryItemInput{
+	item, err := h.service.GetBackstoryItem(r.Context(), model.GetBackstoryItemInput{
 		UserID:          userID,
 		CharacterID:     characterID,
 		BackstoryItemID: itemID,
@@ -118,7 +118,7 @@ func (h *Handler) getBackstoryItem(w http.ResponseWriter, r *http.Request) *myEr
 	return nil
 }
 
-func (h *Handler) createBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) createBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -133,7 +133,7 @@ func (h *Handler) createBackstoryItem(w http.ResponseWriter, r *http.Request) *m
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	item, err := h.characters.CreateBackstoryItem(r.Context(), input)
+	item, err := h.service.CreateBackstoryItem(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character backstory not found", "failed to create backstory item")
 	}
@@ -142,7 +142,7 @@ func (h *Handler) createBackstoryItem(w http.ResponseWriter, r *http.Request) *m
 	return nil
 }
 
-func (h *Handler) updateBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) updateBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -163,7 +163,7 @@ func (h *Handler) updateBackstoryItem(w http.ResponseWriter, r *http.Request) *m
 	input.CharacterID = characterID
 	input.BackstoryItemID = itemID
 
-	item, err := h.characters.UpdateBackstoryItem(r.Context(), input)
+	item, err := h.service.UpdateBackstoryItem(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "backstory item not found", "failed to update backstory item")
 	}
@@ -172,7 +172,7 @@ func (h *Handler) updateBackstoryItem(w http.ResponseWriter, r *http.Request) *m
 	return nil
 }
 
-func (h *Handler) deleteBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -185,7 +185,7 @@ func (h *Handler) deleteBackstoryItem(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
 
-	if err := h.characters.DeleteBackstoryItem(r.Context(), model.DeleteBackstoryItemInput{
+	if err := h.service.DeleteBackstoryItem(r.Context(), model.DeleteBackstoryItemInput{
 		UserID:          userID,
 		CharacterID:     characterID,
 		BackstoryItemID: itemID,

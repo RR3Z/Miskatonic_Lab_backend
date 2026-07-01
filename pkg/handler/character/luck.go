@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppE
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	luck, err := h.characters.GetLuck(r.Context(), model.GetLuckInput{
+	luck, err := h.service.GetLuck(r.Context(), model.GetLuckInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppE
 	return nil
 }
 
-func (h *Handler) upsertLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) upsertLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -44,7 +44,7 @@ func (h *Handler) upsertLuck(w http.ResponseWriter, r *http.Request) *myErrors.A
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	luck, err := h.characters.UpsertLuck(r.Context(), input)
+	luck, err := h.service.UpsertLuck(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to upsert character luck")
 	}
@@ -53,7 +53,7 @@ func (h *Handler) upsertLuck(w http.ResponseWriter, r *http.Request) *myErrors.A
 	return nil
 }
 
-func (h *Handler) deleteLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -61,7 +61,7 @@ func (h *Handler) deleteLuck(w http.ResponseWriter, r *http.Request) *myErrors.A
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteLuck(r.Context(), model.DeleteLuckInput{
+	if err := h.service.DeleteLuck(r.Context(), model.DeleteLuckInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

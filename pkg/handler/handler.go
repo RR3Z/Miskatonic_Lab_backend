@@ -47,7 +47,7 @@ func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *ch
 		r.Get("/me", AppHandler(h.getUserByID).ServeHTTP)
 
 		r.Route("/characters", func(r chi.Router) {
-			characterHandler.New(h.services.Character).RegisterCharacterRoutes(r)
+			characterHandler.New(h.services.Character).RegisterRoutes(r)
 		})
 
 		r.Route("/dice-roll/{characterID}", func(r chi.Router) {

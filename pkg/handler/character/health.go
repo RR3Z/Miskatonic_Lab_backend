@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getHealth(w http.ResponseWriter, r *http.Request) *myErrors.Ap
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	health, err := h.characters.GetHealth(r.Context(), model.GetHealthInput{
+	health, err := h.service.GetHealth(r.Context(), model.GetHealthInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getHealth(w http.ResponseWriter, r *http.Request) *myErrors.Ap
 	return nil
 }
 
-func (h *Handler) upsertHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) upsertHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -44,7 +44,7 @@ func (h *Handler) upsertHealth(w http.ResponseWriter, r *http.Request) *myErrors
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	health, err := h.characters.UpsertHealth(r.Context(), input)
+	health, err := h.service.UpsertHealth(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to upsert character health")
 	}
@@ -53,7 +53,7 @@ func (h *Handler) upsertHealth(w http.ResponseWriter, r *http.Request) *myErrors
 	return nil
 }
 
-func (h *Handler) deleteHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteHealth(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -61,7 +61,7 @@ func (h *Handler) deleteHealth(w http.ResponseWriter, r *http.Request) *myErrors
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteHealth(r.Context(), model.DeleteHealthInput{
+	if err := h.service.DeleteHealth(r.Context(), model.DeleteHealthInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getMagic(w http.ResponseWriter, r *http.Request) *myErrors.App
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	magic, err := h.characters.GetMagic(r.Context(), model.GetMagicInput{
+	magic, err := h.service.GetMagic(r.Context(), model.GetMagicInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getMagic(w http.ResponseWriter, r *http.Request) *myErrors.App
 	return nil
 }
 
-func (h *Handler) upsertMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) upsertMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -44,7 +44,7 @@ func (h *Handler) upsertMagic(w http.ResponseWriter, r *http.Request) *myErrors.
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	magic, err := h.characters.UpsertMagic(r.Context(), input)
+	magic, err := h.service.UpsertMagic(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to upsert character magic")
 	}
@@ -53,7 +53,7 @@ func (h *Handler) upsertMagic(w http.ResponseWriter, r *http.Request) *myErrors.
 	return nil
 }
 
-func (h *Handler) deleteMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteMagic(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -61,7 +61,7 @@ func (h *Handler) deleteMagic(w http.ResponseWriter, r *http.Request) *myErrors.
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteMagic(r.Context(), model.DeleteMagicInput{
+	if err := h.service.DeleteMagic(r.Context(), model.DeleteMagicInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

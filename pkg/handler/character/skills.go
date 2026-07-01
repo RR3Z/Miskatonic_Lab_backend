@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getSkills(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getSkills(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getSkills(w http.ResponseWriter, r *http.Request) *myErrors.Ap
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	skills, err := h.characters.GetSkills(r.Context(), model.GetSkillsInput{
+	skills, err := h.service.GetSkills(r.Context(), model.GetSkillsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getSkills(w http.ResponseWriter, r *http.Request) *myErrors.Ap
 	return nil
 }
 
-func (h *Handler) getSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -42,7 +42,7 @@ func (h *Handler) getSkill(w http.ResponseWriter, r *http.Request) *myErrors.App
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}
 
-	skill, err := h.characters.GetSkill(r.Context(), model.GetSkillInput{
+	skill, err := h.service.GetSkill(r.Context(), model.GetSkillInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		SkillID:     skillID,
@@ -55,7 +55,7 @@ func (h *Handler) getSkill(w http.ResponseWriter, r *http.Request) *myErrors.App
 	return nil
 }
 
-func (h *Handler) createSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) createSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -70,7 +70,7 @@ func (h *Handler) createSkill(w http.ResponseWriter, r *http.Request) *myErrors.
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	skill, err := h.characters.CreateSkill(r.Context(), input)
+	skill, err := h.service.CreateSkill(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to create skill")
 	}
@@ -79,7 +79,7 @@ func (h *Handler) createSkill(w http.ResponseWriter, r *http.Request) *myErrors.
 	return nil
 }
 
-func (h *Handler) updateSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) updateSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -100,7 +100,7 @@ func (h *Handler) updateSkill(w http.ResponseWriter, r *http.Request) *myErrors.
 	input.CharacterID = characterID
 	input.SkillID = skillID
 
-	skill, err := h.characters.UpdateSkill(r.Context(), input)
+	skill, err := h.service.UpdateSkill(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "skill not found", "failed to update skill")
 	}
@@ -109,7 +109,7 @@ func (h *Handler) updateSkill(w http.ResponseWriter, r *http.Request) *myErrors.
 	return nil
 }
 
-func (h *Handler) deleteSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -122,7 +122,7 @@ func (h *Handler) deleteSkill(w http.ResponseWriter, r *http.Request) *myErrors.
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}
 
-	if err := h.characters.DeleteSkill(r.Context(), model.DeleteSkillInput{
+	if err := h.service.DeleteSkill(r.Context(), model.DeleteSkillInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		SkillID:     skillID,

@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getNotes(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getNotes(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getNotes(w http.ResponseWriter, r *http.Request) *myErrors.App
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	notes, err := h.characters.GetNotes(r.Context(), model.GetNotesInput{
+	notes, err := h.service.GetNotes(r.Context(), model.GetNotesInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getNotes(w http.ResponseWriter, r *http.Request) *myErrors.App
 	return nil
 }
 
-func (h *Handler) getNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -42,7 +42,7 @@ func (h *Handler) getNote(w http.ResponseWriter, r *http.Request) *myErrors.AppE
 		return characterErrors.InvalidPathIDError("invalid note id", err)
 	}
 
-	note, err := h.characters.GetNote(r.Context(), model.GetNoteInput{
+	note, err := h.service.GetNote(r.Context(), model.GetNoteInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		NoteID:      noteID,
@@ -55,7 +55,7 @@ func (h *Handler) getNote(w http.ResponseWriter, r *http.Request) *myErrors.AppE
 	return nil
 }
 
-func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) createNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -70,7 +70,7 @@ func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) *myErrors.A
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	note, err := h.characters.CreateNote(r.Context(), input)
+	note, err := h.service.CreateNote(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to create note")
 	}
@@ -79,7 +79,7 @@ func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) *myErrors.A
 	return nil
 }
 
-func (h *Handler) updateNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) updateNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -100,7 +100,7 @@ func (h *Handler) updateNote(w http.ResponseWriter, r *http.Request) *myErrors.A
 	input.CharacterID = characterID
 	input.NoteID = noteID
 
-	note, err := h.characters.UpdateNote(r.Context(), input)
+	note, err := h.service.UpdateNote(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "note not found", "failed to update note")
 	}
@@ -109,7 +109,7 @@ func (h *Handler) updateNote(w http.ResponseWriter, r *http.Request) *myErrors.A
 	return nil
 }
 
-func (h *Handler) deleteNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteNote(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -122,7 +122,7 @@ func (h *Handler) deleteNote(w http.ResponseWriter, r *http.Request) *myErrors.A
 		return characterErrors.InvalidPathIDError("invalid note id", err)
 	}
 
-	if err := h.characters.DeleteNote(r.Context(), model.DeleteNoteInput{
+	if err := h.service.DeleteNote(r.Context(), model.DeleteNoteInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		NoteID:      noteID,

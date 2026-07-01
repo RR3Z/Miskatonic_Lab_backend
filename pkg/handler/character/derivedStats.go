@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getDerivedStats(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getDerivedStats(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getDerivedStats(w http.ResponseWriter, r *http.Request) *myErr
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	derivedStats, err := h.characters.GetDerivedStats(r.Context(), model.GetDerivedStatsInput{
+	derivedStats, err := h.service.GetDerivedStats(r.Context(), model.GetDerivedStatsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getDerivedStats(w http.ResponseWriter, r *http.Request) *myErr
 	return nil
 }
 
-func (h *Handler) upsertDerivedStats(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) upsertDerivedStats(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -44,7 +44,7 @@ func (h *Handler) upsertDerivedStats(w http.ResponseWriter, r *http.Request) *my
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	derivedStats, err := h.characters.UpsertDerivedStats(r.Context(), input)
+	derivedStats, err := h.service.UpsertDerivedStats(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to upsert character derived stats")
 	}
@@ -53,7 +53,7 @@ func (h *Handler) upsertDerivedStats(w http.ResponseWriter, r *http.Request) *my
 	return nil
 }
 
-func (h *Handler) deleteDerivedStats(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteDerivedStats(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -61,7 +61,7 @@ func (h *Handler) deleteDerivedStats(w http.ResponseWriter, r *http.Request) *my
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteDerivedStats(r.Context(), model.DeleteDerivedStatsInput{
+	if err := h.service.DeleteDerivedStats(r.Context(), model.DeleteDerivedStatsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

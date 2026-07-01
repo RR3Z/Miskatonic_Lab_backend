@@ -9,10 +9,10 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getAllCharacters(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getAllCharacters(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characters, err := h.characters.GetAllCharacters(r.Context(), userID)
+	characters, err := h.service.GetAllCharacters(r.Context(), userID)
 	if err != nil {
 		return &myErrors.AppError{
 			Status:  http.StatusInternalServerError,
@@ -25,7 +25,7 @@ func (h *Handler) getAllCharacters(w http.ResponseWriter, r *http.Request) *myEr
 	return nil
 }
 
-func (h *Handler) getCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -33,7 +33,7 @@ func (h *Handler) getCharacter(w http.ResponseWriter, r *http.Request) *myErrors
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	character, err := h.characters.GetCharacter(r.Context(), model.GetCharacterInput{
+	character, err := h.service.GetCharacter(r.Context(), model.GetCharacterInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -45,7 +45,7 @@ func (h *Handler) getCharacter(w http.ResponseWriter, r *http.Request) *myErrors
 	return nil
 }
 
-func (h *Handler) createCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) createCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	var input model.CreateCharacterInput
@@ -54,7 +54,7 @@ func (h *Handler) createCharacter(w http.ResponseWriter, r *http.Request) *myErr
 	}
 	input.UserID = userID
 
-	character, err := h.characters.CreateCharacter(r.Context(), input)
+	character, err := h.service.CreateCharacter(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapServiceError(err, "failed to create character")
 	}
@@ -63,7 +63,7 @@ func (h *Handler) createCharacter(w http.ResponseWriter, r *http.Request) *myErr
 	return nil
 }
 
-func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) updateCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -78,7 +78,7 @@ func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) *myErr
 	input.UserID = userID
 	input.ID = characterID
 
-	character, err := h.characters.UpdateCharacter(r.Context(), input)
+	character, err := h.service.UpdateCharacter(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to update character")
 	}
@@ -87,7 +87,7 @@ func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) *myErr
 	return nil
 }
 
-func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -95,7 +95,7 @@ func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) *myErr
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteCharacter(r.Context(), model.DeleteCharacterInput{
+	if err := h.service.DeleteCharacter(r.Context(), model.DeleteCharacterInput{
 		UserID: userID,
 		ID:     characterID,
 	}); err != nil {

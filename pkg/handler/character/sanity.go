@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getSanity(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getSanity(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getSanity(w http.ResponseWriter, r *http.Request) *myErrors.Ap
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	sanity, err := h.characters.GetSanity(r.Context(), model.GetSanityInput{
+	sanity, err := h.service.GetSanity(r.Context(), model.GetSanityInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getSanity(w http.ResponseWriter, r *http.Request) *myErrors.Ap
 	return nil
 }
 
-func (h *Handler) upsertSanity(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) upsertSanity(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -44,7 +44,7 @@ func (h *Handler) upsertSanity(w http.ResponseWriter, r *http.Request) *myErrors
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	sanity, err := h.characters.UpsertSanity(r.Context(), input)
+	sanity, err := h.service.UpsertSanity(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to upsert character sanity")
 	}
@@ -53,7 +53,7 @@ func (h *Handler) upsertSanity(w http.ResponseWriter, r *http.Request) *myErrors
 	return nil
 }
 
-func (h *Handler) deleteSanity(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteSanity(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -61,7 +61,7 @@ func (h *Handler) deleteSanity(w http.ResponseWriter, r *http.Request) *myErrors
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteSanity(r.Context(), model.DeleteSanityInput{
+	if err := h.service.DeleteSanity(r.Context(), model.DeleteSanityInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

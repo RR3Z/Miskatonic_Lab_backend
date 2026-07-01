@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) *my
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	characteristics, err := h.characters.GetCharacteristics(r.Context(), model.GetCharacteristicsInput{
+	characteristics, err := h.service.GetCharacteristics(r.Context(), model.GetCharacteristicsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getCharacteristics(w http.ResponseWriter, r *http.Request) *my
 	return nil
 }
 
-func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -44,7 +44,7 @@ func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) 
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	characteristics, err := h.characters.UpsertCharacteristics(r.Context(), input)
+	characteristics, err := h.service.UpsertCharacteristics(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to upsert character characteristics")
 	}
@@ -53,7 +53,7 @@ func (h *Handler) upsertCharacteristics(w http.ResponseWriter, r *http.Request) 
 	return nil
 }
 
-func (h *Handler) deleteCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteCharacteristics(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -61,7 +61,7 @@ func (h *Handler) deleteCharacteristics(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteCharacteristics(r.Context(), model.DeleteCharacteristicsInput{
+	if err := h.service.DeleteCharacteristics(r.Context(), model.DeleteCharacteristicsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

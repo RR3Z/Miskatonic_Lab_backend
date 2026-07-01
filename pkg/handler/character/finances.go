@@ -9,7 +9,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
-func (h *Handler) getFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) getFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -17,7 +17,7 @@ func (h *Handler) getFinances(w http.ResponseWriter, r *http.Request) *myErrors.
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	finances, err := h.characters.GetFinances(r.Context(), model.GetFinancesInput{
+	finances, err := h.service.GetFinances(r.Context(), model.GetFinancesInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -29,7 +29,7 @@ func (h *Handler) getFinances(w http.ResponseWriter, r *http.Request) *myErrors.
 	return nil
 }
 
-func (h *Handler) upsertFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) upsertFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -44,7 +44,7 @@ func (h *Handler) upsertFinances(w http.ResponseWriter, r *http.Request) *myErro
 	input.UserID = userID
 	input.CharacterID = characterID
 
-	finances, err := h.characters.UpsertFinances(r.Context(), input)
+	finances, err := h.service.UpsertFinances(r.Context(), input)
 	if err != nil {
 		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to upsert character finances")
 	}
@@ -53,7 +53,7 @@ func (h *Handler) upsertFinances(w http.ResponseWriter, r *http.Request) *myErro
 	return nil
 }
 
-func (h *Handler) deleteFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) deleteFinances(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	characterID, err := getCharacterIDFromRequest(r)
@@ -61,7 +61,7 @@ func (h *Handler) deleteFinances(w http.ResponseWriter, r *http.Request) *myErro
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.characters.DeleteFinances(r.Context(), model.DeleteFinancesInput{
+	if err := h.service.DeleteFinances(r.Context(), model.DeleteFinancesInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {
