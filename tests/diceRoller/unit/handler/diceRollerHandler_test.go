@@ -99,6 +99,7 @@ func TestDiceRollerRejectsInvalidBody(t *testing.T) {
 		"/api/dice-roll/11111111-1111-1111-1111-111111111111/",
 		`{"expression":`)
 	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.Contains(t, rec.Body.String(), "common.invalid_request")
 	require.Zero(t, svc.makeCalls)
 }
 
