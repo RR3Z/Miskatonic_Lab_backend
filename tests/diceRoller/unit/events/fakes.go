@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
+	diceRollerDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/diceRoller"
 )
 
 type FakeEventPublisher struct {
@@ -18,14 +17,14 @@ func (f *FakeEventPublisher) Publish(_ context.Context, event events.Event) {
 
 type FakeDiceRollerService struct {
 	Err   error
-	Roll  db.DiceRoll
-	Rolls []db.DiceRoll
+	Roll  diceRollerDTO.DiceRollModel
+	Rolls []diceRollerDTO.DiceRollModel
 }
 
-func (f *FakeDiceRollerService) MakeRoll(ctx context.Context, input diceRoller.DiceRollInput) (db.DiceRoll, error) {
+func (f *FakeDiceRollerService) MakeRoll(_ context.Context, _ diceRollerDTO.MakeRollInput) (diceRollerDTO.DiceRollModel, error) {
 	return f.Roll, f.Err
 }
 
-func (f *FakeDiceRollerService) GetLastDiceRolls(ctx context.Context, input db.GetDiceRollsParams) ([]db.DiceRoll, error) {
+func (f *FakeDiceRollerService) GetLastDiceRolls(_ context.Context, _ diceRollerDTO.GetLastDiceRollsInput) ([]diceRollerDTO.DiceRollModel, error) {
 	return f.Rolls, f.Err
 }

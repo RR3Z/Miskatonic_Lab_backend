@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	diceRollerDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/diceRoller"
 	diceRollerServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -16,13 +16,13 @@ const (
 )
 
 func newEventPublishingTestSubject() (*FakeDiceRollerService, *FakeEventPublisher, *diceRollerServices.EventPublishingDiceRollerService) {
-	next := &FakeDiceRollerService{Roll: testDiceRoll(), Rolls: []db.DiceRoll{testDiceRoll()}}
+	next := &FakeDiceRollerService{Roll: testDiceRollModel(), Rolls: []diceRollerDTO.DiceRollModel{testDiceRollModel()}}
 	publisher := &FakeEventPublisher{}
 	return next, publisher, diceRollerServices.NewEventPublishingDiceRollerService(next, publisher)
 }
 
-func testDiceRoll() db.DiceRoll {
-	return db.DiceRoll{
+func testDiceRollModel() diceRollerDTO.DiceRollModel {
+	return diceRollerDTO.DiceRollModel{
 		ID:          diceTestUUID(diceTestCharacterID),
 		CharacterID: diceTestUUID(diceTestCharacterID),
 		UserID:      diceTestUserID,
@@ -44,4 +44,19 @@ func requirePublishedEvent(t *testing.T, publisher *FakeEventPublisher, expected
 	t.Helper()
 	require.Len(t, publisher.Events, 1)
 	require.Equal(t, expected, publisher.Events[0])
+}
+
+func diceTestMakeRollInput() diceRollerDTO.MakeRollInput {
+	return diceRollerDTO.MakeRollInput{
+		UserID:      diceTestUserID,
+		CharacterID: diceTestUUID(diceTestCharacterID),
+		Formula:     "2d6+3",
+	}
+}
+
+func diceTestGetLastDiceRollsInput() diceRollerDTO.GetLastDiceRollsInput {
+	return diceRollerDTO.GetLastDiceRollsInput{
+		UserID:      diceTestUserID,
+		CharacterID: diceTestUUID(diceTestCharacterID),
+	}
 }
