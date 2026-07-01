@@ -7,6 +7,7 @@ import (
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	characterHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character"
+	diceRollerHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/diceRoller"
 	roomHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
@@ -19,16 +20,18 @@ type Handler struct {
 }
 
 type AuxiliaryHandlers struct {
-	characterHandler *characterHandler.CharacterHandler
-	roomHandler      *roomHandler.RoomHandler
+	characterHandler  *characterHandler.CharacterHandler
+	diceRollerHandler *diceRollerHandler.DiceRollerHandler
+	roomHandler       *roomHandler.RoomHandler
 }
 
 func NewHandler(services *service.Service) *Handler {
 	return &Handler{
 		services: services,
 		auxiliaryHandlers: new(AuxiliaryHandlers{
-			characterHandler: characterHandler.New(services.Character),
-			roomHandler:      roomHandler.New(services.Room),
+			characterHandler:  characterHandler.New(services.Character),
+			diceRollerHandler: diceRollerHandler.New(services.DiceRoller),
+			roomHandler:       roomHandler.New(services.Room),
 		}),
 	}
 }
@@ -60,9 +63,8 @@ func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *ch
 			h.auxiliaryHandlers.characterHandler.RegisterRoutes(r)
 		})
 
-		r.Route("/dice-roll/{characterID}", func(r chi.Router) {
-			r.Post("/", AppHandler(h.makeRoll).ServeHTTP)
-			r.Get("/lasts", AppHandler(h.getLastDiceRolls).ServeHTTP)
+		r.Route("/dice-roll", func(r chi.Router) {
+			h.auxiliaryHandlers.diceRollerHandler.RegisterRoutes(r)
 		})
 
 		r.Route("/rooms", func(r chi.Router) {
