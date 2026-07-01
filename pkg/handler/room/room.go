@@ -1,7 +1,6 @@
 package room
 
 import (
-	"encoding/json"
 	"net/http"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
@@ -16,8 +15,8 @@ func (h *RoomHandler) createRoom(w http.ResponseWriter, r *http.Request) *myErro
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	var req roomDTO.CreateRoomRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return roomErrors.InvalidInputError("invalid request body", err)
+	if appErr := roomHelpers.DecodeJSON(r, &req); appErr != nil {
+		return appErr
 	}
 
 	result, err := h.service.CreateRoom(r.Context(), roomDTO.CreateRoomInput{
@@ -59,8 +58,8 @@ func (h *RoomHandler) updateRoom(w http.ResponseWriter, r *http.Request) *myErro
 	}
 
 	var req roomDTO.UpdateRoomRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return roomErrors.InvalidInputError("invalid request body", err)
+	if appErr := roomHelpers.DecodeJSON(r, &req); appErr != nil {
+		return appErr
 	}
 
 	result, err := h.service.UpdateRoom(r.Context(), roomDTO.UpdateRoomInput{
@@ -84,8 +83,8 @@ func (h *RoomHandler) transferRoomOwnership(w http.ResponseWriter, r *http.Reque
 	}
 
 	var req roomDTO.TransferRoomOwnershipRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return roomErrors.InvalidInputError("invalid request body", err)
+	if appErr := roomHelpers.DecodeJSON(r, &req); appErr != nil {
+		return appErr
 	}
 
 	result, err := h.service.TransferOwnership(r.Context(), roomDTO.TransferOwnershipInput{
@@ -128,8 +127,8 @@ func (h *RoomHandler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors
 	}
 
 	var req roomDTO.JoinRoomRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return roomErrors.InvalidInputError("invalid request body", err)
+	if appErr := roomHelpers.DecodeJSON(r, &req); appErr != nil {
+		return appErr
 	}
 
 	result, err := h.service.JoinRoom(
@@ -199,8 +198,8 @@ func (h *RoomHandler) selectCharacter(w http.ResponseWriter, r *http.Request) *m
 	}
 
 	var req roomDTO.SelectCharacterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return roomErrors.InvalidInputError("invalid request body", err)
+	if appErr := roomHelpers.DecodeJSON(r, &req); appErr != nil {
+		return appErr
 	}
 
 	result, err := h.service.SelectCharacter(r.Context(), roomDTO.SelectCharacterInput{
@@ -225,8 +224,8 @@ func (h *RoomHandler) changeRole(w http.ResponseWriter, r *http.Request) *myErro
 	targetUserID := chi.URLParam(r, "userID")
 
 	var req roomDTO.ChangeRoleRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return roomErrors.InvalidInputError("invalid request body", err)
+	if appErr := roomHelpers.DecodeJSON(r, &req); appErr != nil {
+		return appErr
 	}
 
 	result, err := h.service.ChangeRole(

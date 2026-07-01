@@ -25,8 +25,8 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 	if input.MaxPlayers != nil {
 		maxPlayers = *input.MaxPlayers
 	}
-	if maxPlayers < 1 {
-		return model.RoomModel{}, ErrInvalidInput
+	if err := validateMaxPlayers(maxPlayers); err != nil {
+		return model.RoomModel{}, err
 	}
 
 	tx, err := s.repos.DB.Begin(ctx)
@@ -90,8 +90,8 @@ func (s *RoomService) GetRoom(ctx context.Context, input model.GetRoomInput) (mo
 }
 
 func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInput) (model.RoomModel, error) {
-	if input.MaxPlayers < 1 {
-		return model.RoomModel{}, ErrInvalidInput
+	if err := validateMaxPlayers(input.MaxPlayers); err != nil {
+		return model.RoomModel{}, err
 	}
 
 	if err := s.EnsureOwner(ctx, input.RoomID, input.OwnerID); err != nil {
@@ -168,8 +168,8 @@ func (s *RoomService) DeleteRoom(ctx context.Context, input model.DeleteRoomInpu
 }
 
 func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMemberModel, error) {
-	if input.InviteToken == "" {
-		return model.RoomMemberModel{}, ErrInvalidInput
+	if err := validateInviteToken(input.InviteToken); err != nil {
+		return model.RoomMemberModel{}, err
 	}
 
 	tx, err := s.repos.DB.Begin(ctx)
