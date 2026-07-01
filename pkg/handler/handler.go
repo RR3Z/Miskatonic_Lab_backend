@@ -9,6 +9,7 @@ import (
 	characterHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character"
 	diceRollerHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/diceRoller"
 	roomHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room"
+	userHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/user"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/go-chi/chi/v5"
@@ -23,6 +24,7 @@ type AuxiliaryHandlers struct {
 	characterHandler  *characterHandler.CharacterHandler
 	diceRollerHandler *diceRollerHandler.DiceRollerHandler
 	roomHandler       *roomHandler.RoomHandler
+	userHandler       *userHandler.UserHandler
 }
 
 func NewHandler(services *service.Service) *Handler {
@@ -32,6 +34,7 @@ func NewHandler(services *service.Service) *Handler {
 			characterHandler:  characterHandler.New(services.Character),
 			diceRollerHandler: diceRollerHandler.New(services.DiceRoller),
 			roomHandler:       roomHandler.New(services.Room),
+			userHandler:       userHandler.New(services.User),
 		}),
 	}
 }
@@ -50,14 +53,14 @@ func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *ch
 
 	router.Use(middleware.RequestLoggingMiddleware(slog.Default()))
 
-	router.Post("/webhooks/clerk/user", AppHandler(h.handleUserClerkWebhook).ServeHTTP)
+	h.auxiliaryHandlers.userHandler.RegisterPublicRoutes(router)
 
 	router.Route("/api", func(r chi.Router) {
 		if authMiddleware != nil {
 			r.Use(authMiddleware)
 		}
 
-		r.Get("/me", AppHandler(h.getUserByID).ServeHTTP)
+		h.auxiliaryHandlers.userHandler.RegisterProtectedRoutes(r)
 
 		r.Route("/characters", func(r chi.Router) {
 			h.auxiliaryHandlers.characterHandler.RegisterRoutes(r)
