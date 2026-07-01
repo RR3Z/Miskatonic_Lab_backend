@@ -7,10 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	userErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/user/errors"
 	"github.com/stretchr/testify/require"
 )
 
-func TestClerkWebhookUserParsingUsesTrimmedUsername(t *testing.T) {
+func TestClerkWebhookPassesRawUsername(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
 	data.Username = stringPtr("  roger  ")
@@ -19,12 +20,12 @@ func TestClerkWebhookUserParsingUsesTrimmedUsername(t *testing.T) {
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
-	require.Equal(t, "roger", userService.LastUpsertUserInput.Username)
-	require.Equal(t, "primary@example.com", userService.LastUpsertUserInput.Email)
-	require.Equal(t, data.ImageURL, userService.LastUpsertUserInput.AvatarUrl)
+	require.Equal(t, "  roger  ", *userService.LastUpsertUserInput.Username)
+	require.NotNil(t, userService.LastUpsertUserInput.AvatarURL)
+	require.Equal(t, "https://example.com/avatar.png", *userService.LastUpsertUserInput.AvatarURL)
 }
 
-func TestClerkWebhookUserParsingUsesEmailPrefixWhenUsernameIsNil(t *testing.T) {
+func TestClerkWebhookPassesNilUsername(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
 	data.Username = nil
@@ -33,11 +34,10 @@ func TestClerkWebhookUserParsingUsesEmailPrefixWhenUsernameIsNil(t *testing.T) {
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
-	require.Equal(t, "primary", userService.LastUpsertUserInput.Username)
-	require.Equal(t, "primary@example.com", userService.LastUpsertUserInput.Email)
+	require.Nil(t, userService.LastUpsertUserInput.Username)
 }
 
-func TestClerkWebhookUserParsingUsesEmailPrefixWhenUsernameIsBlank(t *testing.T) {
+func TestClerkWebhookPassesBlankUsername(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
 	data.Username = stringPtr("   ")
@@ -46,11 +46,10 @@ func TestClerkWebhookUserParsingUsesEmailPrefixWhenUsernameIsBlank(t *testing.T)
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
-	require.Equal(t, "primary", userService.LastUpsertUserInput.Username)
-	require.Equal(t, "primary@example.com", userService.LastUpsertUserInput.Email)
+	require.Equal(t, "   ", *userService.LastUpsertUserInput.Username)
 }
 
-func TestClerkWebhookUserParsingUsesPrimaryEmailWhenPrimaryIDMatches(t *testing.T) {
+func TestClerkWebhookPassesPrimaryEmailID(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
 
@@ -58,38 +57,37 @@ func TestClerkWebhookUserParsingUsesPrimaryEmailWhenPrimaryIDMatches(t *testing.
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
-	require.Equal(t, "primary@example.com", userService.LastUpsertUserInput.Email)
+	require.NotNil(t, userService.LastUpsertUserInput.PrimaryEmailAddressID)
+	require.Equal(t, "email_2", *userService.LastUpsertUserInput.PrimaryEmailAddressID)
+	require.Len(t, userService.LastUpsertUserInput.EmailAddresses, 2)
 }
 
-func TestClerkWebhookUserParsingFallsBackToFirstEmailWhenPrimaryIDIsMissing(t *testing.T) {
+func TestClerkWebhookPassesMissingPrimaryEmailID(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
-	data.Username = nil
 	data.PrimaryEmailAddressID = stringPtr("missing_email")
 
 	recorder := performSignedClerkUserWebhook(t, router, testUserCreatedPayload(data))
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
-	require.Equal(t, "first@example.com", userService.LastUpsertUserInput.Email)
-	require.Equal(t, "first", userService.LastUpsertUserInput.Username)
+	require.NotNil(t, userService.LastUpsertUserInput.PrimaryEmailAddressID)
+	require.Equal(t, "missing_email", *userService.LastUpsertUserInput.PrimaryEmailAddressID)
 }
 
-func TestClerkWebhookUserParsingFallsBackToFirstEmailWhenPrimaryIDIsNil(t *testing.T) {
+func TestClerkWebhookPassesNilPrimaryEmailID(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
-	data.Username = nil
 	data.PrimaryEmailAddressID = nil
 
 	recorder := performSignedClerkUserWebhook(t, router, testUserCreatedPayload(data))
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
-	require.Equal(t, "first@example.com", userService.LastUpsertUserInput.Email)
-	require.Equal(t, "first", userService.LastUpsertUserInput.Username)
+	require.Nil(t, userService.LastUpsertUserInput.PrimaryEmailAddressID)
 }
 
-func TestClerkWebhookUserParsingFallsBackToLocalEmailWhenNoEmailsExist(t *testing.T) {
+func TestClerkWebhookPassesEmptyEmailList(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
 	data.Username = nil
@@ -100,23 +98,18 @@ func TestClerkWebhookUserParsingFallsBackToLocalEmailWhenNoEmailsExist(t *testin
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
-	require.Equal(t, "user_1@users.local", userService.LastUpsertUserInput.Email)
-	require.Equal(t, expectedSyntheticClerkWebhookUsername("user_1"), userService.LastUpsertUserInput.Username)
-	require.NotEqual(t, "user_1", userService.LastUpsertUserInput.Username)
+	require.Empty(t, userService.LastUpsertUserInput.EmailAddresses)
 }
 
-func TestClerkWebhookUserParsingUsesSameRulesForUpdatedEvent(t *testing.T) {
+func TestClerkWebhookUpsertsForUpdatedEvent(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
-	data.Username = nil
 
 	recorder := performSignedClerkUserWebhook(t, router, testUserUpdatedPayload(data))
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.UpsertUserCalls)
 	require.Equal(t, "user_1", userService.LastUpsertUserInput.ID)
-	require.Equal(t, "primary", userService.LastUpsertUserInput.Username)
-	require.Equal(t, "primary@example.com", userService.LastUpsertUserInput.Email)
 }
 
 func TestClerkWebhookDeletesUserForDeletedEvent(t *testing.T) {
@@ -127,7 +120,7 @@ func TestClerkWebhookDeletesUserForDeletedEvent(t *testing.T) {
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, 1, userService.DeleteUserCalls)
-	require.Equal(t, "user_1", userService.LastDeleteUserID)
+	require.Equal(t, "user_1", userService.LastDeleteUserInput.ID)
 	require.Zero(t, userService.UpsertUserCalls)
 }
 
@@ -135,11 +128,12 @@ func TestClerkWebhookRejectsDeletedEventWithoutUserID(t *testing.T) {
 	userService, router := newClerkWebhookParsingTestSubject(t)
 	data := testClerkUserFields()
 	data.ID = "   "
+	userService.DeleteUserErr = userErrors.ErrMissingUserID
 
 	recorder := performSignedClerkUserWebhook(t, router, testUserDeletedPayload(data))
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
-	require.Zero(t, userService.DeleteUserCalls)
+	require.Equal(t, 1, userService.DeleteUserCalls)
 }
 
 func TestClerkWebhookRejectsUnexpectedEventType(t *testing.T) {
