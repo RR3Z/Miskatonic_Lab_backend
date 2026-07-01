@@ -1,90 +1,90 @@
 package character
 
 import (
-	rootModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characters"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/sanity"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 )
 
-type CharacterDBData struct {
-	Character       db.Character
-	Characteristics db.Characteristic
-	DerivedStats    db.DerivedStat
-	HP              db.HealthState
-	MP              db.MagicState
-	Sanity          db.SanityState
-	Luck            db.LuckState
-	Skills          []db.GetSkillsRow
-	Backstory       *db.Backstory
-	BackstoryItems  []db.BackstoryItem
-	Finances        *db.Finance
-	Notes           []db.Note
-}
+type CharacterShortModel = characters.CharacterShortModel
+type CharacterModel = characters.CharacterModel
+type CharacterDBData = characters.CharacterDBData
 
-type CharacterModel struct {
-	CharacterShortModel
+type HealthState = db.HealthState
+type SanityState = db.SanityState
+type MagicState = db.MagicState
+type LuckState = db.LuckState
+type Characteristic = db.Characteristic
+type DerivedStat = db.DerivedStat
+type Finance = db.Finance
+type Note = db.Note
 
-	Skills          []rootModel.SkillModel   `json:"skills"`
-	Characteristics db.Characteristic        `json:"characteristics"`
-	DerivedStats    db.DerivedStat           `json:"derived_stats"`
-	HP              db.HealthState           `json:"hp"`
-	MP              db.MagicState            `json:"mp"`
-	Sanity          db.SanityState           `json:"sanity"`
-	Luck            db.LuckState             `json:"luck"`
-	Backstory       rootModel.BackstoryModel `json:"backstory"`
-	Finances        rootModel.FinancesModel  `json:"finances"`
-	Notes           []db.Note                `json:"notes"`
+type BackstoryModel = backstories.BackstoryModel
+type BackstoryItemModel = backstories.BackstoryItemModel
+type FinancesModel = finances.FinancesModel
+type SkillModel = skills.SkillModel
+
+type CharacteristicsModel = characteristics.CharacteristicsModel
+type DerivedStatsModel = derivedstats.DerivedStatsModel
+type HealthModel = health.HealthModel
+type SanityModel = sanity.SanityModel
+type MagicModel = magic.MagicModel
+type LuckModel = luck.LuckModel
+type NoteModel = notes.NoteModel
+
+func ToCharacterShortModel(c db.Character) CharacterShortModel {
+	return characters.ToCharacterShortModel(c)
 }
 
 func ToCharacterModel(d CharacterDBData) CharacterModel {
-	m := CharacterModel{
-		CharacterShortModel: ToCharacterShortModel(d.Character),
-	}
+	return characters.ToCharacterModel(d)
+}
 
-	if d.Characteristics.ID.Valid {
-		m.Characteristics = d.Characteristics
-	}
-	if d.DerivedStats.ID.Valid {
-		m.DerivedStats = d.DerivedStats
-	}
-	if d.HP.ID.Valid {
-		m.HP = d.HP
-	}
-	if d.MP.ID.Valid {
-		m.MP = d.MP
-	}
-	if d.Sanity.ID.Valid {
-		m.Sanity = d.Sanity
-	}
-	if d.Luck.ID.Valid {
-		m.Luck = d.Luck
-	}
+func ToBackstoryModel(b db.Backstory, items []db.BackstoryItem) BackstoryModel {
+	return backstories.ToBackstoryModel(b, items)
+}
 
-	m.Notes = d.Notes
+func ToBackstoryItemModel(item db.BackstoryItem) BackstoryItemModel {
+	return backstories.ToBackstoryItemModel(item)
+}
 
-	if len(d.Skills) > 0 {
-		skills := make([]rootModel.SkillModel, len(d.Skills))
-		for i, s := range d.Skills {
-			skills[i] = rootModel.ToSkillModel(s)
-		}
-		m.Skills = skills
-	}
+func ToBackstoryItemModels(items []db.BackstoryItem) []BackstoryItemModel {
+	return backstories.ToBackstoryItemModels(items)
+}
 
-	if d.Backstory != nil {
-		m.Backstory = rootModel.ToBackstoryModel(*d.Backstory, d.BackstoryItems)
-	}
+func ToFinancesModel(f db.Finance, creditRating *skills.SkillModel) FinancesModel {
+	return finances.ToFinancesModel(f, creditRating)
+}
 
-	if d.Finances != nil {
-		var creditRating *rootModel.SkillModel
-		if d.Finances.CreditRatingSkillID.Valid {
-			for _, skill := range m.Skills {
-				if skill.ID == d.Finances.CreditRatingSkillID {
-					creditRating = &skill
-					break
-				}
-			}
-		}
-		m.Finances = rootModel.ToFinancesModel(*d.Finances, creditRating)
-	}
+func ToSkillModel(row db.GetSkillsRow) SkillModel {
+	return skills.ToSkillModel(row)
+}
 
-	return m
+func ToCharacterSkillModels(rows []db.GetCharacterSkillsRow) []SkillModel {
+	return skills.ToCharacterSkillModels(rows)
+}
+
+func ToCharacterSkillModel(row db.GetCharacterSkillsRow) SkillModel {
+	return skills.ToCharacterSkillModel(row)
+}
+
+func ToSingleCharacterSkillModel(row db.GetCharacterSkillRow) SkillModel {
+	return skills.ToSingleCharacterSkillModel(row)
+}
+
+func ToCreatedCharacterSkillModel(row db.CreateCharacterSkillRow) SkillModel {
+	return skills.ToCreatedCharacterSkillModel(row)
+}
+
+func ToUpdatedCharacterSkillModel(row db.UpdateCharacterSkillRow) SkillModel {
+	return skills.ToUpdatedCharacterSkillModel(row)
 }
