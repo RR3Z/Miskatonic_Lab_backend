@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	sanityDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/sanity"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
@@ -29,8 +29,8 @@ func testSanityState() db.SanityState {
 	}
 }
 
-func testUpsertSanityInput(maxSanity *int16, currentSanity *int16) characterModel.UpsertSanityInput {
-	return characterModel.UpsertSanityInput{
+func testUpsertSanityInput(maxSanity *int16, currentSanity *int16) sanityDTO.UpsertSanityInput {
+	return sanityDTO.UpsertSanityInput{
 		UserID:        "user_1",
 		CharacterID:   testSanityUUID("11111111-1111-1111-1111-111111111111"),
 		MaxSanity:     maxSanity,

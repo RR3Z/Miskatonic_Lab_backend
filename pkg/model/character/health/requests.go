@@ -1,4 +1,4 @@
-package health
+package healthDTO
 
 type HealthRequest struct {
 	MaxHp       *int16 `json:"max_hp"`

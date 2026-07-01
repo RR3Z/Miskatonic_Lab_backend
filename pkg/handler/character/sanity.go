@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	sanityDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/sanity"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getSanity(w http.ResponseWriter, r *http.Request) *my
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	sanity, err := h.service.GetSanity(r.Context(), model.GetSanityInput{
+	sanity, err := h.service.GetSanity(r.Context(), sanityDTO.GetSanityInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -38,7 +38,7 @@ func (h *CharacterHandler) upsertSanity(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpsertSanityInput
+	var input sanityDTO.UpsertSanityInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -62,7 +62,7 @@ func (h *CharacterHandler) deleteSanity(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteSanity(r.Context(), model.DeleteSanityInput{
+	if err := h.service.DeleteSanity(r.Context(), sanityDTO.DeleteSanityInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

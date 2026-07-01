@@ -1,4 +1,4 @@
-package finances
+package financesDTO
 
 import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
@@ -13,13 +13,13 @@ type FinancesModel struct {
 	Cash          *string `json:"cash"`
 	Assets        *string `json:"assets"`
 
-	CreditRating *skills.SkillModel `json:"credit_rating,omitempty"`
+	CreditRating *skillsDTO.SkillModel `json:"credit_rating,omitempty"`
 
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
-func ToFinancesModel(f db.Finance, creditRating *skills.SkillModel) FinancesModel {
+func ToFinancesModel(f db.Finance, creditRating *skillsDTO.SkillModel) FinancesModel {
 	return FinancesModel{
 		ID:            f.ID,
 		SpendingLimit: f.SpendingLimit,

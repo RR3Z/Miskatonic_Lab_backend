@@ -1,4 +1,4 @@
-package health
+package healthDTO
 
 import "github.com/jackc/pgx/v5/pgtype"
 

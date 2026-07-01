@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getFinances(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	finances, err := h.service.GetFinances(r.Context(), model.GetFinancesInput{
+	finances, err := h.service.GetFinances(r.Context(), financesDTO.GetFinancesInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -38,7 +38,7 @@ func (h *CharacterHandler) upsertFinances(w http.ResponseWriter, r *http.Request
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpsertFinancesInput
+	var input financesDTO.UpsertFinancesInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -62,7 +62,7 @@ func (h *CharacterHandler) deleteFinances(w http.ResponseWriter, r *http.Request
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteFinances(r.Context(), model.DeleteFinancesInput{
+	if err := h.service.DeleteFinances(r.Context(), financesDTO.DeleteFinancesInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

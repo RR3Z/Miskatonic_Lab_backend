@@ -8,8 +8,17 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
-	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
+	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
+	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
+	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	luckDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
+	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
+	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
+	sanityDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/sanity"
+	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/calculators"
@@ -33,29 +42,29 @@ func NewCharacterService(repos *repository.Repository, publisher ...events.Event
 }
 
 // Characters
-func (s *CharacterService) GetAllCharacters(ctx context.Context, userID string) ([]characterModel.CharacterShortModel, error) {
-	characters, err := s.repos.Queries.GetAllUserCharacters(ctx, userID)
+func (s *CharacterService) GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterShortModel, error) {
+	dbCharacters, err := s.repos.Queries.GetAllUserCharacters(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]characterModel.CharacterShortModel, len(characters))
-	for i, c := range characters {
-		result[i] = characterModel.ToCharacterShortModel(c)
+	result := make([]characterDTO.CharacterShortModel, len(dbCharacters))
+	for i, c := range dbCharacters {
+		result[i] = characterDTO.ToCharacterShortModel(c)
 	}
 
 	return result, nil
 }
 
-func (s *CharacterService) GetCharacter(ctx context.Context, input characterModel.GetCharacterInput) (characterModel.CharacterModel, error) {
-	var rawData characterModel.CharacterDBData
+func (s *CharacterService) GetCharacter(ctx context.Context, input characterDTO.GetCharacterInput) (characterDTO.CharacterModel, error) {
+	var rawData characterDTO.CharacterDBData
 
 	characterGeneralData, err := s.repos.Queries.GetCharacter(ctx, db.GetCharacterParams{
 		UserID: input.UserID,
 		ID:     input.CharacterID,
 	})
 	if err != nil {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.Character = characterGeneralData
 
@@ -64,7 +73,7 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterMode
 		CharacterID: input.CharacterID,
 	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.Characteristics = characteristics
 
@@ -73,7 +82,7 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterMode
 		CharacterID: input.CharacterID,
 	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.DerivedStats = derivedStats
 
@@ -82,7 +91,7 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterMode
 		CharacterID: input.CharacterID,
 	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.HP = hp
 
@@ -91,7 +100,7 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterMode
 		CharacterID: input.CharacterID,
 	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.Sanity = sanity
 
@@ -100,7 +109,7 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterMode
 		CharacterID: input.CharacterID,
 	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.MP = mp
 
@@ -109,13 +118,13 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterMode
 		CharacterID: input.CharacterID,
 	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.Luck = luck
 
 	skills, err := s.repos.Queries.GetSkills(ctx, characterGeneralData.ID)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.Skills = skills
 
@@ -124,20 +133,20 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterMode
 		CharacterID: input.CharacterID,
 	})
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 	rawData.Notes = notes
 
 	backstory, err := s.repos.Queries.GetBackstory(ctx, characterGeneralData.ID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return characterModel.CharacterModel{}, err
+			return characterDTO.CharacterModel{}, err
 		}
 	} else {
 		rawData.Backstory = &backstory
 		rawData.BackstoryItems, err = s.repos.Queries.GetBackstoryItemsByBackstoryID(ctx, backstory.ID)
 		if err != nil {
-			return characterModel.CharacterModel{}, err
+			return characterDTO.CharacterModel{}, err
 		}
 	}
 
@@ -147,18 +156,18 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterMode
 	})
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return characterModel.CharacterModel{}, err
+			return characterDTO.CharacterModel{}, err
 		}
 	} else {
 		rawData.Finances = &finances
 	}
 
-	return characterModel.ToCharacterModel(rawData), nil
+	return characterDTO.ToCharacterModel(rawData), nil
 }
 
-func (s *CharacterService) CreateCharacter(ctx context.Context, input characterModel.CreateCharacterInput) (characterModel.CharacterShortModel, error) {
+func (s *CharacterService) CreateCharacter(ctx context.Context, input characterDTO.CreateCharacterInput) (characterDTO.CharacterShortModel, error) {
 	if strings.TrimSpace(input.Name) == "" {
-		return characterModel.CharacterShortModel{}, characterErrors.ErrNameRequired
+		return characterDTO.CharacterShortModel{}, characterErrors.ErrNameRequired
 	}
 
 	character, err := s.repos.Queries.CreateCharacter(ctx, db.CreateCharacterParams{
@@ -172,15 +181,15 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterM
 		Birthplace: input.Birthplace,
 	})
 	if err != nil {
-		return characterModel.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
+		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
 	}
 
-	return characterModel.ToCharacterShortModel(character), nil
+	return characterDTO.ToCharacterShortModel(character), nil
 }
 
-func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterModel.UpdateCharacterInput) (characterModel.CharacterShortModel, error) {
+func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterDTO.UpdateCharacterInput) (characterDTO.CharacterShortModel, error) {
 	if strings.TrimSpace(input.Name) == "" {
-		return characterModel.CharacterShortModel{}, characterErrors.ErrNameRequired
+		return characterDTO.CharacterShortModel{}, characterErrors.ErrNameRequired
 	}
 
 	character, err := s.repos.Queries.UpdateCharacter(ctx, db.UpdateCharacterParams{
@@ -195,7 +204,7 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterM
 		Birthplace: input.Birthplace,
 	})
 	if err != nil {
-		return characterModel.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
+		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
 	}
 
 	characteristics, shouldRecalculate := s.getCharacteristicsForDerivedStatsRecalculation(ctx, input.UserID, input.ID)
@@ -203,10 +212,10 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterM
 		s.recalculateDerivedStats(ctx, character.UserID, character.ID, character.Age, characteristics, "character_update")
 	}
 
-	return characterModel.ToCharacterShortModel(character), nil
+	return characterDTO.ToCharacterShortModel(character), nil
 }
 
-func (s *CharacterService) DeleteCharacter(ctx context.Context, input characterModel.DeleteCharacterInput) error {
+func (s *CharacterService) DeleteCharacter(ctx context.Context, input characterDTO.DeleteCharacterInput) error {
 	_, err := s.repos.Queries.DeleteCharacter(ctx, db.DeleteCharacterParams{
 		ID:     input.ID,
 		UserID: input.UserID,
@@ -215,7 +224,7 @@ func (s *CharacterService) DeleteCharacter(ctx context.Context, input characterM
 }
 
 // Health
-func (s *CharacterService) GetHealth(ctx context.Context, input characterModel.GetHealthInput) (db.HealthState, error) {
+func (s *CharacterService) GetHealth(ctx context.Context, input healthDTO.GetHealthInput) (db.HealthState, error) {
 	health, err := s.repos.Queries.GetHealthState(ctx, db.GetHealthStateParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -227,7 +236,7 @@ func (s *CharacterService) GetHealth(ctx context.Context, input characterModel.G
 	return health, nil
 }
 
-func (s *CharacterService) UpsertHealth(ctx context.Context, input characterModel.UpsertHealthInput) (db.HealthState, error) {
+func (s *CharacterService) UpsertHealth(ctx context.Context, input healthDTO.UpsertHealthInput) (db.HealthState, error) {
 	if err := s.validateHealthState(ctx, input); err != nil {
 		return db.HealthState{}, err
 	}
@@ -249,7 +258,7 @@ func (s *CharacterService) UpsertHealth(ctx context.Context, input characterMode
 	return health, nil
 }
 
-func (s *CharacterService) DeleteHealth(ctx context.Context, input characterModel.DeleteHealthInput) error {
+func (s *CharacterService) DeleteHealth(ctx context.Context, input healthDTO.DeleteHealthInput) error {
 	if _, err := s.repos.Queries.DeleteHealthState(ctx, db.DeleteHealthStateParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -261,7 +270,7 @@ func (s *CharacterService) DeleteHealth(ctx context.Context, input characterMode
 }
 
 // Sanity
-func (s *CharacterService) GetSanity(ctx context.Context, input characterModel.GetSanityInput) (db.SanityState, error) {
+func (s *CharacterService) GetSanity(ctx context.Context, input sanityDTO.GetSanityInput) (db.SanityState, error) {
 	sanity, err := s.repos.Queries.GetSanityState(ctx, db.GetSanityStateParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -273,7 +282,7 @@ func (s *CharacterService) GetSanity(ctx context.Context, input characterModel.G
 	return sanity, nil
 }
 
-func (s *CharacterService) UpsertSanity(ctx context.Context, input characterModel.UpsertSanityInput) (db.SanityState, error) {
+func (s *CharacterService) UpsertSanity(ctx context.Context, input sanityDTO.UpsertSanityInput) (db.SanityState, error) {
 	if err := s.validateSanityState(ctx, input); err != nil {
 		return db.SanityState{}, err
 	}
@@ -293,7 +302,7 @@ func (s *CharacterService) UpsertSanity(ctx context.Context, input characterMode
 	return sanity, nil
 }
 
-func (s *CharacterService) DeleteSanity(ctx context.Context, input characterModel.DeleteSanityInput) error {
+func (s *CharacterService) DeleteSanity(ctx context.Context, input sanityDTO.DeleteSanityInput) error {
 	if _, err := s.repos.Queries.DeleteSanityState(ctx, db.DeleteSanityStateParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -305,7 +314,7 @@ func (s *CharacterService) DeleteSanity(ctx context.Context, input characterMode
 }
 
 // Magic
-func (s *CharacterService) GetMagic(ctx context.Context, input characterModel.GetMagicInput) (db.MagicState, error) {
+func (s *CharacterService) GetMagic(ctx context.Context, input magicDTO.GetMagicInput) (db.MagicState, error) {
 	magic, err := s.repos.Queries.GetMagicState(ctx, db.GetMagicStateParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -317,7 +326,7 @@ func (s *CharacterService) GetMagic(ctx context.Context, input characterModel.Ge
 	return magic, nil
 }
 
-func (s *CharacterService) UpsertMagic(ctx context.Context, input characterModel.UpsertMagicInput) (db.MagicState, error) {
+func (s *CharacterService) UpsertMagic(ctx context.Context, input magicDTO.UpsertMagicInput) (db.MagicState, error) {
 	if err := s.validateMagicState(ctx, input); err != nil {
 		return db.MagicState{}, err
 	}
@@ -335,7 +344,7 @@ func (s *CharacterService) UpsertMagic(ctx context.Context, input characterModel
 	return magic, nil
 }
 
-func (s *CharacterService) DeleteMagic(ctx context.Context, input characterModel.DeleteMagicInput) error {
+func (s *CharacterService) DeleteMagic(ctx context.Context, input magicDTO.DeleteMagicInput) error {
 	if _, err := s.repos.Queries.DeleteMagicState(ctx, db.DeleteMagicStateParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -347,7 +356,7 @@ func (s *CharacterService) DeleteMagic(ctx context.Context, input characterModel
 }
 
 // Luck
-func (s *CharacterService) GetLuck(ctx context.Context, input characterModel.GetLuckInput) (db.LuckState, error) {
+func (s *CharacterService) GetLuck(ctx context.Context, input luckDTO.GetLuckInput) (db.LuckState, error) {
 	luck, err := s.repos.Queries.GetLuckState(ctx, db.GetLuckStateParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -359,7 +368,7 @@ func (s *CharacterService) GetLuck(ctx context.Context, input characterModel.Get
 	return luck, nil
 }
 
-func (s *CharacterService) UpsertLuck(ctx context.Context, input characterModel.UpsertLuckInput) (db.LuckState, error) {
+func (s *CharacterService) UpsertLuck(ctx context.Context, input luckDTO.UpsertLuckInput) (db.LuckState, error) {
 	if err := s.validateLuckState(ctx, input); err != nil {
 		return db.LuckState{}, err
 	}
@@ -377,7 +386,7 @@ func (s *CharacterService) UpsertLuck(ctx context.Context, input characterModel.
 	return luck, nil
 }
 
-func (s *CharacterService) DeleteLuck(ctx context.Context, input characterModel.DeleteLuckInput) error {
+func (s *CharacterService) DeleteLuck(ctx context.Context, input luckDTO.DeleteLuckInput) error {
 	if _, err := s.repos.Queries.DeleteLuckState(ctx, db.DeleteLuckStateParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -389,7 +398,7 @@ func (s *CharacterService) DeleteLuck(ctx context.Context, input characterModel.
 }
 
 // Finances
-func (s *CharacterService) GetFinances(ctx context.Context, input characterModel.GetFinancesInput) (db.Finance, error) {
+func (s *CharacterService) GetFinances(ctx context.Context, input financesDTO.GetFinancesInput) (db.Finance, error) {
 	finances, err := s.repos.Queries.GetFinances(ctx, db.GetFinancesParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -401,7 +410,7 @@ func (s *CharacterService) GetFinances(ctx context.Context, input characterModel
 	return finances, nil
 }
 
-func (s *CharacterService) UpsertFinances(ctx context.Context, input characterModel.UpsertFinancesInput) (db.Finance, error) {
+func (s *CharacterService) UpsertFinances(ctx context.Context, input financesDTO.UpsertFinancesInput) (db.Finance, error) {
 	finances, err := s.repos.Queries.UpsertFinances(ctx, db.UpsertFinancesParams{
 		UserID:              input.UserID,
 		CharacterID:         input.CharacterID,
@@ -417,7 +426,7 @@ func (s *CharacterService) UpsertFinances(ctx context.Context, input characterMo
 	return finances, nil
 }
 
-func (s *CharacterService) DeleteFinances(ctx context.Context, input characterModel.DeleteFinancesInput) error {
+func (s *CharacterService) DeleteFinances(ctx context.Context, input financesDTO.DeleteFinancesInput) error {
 	if _, err := s.repos.Queries.DeleteFinances(ctx, db.DeleteFinancesParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -429,13 +438,13 @@ func (s *CharacterService) DeleteFinances(ctx context.Context, input characterMo
 }
 
 // Backstory
-func (s *CharacterService) GetBackstory(ctx context.Context, input characterModel.GetBackstoryInput) (model.BackstoryModel, error) {
+func (s *CharacterService) GetBackstory(ctx context.Context, input backstoriesDTO.GetBackstoryInput) (backstoriesDTO.BackstoryModel, error) {
 	backstory, err := s.repos.Queries.GetBackstoryByCharacter(ctx, db.GetBackstoryByCharacterParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
 	})
 	if err != nil {
-		return model.BackstoryModel{}, err
+		return backstoriesDTO.BackstoryModel{}, err
 	}
 
 	items, err := s.repos.Queries.GetBackstoryItems(ctx, db.GetBackstoryItemsParams{
@@ -443,20 +452,20 @@ func (s *CharacterService) GetBackstory(ctx context.Context, input characterMode
 		CharacterID: input.CharacterID,
 	})
 	if err != nil {
-		return model.BackstoryModel{}, err
+		return backstoriesDTO.BackstoryModel{}, err
 	}
 
-	return model.ToBackstoryModel(backstory, items), nil
+	return backstoriesDTO.ToBackstoryModel(backstory, items), nil
 }
 
-func (s *CharacterService) UpsertBackstory(ctx context.Context, input characterModel.UpsertBackstoryInput) (model.BackstoryModel, error) {
+func (s *CharacterService) UpsertBackstory(ctx context.Context, input backstoriesDTO.UpsertBackstoryInput) (backstoriesDTO.BackstoryModel, error) {
 	backstory, err := s.repos.Queries.UpsertBackstory(ctx, db.UpsertBackstoryParams{
 		UserID:              input.UserID,
 		CharacterID:         input.CharacterID,
 		PersonalDescription: input.PersonalDescription,
 	})
 	if err != nil {
-		return model.BackstoryModel{}, err
+		return backstoriesDTO.BackstoryModel{}, err
 	}
 
 	items, err := s.repos.Queries.GetBackstoryItems(ctx, db.GetBackstoryItemsParams{
@@ -464,13 +473,13 @@ func (s *CharacterService) UpsertBackstory(ctx context.Context, input characterM
 		CharacterID: input.CharacterID,
 	})
 	if err != nil {
-		return model.BackstoryModel{}, err
+		return backstoriesDTO.BackstoryModel{}, err
 	}
 
-	return model.ToBackstoryModel(backstory, items), nil
+	return backstoriesDTO.ToBackstoryModel(backstory, items), nil
 }
 
-func (s *CharacterService) DeleteBackstory(ctx context.Context, input characterModel.DeleteBackstoryInput) error {
+func (s *CharacterService) DeleteBackstory(ctx context.Context, input backstoriesDTO.DeleteBackstoryInput) error {
 	if _, err := s.repos.Queries.DeleteBackstory(ctx, db.DeleteBackstoryParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -481,7 +490,7 @@ func (s *CharacterService) DeleteBackstory(ctx context.Context, input characterM
 	return nil
 }
 
-func (s *CharacterService) GetBackstoryItems(ctx context.Context, input characterModel.GetBackstoryItemsInput) ([]model.BackstoryItemModel, error) {
+func (s *CharacterService) GetBackstoryItems(ctx context.Context, input backstoriesDTO.GetBackstoryItemsInput) ([]backstoriesDTO.BackstoryItemModel, error) {
 	items, err := s.repos.Queries.GetBackstoryItems(ctx, db.GetBackstoryItemsParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -490,23 +499,23 @@ func (s *CharacterService) GetBackstoryItems(ctx context.Context, input characte
 		return nil, err
 	}
 
-	return model.ToBackstoryItemModels(items), nil
+	return backstoriesDTO.ToBackstoryItemModels(items), nil
 }
 
-func (s *CharacterService) GetBackstoryItem(ctx context.Context, input characterModel.GetBackstoryItemInput) (model.BackstoryItemModel, error) {
+func (s *CharacterService) GetBackstoryItem(ctx context.Context, input backstoriesDTO.GetBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error) {
 	item, err := s.repos.Queries.GetBackstoryItem(ctx, db.GetBackstoryItemParams{
 		UserID:          input.UserID,
 		CharacterID:     input.CharacterID,
 		BackstoryItemID: input.BackstoryItemID,
 	})
 	if err != nil {
-		return model.BackstoryItemModel{}, err
+		return backstoriesDTO.BackstoryItemModel{}, err
 	}
 
-	return model.ToBackstoryItemModel(item), nil
+	return backstoriesDTO.ToBackstoryItemModel(item), nil
 }
 
-func (s *CharacterService) CreateBackstoryItem(ctx context.Context, input characterModel.CreateBackstoryItemInput) (model.BackstoryItemModel, error) {
+func (s *CharacterService) CreateBackstoryItem(ctx context.Context, input backstoriesDTO.CreateBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error) {
 	item, err := s.repos.Queries.CreateBackstoryItem(ctx, db.CreateBackstoryItemParams{
 		Section:     input.Section,
 		Title:       input.Title,
@@ -515,13 +524,13 @@ func (s *CharacterService) CreateBackstoryItem(ctx context.Context, input charac
 		CharacterID: input.CharacterID,
 	})
 	if err != nil {
-		return model.BackstoryItemModel{}, characterErrors.MapCharacterConstraintError(err)
+		return backstoriesDTO.BackstoryItemModel{}, characterErrors.MapCharacterConstraintError(err)
 	}
 
-	return model.ToBackstoryItemModel(item), nil
+	return backstoriesDTO.ToBackstoryItemModel(item), nil
 }
 
-func (s *CharacterService) UpdateBackstoryItem(ctx context.Context, input characterModel.UpdateBackstoryItemInput) (model.BackstoryItemModel, error) {
+func (s *CharacterService) UpdateBackstoryItem(ctx context.Context, input backstoriesDTO.UpdateBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error) {
 	item, err := s.repos.Queries.UpdateBackstoryItem(ctx, db.UpdateBackstoryItemParams{
 		Section:         input.Section,
 		Title:           input.Title,
@@ -531,13 +540,13 @@ func (s *CharacterService) UpdateBackstoryItem(ctx context.Context, input charac
 		BackstoryItemID: input.BackstoryItemID,
 	})
 	if err != nil {
-		return model.BackstoryItemModel{}, characterErrors.MapCharacterConstraintError(err)
+		return backstoriesDTO.BackstoryItemModel{}, characterErrors.MapCharacterConstraintError(err)
 	}
 
-	return model.ToBackstoryItemModel(item), nil
+	return backstoriesDTO.ToBackstoryItemModel(item), nil
 }
 
-func (s *CharacterService) DeleteBackstoryItem(ctx context.Context, input characterModel.DeleteBackstoryItemInput) error {
+func (s *CharacterService) DeleteBackstoryItem(ctx context.Context, input backstoriesDTO.DeleteBackstoryItemInput) error {
 	_, err := s.repos.Queries.DeleteBackstoryItem(ctx, db.DeleteBackstoryItemParams{
 		UserID:          input.UserID,
 		CharacterID:     input.CharacterID,
@@ -547,8 +556,8 @@ func (s *CharacterService) DeleteBackstoryItem(ctx context.Context, input charac
 }
 
 // Skills
-func (s *CharacterService) GetSkills(ctx context.Context, input characterModel.GetSkillsInput) ([]model.SkillModel, error) {
-	skills, err := s.repos.Queries.GetCharacterSkills(ctx, db.GetCharacterSkillsParams{
+func (s *CharacterService) GetSkills(ctx context.Context, input skillsDTO.GetSkillsInput) ([]skillsDTO.SkillModel, error) {
+	dbSkills, err := s.repos.Queries.GetCharacterSkills(ctx, db.GetCharacterSkillsParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
 	})
@@ -556,23 +565,23 @@ func (s *CharacterService) GetSkills(ctx context.Context, input characterModel.G
 		return nil, err
 	}
 
-	return model.ToCharacterSkillModels(skills), nil
+	return skillsDTO.ToCharacterSkillModels(dbSkills), nil
 }
 
-func (s *CharacterService) GetSkill(ctx context.Context, input characterModel.GetSkillInput) (model.SkillModel, error) {
+func (s *CharacterService) GetSkill(ctx context.Context, input skillsDTO.GetSkillInput) (skillsDTO.SkillModel, error) {
 	skill, err := s.repos.Queries.GetCharacterSkill(ctx, db.GetCharacterSkillParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
 		SkillID:     input.SkillID,
 	})
 	if err != nil {
-		return model.SkillModel{}, err
+		return skillsDTO.SkillModel{}, err
 	}
 
-	return model.ToSingleCharacterSkillModel(skill), nil
+	return skillsDTO.ToSingleCharacterSkillModel(skill), nil
 }
 
-func (s *CharacterService) CreateSkill(ctx context.Context, input characterModel.CreateSkillInput) (model.SkillModel, error) {
+func (s *CharacterService) CreateSkill(ctx context.Context, input skillsDTO.CreateSkillInput) (skillsDTO.SkillModel, error) {
 	skill, err := s.repos.Queries.CreateCharacterSkill(ctx, db.CreateCharacterSkillParams{
 		Name:        input.Name,
 		CategoryID:  input.CategoryID,
@@ -585,13 +594,13 @@ func (s *CharacterService) CreateSkill(ctx context.Context, input characterModel
 		CharacterID: input.CharacterID,
 	})
 	if err != nil {
-		return model.SkillModel{}, characterErrors.MapCharacterConstraintError(err)
+		return skillsDTO.SkillModel{}, characterErrors.MapCharacterConstraintError(err)
 	}
 
-	return model.ToCreatedCharacterSkillModel(skill), nil
+	return skillsDTO.ToCreatedCharacterSkillModel(skill), nil
 }
 
-func (s *CharacterService) UpdateSkill(ctx context.Context, input characterModel.UpdateSkillInput) (model.SkillModel, error) {
+func (s *CharacterService) UpdateSkill(ctx context.Context, input skillsDTO.UpdateSkillInput) (skillsDTO.SkillModel, error) {
 	skill, err := s.repos.Queries.UpdateCharacterSkill(ctx, db.UpdateCharacterSkillParams{
 		Name:        input.Name,
 		CategoryID:  input.CategoryID,
@@ -605,13 +614,13 @@ func (s *CharacterService) UpdateSkill(ctx context.Context, input characterModel
 		SkillID:     input.SkillID,
 	})
 	if err != nil {
-		return model.SkillModel{}, characterErrors.MapCharacterConstraintError(err)
+		return skillsDTO.SkillModel{}, characterErrors.MapCharacterConstraintError(err)
 	}
 
-	return model.ToUpdatedCharacterSkillModel(skill), nil
+	return skillsDTO.ToUpdatedCharacterSkillModel(skill), nil
 }
 
-func (s *CharacterService) DeleteSkill(ctx context.Context, input characterModel.DeleteSkillInput) error {
+func (s *CharacterService) DeleteSkill(ctx context.Context, input skillsDTO.DeleteSkillInput) error {
 	_, err := s.repos.Queries.DeleteCharacterSkill(ctx, db.DeleteCharacterSkillParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -621,7 +630,7 @@ func (s *CharacterService) DeleteSkill(ctx context.Context, input characterModel
 }
 
 // DerivedStats
-func (s *CharacterService) GetDerivedStats(ctx context.Context, input characterModel.GetDerivedStatsInput) (db.DerivedStat, error) {
+func (s *CharacterService) GetDerivedStats(ctx context.Context, input derivedStatsDTO.GetDerivedStatsInput) (db.DerivedStat, error) {
 	derivedStats, err := s.repos.Queries.GetDerivedStats(ctx, db.GetDerivedStatsParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -633,7 +642,7 @@ func (s *CharacterService) GetDerivedStats(ctx context.Context, input characterM
 	return derivedStats, nil
 }
 
-func (s *CharacterService) UpsertDerivedStats(ctx context.Context, input characterModel.UpsertDerivedStatsInput) (db.DerivedStat, error) {
+func (s *CharacterService) UpsertDerivedStats(ctx context.Context, input derivedStatsDTO.UpsertDerivedStatsInput) (db.DerivedStat, error) {
 	derivedStats, err := s.repos.Queries.UpsertDerivedStats(ctx, db.UpsertDerivedStatsParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -649,7 +658,7 @@ func (s *CharacterService) UpsertDerivedStats(ctx context.Context, input charact
 	return derivedStats, nil
 }
 
-func (s *CharacterService) DeleteDerivedStats(ctx context.Context, input characterModel.DeleteDerivedStatsInput) error {
+func (s *CharacterService) DeleteDerivedStats(ctx context.Context, input derivedStatsDTO.DeleteDerivedStatsInput) error {
 	if _, err := s.repos.Queries.DeleteDerivedStats(ctx, db.DeleteDerivedStatsParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -661,7 +670,7 @@ func (s *CharacterService) DeleteDerivedStats(ctx context.Context, input charact
 }
 
 // Characteristics
-func (s *CharacterService) GetCharacteristics(ctx context.Context, input characterModel.GetCharacteristicsInput) (db.Characteristic, error) {
+func (s *CharacterService) GetCharacteristics(ctx context.Context, input characteristicsDTO.GetCharacteristicsInput) (db.Characteristic, error) {
 	characteristics, err := s.repos.Queries.GetCharacteristics(ctx, db.GetCharacteristicsParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -673,7 +682,7 @@ func (s *CharacterService) GetCharacteristics(ctx context.Context, input charact
 	return characteristics, nil
 }
 
-func (s *CharacterService) UpsertCharacteristics(ctx context.Context, input characterModel.UpsertCharacteristicsInput) (db.Characteristic, error) {
+func (s *CharacterService) UpsertCharacteristics(ctx context.Context, input characteristicsDTO.UpsertCharacteristicsInput) (db.Characteristic, error) {
 	characteristics, err := s.repos.Queries.UpsertCharacteristics(ctx, db.UpsertCharacteristicsParams{
 		Strength:     input.Strength,
 		Constitution: input.Constitution,
@@ -701,7 +710,7 @@ func (s *CharacterService) UpsertCharacteristics(ctx context.Context, input char
 	return characteristics, nil
 }
 
-func (s *CharacterService) DeleteCharacteristics(ctx context.Context, input characterModel.DeleteCharacteristicsInput) error {
+func (s *CharacterService) DeleteCharacteristics(ctx context.Context, input characteristicsDTO.DeleteCharacteristicsInput) error {
 	if _, err := s.repos.Queries.DeleteCharacteristics(ctx, db.DeleteCharacteristicsParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -713,7 +722,7 @@ func (s *CharacterService) DeleteCharacteristics(ctx context.Context, input char
 }
 
 // Notes
-func (s *CharacterService) GetNotes(ctx context.Context, input characterModel.GetNotesInput) ([]db.Note, error) {
+func (s *CharacterService) GetNotes(ctx context.Context, input notesDTO.GetNotesInput) ([]db.Note, error) {
 	notes, err := s.repos.Queries.GetNotes(ctx, db.GetNotesParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -725,7 +734,7 @@ func (s *CharacterService) GetNotes(ctx context.Context, input characterModel.Ge
 	return notes, nil
 }
 
-func (s *CharacterService) GetNote(ctx context.Context, input characterModel.GetNoteInput) (db.Note, error) {
+func (s *CharacterService) GetNote(ctx context.Context, input notesDTO.GetNoteInput) (db.Note, error) {
 	note, err := s.repos.Queries.GetNote(ctx, db.GetNoteParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -738,7 +747,7 @@ func (s *CharacterService) GetNote(ctx context.Context, input characterModel.Get
 	return note, nil
 }
 
-func (s *CharacterService) CreateNote(ctx context.Context, input characterModel.CreateNoteInput) (db.Note, error) {
+func (s *CharacterService) CreateNote(ctx context.Context, input notesDTO.CreateNoteInput) (db.Note, error) {
 	note, err := s.repos.Queries.CreateNote(ctx, db.CreateNoteParams{
 		Title:       input.Title,
 		Body:        input.Body,
@@ -752,7 +761,7 @@ func (s *CharacterService) CreateNote(ctx context.Context, input characterModel.
 	return note, nil
 }
 
-func (s *CharacterService) UpdateNote(ctx context.Context, input characterModel.UpdateNoteInput) (db.Note, error) {
+func (s *CharacterService) UpdateNote(ctx context.Context, input notesDTO.UpdateNoteInput) (db.Note, error) {
 	note, err := s.repos.Queries.UpdateNote(ctx, db.UpdateNoteParams{
 		Title:       input.Title,
 		Body:        input.Body,
@@ -767,7 +776,7 @@ func (s *CharacterService) UpdateNote(ctx context.Context, input characterModel.
 	return note, nil
 }
 
-func (s *CharacterService) DeleteNote(ctx context.Context, input characterModel.DeleteNoteInput) error {
+func (s *CharacterService) DeleteNote(ctx context.Context, input notesDTO.DeleteNoteInput) error {
 	_, err := s.repos.Queries.DeleteNote(ctx, db.DeleteNoteParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -777,7 +786,7 @@ func (s *CharacterService) DeleteNote(ctx context.Context, input characterModel.
 }
 
 // Helpers
-func (s *CharacterService) validateMagicState(ctx context.Context, input characterModel.UpsertMagicInput) error {
+func (s *CharacterService) validateMagicState(ctx context.Context, input magicDTO.UpsertMagicInput) error {
 	if input.MaxMp != nil && input.CurrentMp != nil {
 		if *input.CurrentMp > *input.MaxMp {
 			return myErrors.ErrCurrentMagicExceedsMax
@@ -817,7 +826,7 @@ func (s *CharacterService) validateMagicState(ctx context.Context, input charact
 	return nil
 }
 
-func (s *CharacterService) validateLuckState(ctx context.Context, input characterModel.UpsertLuckInput) error {
+func (s *CharacterService) validateLuckState(ctx context.Context, input luckDTO.UpsertLuckInput) error {
 	if input.StartingLuck != nil && input.CurrentLuck != nil {
 		if *input.CurrentLuck > *input.StartingLuck {
 			return myErrors.ErrCurrentLuckExceedsStarting
@@ -857,7 +866,7 @@ func (s *CharacterService) validateLuckState(ctx context.Context, input characte
 	return nil
 }
 
-func (s *CharacterService) validateHealthState(ctx context.Context, input characterModel.UpsertHealthInput) error {
+func (s *CharacterService) validateHealthState(ctx context.Context, input healthDTO.UpsertHealthInput) error {
 	if input.MaxHp != nil && input.CurrentHp != nil {
 		if *input.CurrentHp > *input.MaxHp {
 			return myErrors.ErrCurrentHealthExceedsMax
@@ -897,7 +906,7 @@ func (s *CharacterService) validateHealthState(ctx context.Context, input charac
 	return nil
 }
 
-func (s *CharacterService) validateSanityState(ctx context.Context, input characterModel.UpsertSanityInput) error {
+func (s *CharacterService) validateSanityState(ctx context.Context, input sanityDTO.UpsertSanityInput) error {
 	if input.MaxSanity != nil && input.CurrentSanity != nil {
 		if *input.CurrentSanity > *input.MaxSanity {
 			return myErrors.ErrCurrentSanityExceedsMax
@@ -978,7 +987,7 @@ func (s *CharacterService) recalculateDerivedStats(
 		characteristics,
 	)
 
-	_, err := s.UpsertDerivedStats(ctx, characterModel.UpsertDerivedStatsInput{
+	_, err := s.UpsertDerivedStats(ctx, derivedStatsDTO.UpsertDerivedStatsInput{
 		UserID:      derivedStatsInput.UserID,
 		CharacterID: derivedStatsInput.CharacterID,
 		Speed:       derivedStatsInput.Speed,

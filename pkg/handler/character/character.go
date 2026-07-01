@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -34,7 +34,7 @@ func (h *CharacterHandler) getCharacter(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	character, err := h.service.GetCharacter(r.Context(), model.GetCharacterInput{
+	character, err := h.service.GetCharacter(r.Context(), characterDTO.GetCharacterInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -49,7 +49,7 @@ func (h *CharacterHandler) getCharacter(w http.ResponseWriter, r *http.Request) 
 func (h *CharacterHandler) createCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	var input model.CreateCharacterInput
+	var input characterDTO.CreateCharacterInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -72,7 +72,7 @@ func (h *CharacterHandler) updateCharacter(w http.ResponseWriter, r *http.Reques
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpdateCharacterInput
+	var input characterDTO.UpdateCharacterInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -96,7 +96,7 @@ func (h *CharacterHandler) deleteCharacter(w http.ResponseWriter, r *http.Reques
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteCharacter(r.Context(), model.DeleteCharacterInput{
+	if err := h.service.DeleteCharacter(r.Context(), characterDTO.DeleteCharacterInput{
 		UserID: userID,
 		ID:     characterID,
 	}); err != nil {

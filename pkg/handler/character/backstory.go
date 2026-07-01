@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getBackstory(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	backstory, err := h.service.GetBackstory(r.Context(), model.GetBackstoryInput{
+	backstory, err := h.service.GetBackstory(r.Context(), backstoriesDTO.GetBackstoryInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -38,7 +38,7 @@ func (h *CharacterHandler) upsertBackstory(w http.ResponseWriter, r *http.Reques
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpsertBackstoryInput
+	var input backstoriesDTO.UpsertBackstoryInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -62,7 +62,7 @@ func (h *CharacterHandler) deleteBackstory(w http.ResponseWriter, r *http.Reques
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteBackstory(r.Context(), model.DeleteBackstoryInput{
+	if err := h.service.DeleteBackstory(r.Context(), backstoriesDTO.DeleteBackstoryInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {
@@ -81,7 +81,7 @@ func (h *CharacterHandler) getBackstoryItems(w http.ResponseWriter, r *http.Requ
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	items, err := h.service.GetBackstoryItems(r.Context(), model.GetBackstoryItemsInput{
+	items, err := h.service.GetBackstoryItems(r.Context(), backstoriesDTO.GetBackstoryItemsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -106,7 +106,7 @@ func (h *CharacterHandler) getBackstoryItem(w http.ResponseWriter, r *http.Reque
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
 
-	item, err := h.service.GetBackstoryItem(r.Context(), model.GetBackstoryItemInput{
+	item, err := h.service.GetBackstoryItem(r.Context(), backstoriesDTO.GetBackstoryItemInput{
 		UserID:          userID,
 		CharacterID:     characterID,
 		BackstoryItemID: itemID,
@@ -127,7 +127,7 @@ func (h *CharacterHandler) createBackstoryItem(w http.ResponseWriter, r *http.Re
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.CreateBackstoryItemInput
+	var input backstoriesDTO.CreateBackstoryItemInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -156,7 +156,7 @@ func (h *CharacterHandler) updateBackstoryItem(w http.ResponseWriter, r *http.Re
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
 
-	var input model.UpdateBackstoryItemInput
+	var input backstoriesDTO.UpdateBackstoryItemInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -186,7 +186,7 @@ func (h *CharacterHandler) deleteBackstoryItem(w http.ResponseWriter, r *http.Re
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
 
-	if err := h.service.DeleteBackstoryItem(r.Context(), model.DeleteBackstoryItemInput{
+	if err := h.service.DeleteBackstoryItem(r.Context(), backstoriesDTO.DeleteBackstoryItemInput{
 		UserID:          userID,
 		CharacterID:     characterID,
 		BackstoryItemID: itemID,

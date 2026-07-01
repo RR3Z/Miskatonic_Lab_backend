@@ -1,4 +1,4 @@
-package characteristics
+package characteristicsDTO
 
 import "github.com/jackc/pgx/v5/pgtype"
 

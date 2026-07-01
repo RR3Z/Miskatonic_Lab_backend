@@ -1,4 +1,4 @@
-package notes
+package notesDTO
 
 type NoteRequest struct {
 	Title string `json:"title"`

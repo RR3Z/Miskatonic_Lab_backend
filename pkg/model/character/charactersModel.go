@@ -1,4 +1,4 @@
-package characters
+package characterDTO
 
 import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
@@ -49,16 +49,16 @@ type CharacterShortModel struct {
 type CharacterModel struct {
 	CharacterShortModel
 
-	Skills          []skills.SkillModel                `json:"skills"`
-	Characteristics characteristics.CharacteristicsModel `json:"characteristics"`
-	DerivedStats    derivedstats.DerivedStatsModel     `json:"derived_stats"`
-	HP              health.HealthModel                 `json:"hp"`
-	MP              magic.MagicModel                   `json:"mp"`
-	Sanity          sanity.SanityModel                 `json:"sanity"`
-	Luck            luck.LuckModel                     `json:"luck"`
-	Backstory       backstories.BackstoryModel         `json:"backstory"`
-	Finances        finances.FinancesModel             `json:"finances"`
-	Notes           []notes.NoteModel                  `json:"notes"`
+	Skills          []skillsDTO.SkillModel                  `json:"skills"`
+	Characteristics characteristicsDTO.CharacteristicsModel `json:"characteristics"`
+	DerivedStats    derivedStatsDTO.DerivedStatsModel       `json:"derived_stats"`
+	HP              healthDTO.HealthModel                   `json:"hp"`
+	MP              magicDTO.MagicModel                     `json:"mp"`
+	Sanity          sanityDTO.SanityModel                   `json:"sanity"`
+	Luck            luckDTO.LuckModel                       `json:"luck"`
+	Backstory       backstoriesDTO.BackstoryModel           `json:"backstory"`
+	Finances        financesDTO.FinancesModel               `json:"finances"`
+	Notes           []notesDTO.NoteModel                    `json:"notes"`
 }
 
 func ToCharacterShortModel(c db.Character) CharacterShortModel {
@@ -83,40 +83,40 @@ func ToCharacterModel(d CharacterDBData) CharacterModel {
 	}
 
 	if d.Characteristics.ID.Valid {
-		m.Characteristics = characteristics.ToCharacteristicsModel(d.Characteristics)
+		m.Characteristics = characteristicsDTO.ToCharacteristicsModel(d.Characteristics)
 	}
 	if d.DerivedStats.ID.Valid {
-		m.DerivedStats = derivedstats.ToDerivedStatsModel(d.DerivedStats)
+		m.DerivedStats = derivedStatsDTO.ToDerivedStatsModel(d.DerivedStats)
 	}
 	if d.HP.ID.Valid {
-		m.HP = health.ToHealthModel(d.HP)
+		m.HP = healthDTO.ToHealthModel(d.HP)
 	}
 	if d.MP.ID.Valid {
-		m.MP = magic.ToMagicModel(d.MP)
+		m.MP = magicDTO.ToMagicModel(d.MP)
 	}
 	if d.Sanity.ID.Valid {
-		m.Sanity = sanity.ToSanityModel(d.Sanity)
+		m.Sanity = sanityDTO.ToSanityModel(d.Sanity)
 	}
 	if d.Luck.ID.Valid {
-		m.Luck = luck.ToLuckModel(d.Luck)
+		m.Luck = luckDTO.ToLuckModel(d.Luck)
 	}
 
-	m.Notes = notes.ToNoteModels(d.Notes)
+	m.Notes = notesDTO.ToNoteModels(d.Notes)
 
 	if len(d.Skills) > 0 {
-		skillModels := make([]skills.SkillModel, len(d.Skills))
+		skillModels := make([]skillsDTO.SkillModel, len(d.Skills))
 		for i, s := range d.Skills {
-			skillModels[i] = skills.ToSkillModel(s)
+			skillModels[i] = skillsDTO.ToSkillModel(s)
 		}
 		m.Skills = skillModels
 	}
 
 	if d.Backstory != nil {
-		m.Backstory = backstories.ToBackstoryModel(*d.Backstory, d.BackstoryItems)
+		m.Backstory = backstoriesDTO.ToBackstoryModel(*d.Backstory, d.BackstoryItems)
 	}
 
 	if d.Finances != nil {
-		var creditRating *skills.SkillModel
+		var creditRating *skillsDTO.SkillModel
 		if d.Finances.CreditRatingSkillID.Valid {
 			for _, skill := range m.Skills {
 				if skill.ID == d.Finances.CreditRatingSkillID {
@@ -125,7 +125,7 @@ func ToCharacterModel(d CharacterDBData) CharacterModel {
 				}
 			}
 		}
-		m.Finances = finances.ToFinancesModel(*d.Finances, creditRating)
+		m.Finances = financesDTO.ToFinancesModel(*d.Finances, creditRating)
 	}
 
 	return m

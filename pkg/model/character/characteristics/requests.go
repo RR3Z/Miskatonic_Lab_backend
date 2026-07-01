@@ -1,4 +1,4 @@
-package characteristics
+package characteristicsDTO
 
 type CharacteristicsRequest struct {
 	Strength     *int16 `json:"strength"`

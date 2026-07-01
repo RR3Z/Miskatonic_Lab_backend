@@ -1,4 +1,4 @@
-package backstories
+package backstoriesDTO
 
 type BackstoryRequest struct {
 	PersonalDescription *string `json:"personal_description"`

@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getSkills(w http.ResponseWriter, r *http.Request) *my
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	skills, err := h.service.GetSkills(r.Context(), model.GetSkillsInput{
+	skills, err := h.service.GetSkills(r.Context(), skillsDTO.GetSkillsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -43,7 +43,7 @@ func (h *CharacterHandler) getSkill(w http.ResponseWriter, r *http.Request) *myE
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}
 
-	skill, err := h.service.GetSkill(r.Context(), model.GetSkillInput{
+	skill, err := h.service.GetSkill(r.Context(), skillsDTO.GetSkillInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		SkillID:     skillID,
@@ -64,7 +64,7 @@ func (h *CharacterHandler) createSkill(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.CreateSkillInput
+	var input skillsDTO.CreateSkillInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -93,7 +93,7 @@ func (h *CharacterHandler) updateSkill(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}
 
-	var input model.UpdateSkillInput
+	var input skillsDTO.UpdateSkillInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -123,7 +123,7 @@ func (h *CharacterHandler) deleteSkill(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}
 
-	if err := h.service.DeleteSkill(r.Context(), model.DeleteSkillInput{
+	if err := h.service.DeleteSkill(r.Context(), skillsDTO.DeleteSkillInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		SkillID:     skillID,

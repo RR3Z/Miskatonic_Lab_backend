@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
-	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
+	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -29,15 +30,15 @@ func newEventPublishingTestSubject() (*FakeCharacterService, *FakeEventPublisher
 
 func newFakeCharacterService() *FakeCharacterService {
 	return &FakeCharacterService{
-		Characters: []characterModel.CharacterShortModel{
+		Characters: []characterDTO.CharacterShortModel{
 			testCharacterShortModel(),
 			{ID: testUUID("55555555-5555-5555-5555-555555555555"), UserID: testUserID, Name: "Second Character"},
 		},
 		Character:       testCharacterModel(),
-		Backstory:       model.BackstoryModel{ID: testUUID(testItemID), CharacterID: testUUID(testCharacterID)},
-		BackstoryItems:  []model.BackstoryItemModel{testBackstoryItemModel(), {ID: testUUID("66666666-6666-6666-6666-666666666666")}},
+		Backstory:       backstoriesDTO.BackstoryModel{ID: testUUID(testItemID), CharacterID: testUUID(testCharacterID)},
+		BackstoryItems:  []backstoriesDTO.BackstoryItemModel{testBackstoryItemModel(), {ID: testUUID("66666666-6666-6666-6666-666666666666")}},
 		BackstoryItem:   testBackstoryItemModel(),
-		Skills:          []model.SkillModel{testSkillModel(), {ID: testUUID("77777777-7777-7777-7777-777777777777"), Name: "Spot Hidden"}},
+		Skills:          []skillsDTO.SkillModel{testSkillModel(), {ID: testUUID("77777777-7777-7777-7777-777777777777"), Name: "Spot Hidden"}},
 		Skill:           testSkillModel(),
 		Notes:           []db.Note{testNote(), {ID: testUUID("88888888-8888-8888-8888-888888888888"), Title: "Second Note"}},
 		Note:            testNote(),
@@ -61,22 +62,22 @@ func testUUID(value string) pgtype.UUID {
 	return uuid
 }
 
-func testCharacterShortModel() characterModel.CharacterShortModel {
-	return characterModel.CharacterShortModel{
+func testCharacterShortModel() characterDTO.CharacterShortModel {
+	return characterDTO.CharacterShortModel{
 		ID:     testUUID(testCharacterID),
 		UserID: testUserID,
 		Name:   "Dr. Armitage",
 	}
 }
 
-func testCharacterModel() characterModel.CharacterModel {
-	return characterModel.CharacterModel{
+func testCharacterModel() characterDTO.CharacterModel {
+	return characterDTO.CharacterModel{
 		CharacterShortModel: testCharacterShortModel(),
 	}
 }
 
-func testBackstoryItemModel() model.BackstoryItemModel {
-	return model.BackstoryItemModel{
+func testBackstoryItemModel() backstoriesDTO.BackstoryItemModel {
+	return backstoriesDTO.BackstoryItemModel{
 		ID:      testUUID(testItemID),
 		Section: "ideology_beliefs",
 		Title:   "Old Motto",
@@ -84,8 +85,8 @@ func testBackstoryItemModel() model.BackstoryItemModel {
 	}
 }
 
-func testSkillModel() model.SkillModel {
-	return model.SkillModel{
+func testSkillModel() skillsDTO.SkillModel {
+	return skillsDTO.SkillModel{
 		ID:   testUUID(testSkillID),
 		Name: "Library Use",
 	}

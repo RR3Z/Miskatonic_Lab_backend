@@ -1,4 +1,4 @@
-package notes
+package notesDTO
 
 import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"

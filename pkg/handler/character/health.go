@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getHealth(w http.ResponseWriter, r *http.Request) *my
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	health, err := h.service.GetHealth(r.Context(), model.GetHealthInput{
+	health, err := h.service.GetHealth(r.Context(), healthDTO.GetHealthInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -38,7 +38,7 @@ func (h *CharacterHandler) upsertHealth(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpsertHealthInput
+	var input healthDTO.UpsertHealthInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -62,7 +62,7 @@ func (h *CharacterHandler) deleteHealth(w http.ResponseWriter, r *http.Request) 
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteHealth(r.Context(), model.DeleteHealthInput{
+	if err := h.service.DeleteHealth(r.Context(), healthDTO.DeleteHealthInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

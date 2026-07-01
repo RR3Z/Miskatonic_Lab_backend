@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getMagic(w http.ResponseWriter, r *http.Request) *myE
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	magic, err := h.service.GetMagic(r.Context(), model.GetMagicInput{
+	magic, err := h.service.GetMagic(r.Context(), magicDTO.GetMagicInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -38,7 +38,7 @@ func (h *CharacterHandler) upsertMagic(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpsertMagicInput
+	var input magicDTO.UpsertMagicInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -62,7 +62,7 @@ func (h *CharacterHandler) deleteMagic(w http.ResponseWriter, r *http.Request) *
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteMagic(r.Context(), model.DeleteMagicInput{
+	if err := h.service.DeleteMagic(r.Context(), magicDTO.DeleteMagicInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

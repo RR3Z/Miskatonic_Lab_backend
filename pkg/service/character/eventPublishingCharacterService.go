@@ -5,8 +5,17 @@ import (
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
-	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
+	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
+	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
+	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	luckDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
+	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
+	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
+	sanityDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/sanity"
+	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 )
 
@@ -24,7 +33,7 @@ func NewEventPublishingCharacterService(next ICharacter, publisher events.EventP
 }
 
 // Characters
-func (s *EventPublishingCharacterService) GetAllCharacters(ctx context.Context, userID string) ([]characterModel.CharacterShortModel, error) {
+func (s *EventPublishingCharacterService) GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterShortModel, error) {
 	characters, err := s.next.GetAllCharacters(ctx, userID)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharactersListFailed{
@@ -43,7 +52,7 @@ func (s *EventPublishingCharacterService) GetAllCharacters(ctx context.Context, 
 	return characters, nil
 }
 
-func (s *EventPublishingCharacterService) GetCharacter(ctx context.Context, input characterModel.GetCharacterInput) (characterModel.CharacterModel, error) {
+func (s *EventPublishingCharacterService) GetCharacter(ctx context.Context, input characterDTO.GetCharacterInput) (characterDTO.CharacterModel, error) {
 	character, err := s.next.GetCharacter(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterGetFailed{
@@ -51,7 +60,7 @@ func (s *EventPublishingCharacterService) GetCharacter(ctx context.Context, inpu
 			CharacterID: input.CharacterID.String(),
 			Err:         err,
 		})
-		return characterModel.CharacterModel{}, err
+		return characterDTO.CharacterModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterGetSucceeded{
@@ -63,14 +72,14 @@ func (s *EventPublishingCharacterService) GetCharacter(ctx context.Context, inpu
 	return character, nil
 }
 
-func (s *EventPublishingCharacterService) CreateCharacter(ctx context.Context, input characterModel.CreateCharacterInput) (characterModel.CharacterShortModel, error) {
+func (s *EventPublishingCharacterService) CreateCharacter(ctx context.Context, input characterDTO.CreateCharacterInput) (characterDTO.CharacterShortModel, error) {
 	character, err := s.next.CreateCharacter(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterCreateFailed{
 			UserID: input.UserID,
 			Err:    err,
 		})
-		return characterModel.CharacterShortModel{}, err
+		return characterDTO.CharacterShortModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterCreateSucceeded{
@@ -82,7 +91,7 @@ func (s *EventPublishingCharacterService) CreateCharacter(ctx context.Context, i
 	return character, nil
 }
 
-func (s *EventPublishingCharacterService) UpdateCharacter(ctx context.Context, input characterModel.UpdateCharacterInput) (characterModel.CharacterShortModel, error) {
+func (s *EventPublishingCharacterService) UpdateCharacter(ctx context.Context, input characterDTO.UpdateCharacterInput) (characterDTO.CharacterShortModel, error) {
 	character, err := s.next.UpdateCharacter(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterUpdateFailed{
@@ -90,7 +99,7 @@ func (s *EventPublishingCharacterService) UpdateCharacter(ctx context.Context, i
 			CharacterID: input.ID.String(),
 			Err:         err,
 		})
-		return characterModel.CharacterShortModel{}, err
+		return characterDTO.CharacterShortModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterUpdateSucceeded{
@@ -102,7 +111,7 @@ func (s *EventPublishingCharacterService) UpdateCharacter(ctx context.Context, i
 	return character, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteCharacter(ctx context.Context, input characterModel.DeleteCharacterInput) error {
+func (s *EventPublishingCharacterService) DeleteCharacter(ctx context.Context, input characterDTO.DeleteCharacterInput) error {
 	if err := s.next.DeleteCharacter(ctx, input); err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterDeleteFailed{
 			UserID:      input.UserID,
@@ -121,7 +130,7 @@ func (s *EventPublishingCharacterService) DeleteCharacter(ctx context.Context, i
 }
 
 // Health
-func (s *EventPublishingCharacterService) GetHealth(ctx context.Context, input characterModel.GetHealthInput) (db.HealthState, error) {
+func (s *EventPublishingCharacterService) GetHealth(ctx context.Context, input healthDTO.GetHealthInput) (db.HealthState, error) {
 	health, err := s.next.GetHealth(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterHealthGetFailed{
@@ -140,7 +149,7 @@ func (s *EventPublishingCharacterService) GetHealth(ctx context.Context, input c
 	return health, nil
 }
 
-func (s *EventPublishingCharacterService) UpsertHealth(ctx context.Context, input characterModel.UpsertHealthInput) (db.HealthState, error) {
+func (s *EventPublishingCharacterService) UpsertHealth(ctx context.Context, input healthDTO.UpsertHealthInput) (db.HealthState, error) {
 	health, err := s.next.UpsertHealth(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterHealthUpsertFailed{
@@ -159,7 +168,7 @@ func (s *EventPublishingCharacterService) UpsertHealth(ctx context.Context, inpu
 	return health, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteHealth(ctx context.Context, input characterModel.DeleteHealthInput) error {
+func (s *EventPublishingCharacterService) DeleteHealth(ctx context.Context, input healthDTO.DeleteHealthInput) error {
 	err := s.next.DeleteHealth(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterHealthDeleteFailed{
@@ -179,7 +188,7 @@ func (s *EventPublishingCharacterService) DeleteHealth(ctx context.Context, inpu
 }
 
 // Sanity
-func (s *EventPublishingCharacterService) GetSanity(ctx context.Context, input characterModel.GetSanityInput) (db.SanityState, error) {
+func (s *EventPublishingCharacterService) GetSanity(ctx context.Context, input sanityDTO.GetSanityInput) (db.SanityState, error) {
 	sanity, err := s.next.GetSanity(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterSanityGetFailed{
@@ -198,7 +207,7 @@ func (s *EventPublishingCharacterService) GetSanity(ctx context.Context, input c
 	return sanity, nil
 }
 
-func (s *EventPublishingCharacterService) UpsertSanity(ctx context.Context, input characterModel.UpsertSanityInput) (db.SanityState, error) {
+func (s *EventPublishingCharacterService) UpsertSanity(ctx context.Context, input sanityDTO.UpsertSanityInput) (db.SanityState, error) {
 	sanity, err := s.next.UpsertSanity(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterSanityUpsertFailed{
@@ -217,7 +226,7 @@ func (s *EventPublishingCharacterService) UpsertSanity(ctx context.Context, inpu
 	return sanity, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteSanity(ctx context.Context, input characterModel.DeleteSanityInput) error {
+func (s *EventPublishingCharacterService) DeleteSanity(ctx context.Context, input sanityDTO.DeleteSanityInput) error {
 	err := s.next.DeleteSanity(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterSanityDeleteFailed{
@@ -237,7 +246,7 @@ func (s *EventPublishingCharacterService) DeleteSanity(ctx context.Context, inpu
 }
 
 // Magic
-func (s *EventPublishingCharacterService) GetMagic(ctx context.Context, input characterModel.GetMagicInput) (db.MagicState, error) {
+func (s *EventPublishingCharacterService) GetMagic(ctx context.Context, input magicDTO.GetMagicInput) (db.MagicState, error) {
 	magic, err := s.next.GetMagic(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterMagicGetFailed{
@@ -256,7 +265,7 @@ func (s *EventPublishingCharacterService) GetMagic(ctx context.Context, input ch
 	return magic, nil
 }
 
-func (s *EventPublishingCharacterService) UpsertMagic(ctx context.Context, input characterModel.UpsertMagicInput) (db.MagicState, error) {
+func (s *EventPublishingCharacterService) UpsertMagic(ctx context.Context, input magicDTO.UpsertMagicInput) (db.MagicState, error) {
 	magic, err := s.next.UpsertMagic(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterMagicUpsertFailed{
@@ -275,7 +284,7 @@ func (s *EventPublishingCharacterService) UpsertMagic(ctx context.Context, input
 	return magic, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteMagic(ctx context.Context, input characterModel.DeleteMagicInput) error {
+func (s *EventPublishingCharacterService) DeleteMagic(ctx context.Context, input magicDTO.DeleteMagicInput) error {
 	err := s.next.DeleteMagic(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterMagicDeleteFailed{
@@ -295,7 +304,7 @@ func (s *EventPublishingCharacterService) DeleteMagic(ctx context.Context, input
 }
 
 // Luck
-func (s *EventPublishingCharacterService) GetLuck(ctx context.Context, input characterModel.GetLuckInput) (db.LuckState, error) {
+func (s *EventPublishingCharacterService) GetLuck(ctx context.Context, input luckDTO.GetLuckInput) (db.LuckState, error) {
 	luck, err := s.next.GetLuck(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterLuckGetFailed{
@@ -314,7 +323,7 @@ func (s *EventPublishingCharacterService) GetLuck(ctx context.Context, input cha
 	return luck, nil
 }
 
-func (s *EventPublishingCharacterService) UpsertLuck(ctx context.Context, input characterModel.UpsertLuckInput) (db.LuckState, error) {
+func (s *EventPublishingCharacterService) UpsertLuck(ctx context.Context, input luckDTO.UpsertLuckInput) (db.LuckState, error) {
 	luck, err := s.next.UpsertLuck(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterLuckUpsertFailed{
@@ -333,7 +342,7 @@ func (s *EventPublishingCharacterService) UpsertLuck(ctx context.Context, input 
 	return luck, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteLuck(ctx context.Context, input characterModel.DeleteLuckInput) error {
+func (s *EventPublishingCharacterService) DeleteLuck(ctx context.Context, input luckDTO.DeleteLuckInput) error {
 	err := s.next.DeleteLuck(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterLuckDeleteFailed{
@@ -353,7 +362,7 @@ func (s *EventPublishingCharacterService) DeleteLuck(ctx context.Context, input 
 }
 
 // Finances
-func (s *EventPublishingCharacterService) GetFinances(ctx context.Context, input characterModel.GetFinancesInput) (db.Finance, error) {
+func (s *EventPublishingCharacterService) GetFinances(ctx context.Context, input financesDTO.GetFinancesInput) (db.Finance, error) {
 	finances, err := s.next.GetFinances(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterFinancesGetFailed{
@@ -372,7 +381,7 @@ func (s *EventPublishingCharacterService) GetFinances(ctx context.Context, input
 	return finances, nil
 }
 
-func (s *EventPublishingCharacterService) UpsertFinances(ctx context.Context, input characterModel.UpsertFinancesInput) (db.Finance, error) {
+func (s *EventPublishingCharacterService) UpsertFinances(ctx context.Context, input financesDTO.UpsertFinancesInput) (db.Finance, error) {
 	finances, err := s.next.UpsertFinances(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterFinancesUpsertFailed{
@@ -391,7 +400,7 @@ func (s *EventPublishingCharacterService) UpsertFinances(ctx context.Context, in
 	return finances, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteFinances(ctx context.Context, input characterModel.DeleteFinancesInput) error {
+func (s *EventPublishingCharacterService) DeleteFinances(ctx context.Context, input financesDTO.DeleteFinancesInput) error {
 	err := s.next.DeleteFinances(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterFinancesDeleteFailed{
@@ -411,7 +420,7 @@ func (s *EventPublishingCharacterService) DeleteFinances(ctx context.Context, in
 }
 
 // Backstory
-func (s *EventPublishingCharacterService) GetBackstory(ctx context.Context, input characterModel.GetBackstoryInput) (model.BackstoryModel, error) {
+func (s *EventPublishingCharacterService) GetBackstory(ctx context.Context, input backstoriesDTO.GetBackstoryInput) (backstoriesDTO.BackstoryModel, error) {
 	backstory, err := s.next.GetBackstory(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryGetFailed{
@@ -419,7 +428,7 @@ func (s *EventPublishingCharacterService) GetBackstory(ctx context.Context, inpu
 			CharacterID: input.CharacterID.String(),
 			Err:         err,
 		})
-		return model.BackstoryModel{}, err
+		return backstoriesDTO.BackstoryModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryGetSucceeded{
@@ -430,7 +439,7 @@ func (s *EventPublishingCharacterService) GetBackstory(ctx context.Context, inpu
 	return backstory, nil
 }
 
-func (s *EventPublishingCharacterService) UpsertBackstory(ctx context.Context, input characterModel.UpsertBackstoryInput) (model.BackstoryModel, error) {
+func (s *EventPublishingCharacterService) UpsertBackstory(ctx context.Context, input backstoriesDTO.UpsertBackstoryInput) (backstoriesDTO.BackstoryModel, error) {
 	backstory, err := s.next.UpsertBackstory(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryUpsertFailed{
@@ -438,7 +447,7 @@ func (s *EventPublishingCharacterService) UpsertBackstory(ctx context.Context, i
 			CharacterID: input.CharacterID.String(),
 			Err:         err,
 		})
-		return model.BackstoryModel{}, err
+		return backstoriesDTO.BackstoryModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryUpsertSucceeded{
@@ -449,7 +458,7 @@ func (s *EventPublishingCharacterService) UpsertBackstory(ctx context.Context, i
 	return backstory, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteBackstory(ctx context.Context, input characterModel.DeleteBackstoryInput) error {
+func (s *EventPublishingCharacterService) DeleteBackstory(ctx context.Context, input backstoriesDTO.DeleteBackstoryInput) error {
 	err := s.next.DeleteBackstory(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryDeleteFailed{
@@ -468,7 +477,7 @@ func (s *EventPublishingCharacterService) DeleteBackstory(ctx context.Context, i
 	return nil
 }
 
-func (s *EventPublishingCharacterService) GetBackstoryItems(ctx context.Context, input characterModel.GetBackstoryItemsInput) ([]model.BackstoryItemModel, error) {
+func (s *EventPublishingCharacterService) GetBackstoryItems(ctx context.Context, input backstoriesDTO.GetBackstoryItemsInput) ([]backstoriesDTO.BackstoryItemModel, error) {
 	items, err := s.next.GetBackstoryItems(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemsListFailed{
@@ -488,7 +497,7 @@ func (s *EventPublishingCharacterService) GetBackstoryItems(ctx context.Context,
 	return items, nil
 }
 
-func (s *EventPublishingCharacterService) GetBackstoryItem(ctx context.Context, input characterModel.GetBackstoryItemInput) (model.BackstoryItemModel, error) {
+func (s *EventPublishingCharacterService) GetBackstoryItem(ctx context.Context, input backstoriesDTO.GetBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error) {
 	item, err := s.next.GetBackstoryItem(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemGetFailed{
@@ -497,7 +506,7 @@ func (s *EventPublishingCharacterService) GetBackstoryItem(ctx context.Context, 
 			BackstoryItemID: input.BackstoryItemID.String(),
 			Err:             err,
 		})
-		return model.BackstoryItemModel{}, err
+		return backstoriesDTO.BackstoryItemModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemGetSucceeded{
@@ -511,7 +520,7 @@ func (s *EventPublishingCharacterService) GetBackstoryItem(ctx context.Context, 
 	return item, nil
 }
 
-func (s *EventPublishingCharacterService) CreateBackstoryItem(ctx context.Context, input characterModel.CreateBackstoryItemInput) (model.BackstoryItemModel, error) {
+func (s *EventPublishingCharacterService) CreateBackstoryItem(ctx context.Context, input backstoriesDTO.CreateBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error) {
 	item, err := s.next.CreateBackstoryItem(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemCreateFailed{
@@ -519,7 +528,7 @@ func (s *EventPublishingCharacterService) CreateBackstoryItem(ctx context.Contex
 			CharacterID: input.CharacterID.String(),
 			Err:         err,
 		})
-		return model.BackstoryItemModel{}, err
+		return backstoriesDTO.BackstoryItemModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemCreateSucceeded{
@@ -533,7 +542,7 @@ func (s *EventPublishingCharacterService) CreateBackstoryItem(ctx context.Contex
 	return item, nil
 }
 
-func (s *EventPublishingCharacterService) UpdateBackstoryItem(ctx context.Context, input characterModel.UpdateBackstoryItemInput) (model.BackstoryItemModel, error) {
+func (s *EventPublishingCharacterService) UpdateBackstoryItem(ctx context.Context, input backstoriesDTO.UpdateBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error) {
 	item, err := s.next.UpdateBackstoryItem(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemUpdateFailed{
@@ -542,7 +551,7 @@ func (s *EventPublishingCharacterService) UpdateBackstoryItem(ctx context.Contex
 			BackstoryItemID: input.BackstoryItemID.String(),
 			Err:             err,
 		})
-		return model.BackstoryItemModel{}, err
+		return backstoriesDTO.BackstoryItemModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemUpdateSucceeded{
@@ -556,7 +565,7 @@ func (s *EventPublishingCharacterService) UpdateBackstoryItem(ctx context.Contex
 	return item, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteBackstoryItem(ctx context.Context, input characterModel.DeleteBackstoryItemInput) error {
+func (s *EventPublishingCharacterService) DeleteBackstoryItem(ctx context.Context, input backstoriesDTO.DeleteBackstoryItemInput) error {
 	err := s.next.DeleteBackstoryItem(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterBackstoryItemDeleteFailed{
@@ -578,7 +587,7 @@ func (s *EventPublishingCharacterService) DeleteBackstoryItem(ctx context.Contex
 }
 
 // Skills
-func (s *EventPublishingCharacterService) GetSkills(ctx context.Context, input characterModel.GetSkillsInput) ([]model.SkillModel, error) {
+func (s *EventPublishingCharacterService) GetSkills(ctx context.Context, input skillsDTO.GetSkillsInput) ([]skillsDTO.SkillModel, error) {
 	skills, err := s.next.GetSkills(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterSkillsListFailed{
@@ -598,7 +607,7 @@ func (s *EventPublishingCharacterService) GetSkills(ctx context.Context, input c
 	return skills, nil
 }
 
-func (s *EventPublishingCharacterService) GetSkill(ctx context.Context, input characterModel.GetSkillInput) (model.SkillModel, error) {
+func (s *EventPublishingCharacterService) GetSkill(ctx context.Context, input skillsDTO.GetSkillInput) (skillsDTO.SkillModel, error) {
 	skill, err := s.next.GetSkill(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterSkillGetFailed{
@@ -607,7 +616,7 @@ func (s *EventPublishingCharacterService) GetSkill(ctx context.Context, input ch
 			SkillID:     input.SkillID.String(),
 			Err:         err,
 		})
-		return model.SkillModel{}, err
+		return skillsDTO.SkillModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterSkillGetSucceeded{
@@ -620,7 +629,7 @@ func (s *EventPublishingCharacterService) GetSkill(ctx context.Context, input ch
 	return skill, nil
 }
 
-func (s *EventPublishingCharacterService) CreateSkill(ctx context.Context, input characterModel.CreateSkillInput) (model.SkillModel, error) {
+func (s *EventPublishingCharacterService) CreateSkill(ctx context.Context, input skillsDTO.CreateSkillInput) (skillsDTO.SkillModel, error) {
 	skill, err := s.next.CreateSkill(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterSkillCreateFailed{
@@ -628,7 +637,7 @@ func (s *EventPublishingCharacterService) CreateSkill(ctx context.Context, input
 			CharacterID: input.CharacterID.String(),
 			Err:         err,
 		})
-		return model.SkillModel{}, err
+		return skillsDTO.SkillModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterSkillCreateSucceeded{
@@ -641,7 +650,7 @@ func (s *EventPublishingCharacterService) CreateSkill(ctx context.Context, input
 	return skill, nil
 }
 
-func (s *EventPublishingCharacterService) UpdateSkill(ctx context.Context, input characterModel.UpdateSkillInput) (model.SkillModel, error) {
+func (s *EventPublishingCharacterService) UpdateSkill(ctx context.Context, input skillsDTO.UpdateSkillInput) (skillsDTO.SkillModel, error) {
 	skill, err := s.next.UpdateSkill(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterSkillUpdateFailed{
@@ -650,7 +659,7 @@ func (s *EventPublishingCharacterService) UpdateSkill(ctx context.Context, input
 			SkillID:     input.SkillID.String(),
 			Err:         err,
 		})
-		return model.SkillModel{}, err
+		return skillsDTO.SkillModel{}, err
 	}
 
 	s.publisher.Publish(ctx, characterEvents.CharacterSkillUpdateSucceeded{
@@ -663,7 +672,7 @@ func (s *EventPublishingCharacterService) UpdateSkill(ctx context.Context, input
 	return skill, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteSkill(ctx context.Context, input characterModel.DeleteSkillInput) error {
+func (s *EventPublishingCharacterService) DeleteSkill(ctx context.Context, input skillsDTO.DeleteSkillInput) error {
 	err := s.next.DeleteSkill(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterSkillDeleteFailed{
@@ -685,7 +694,7 @@ func (s *EventPublishingCharacterService) DeleteSkill(ctx context.Context, input
 }
 
 // DerivedStats
-func (s *EventPublishingCharacterService) GetDerivedStats(ctx context.Context, input characterModel.GetDerivedStatsInput) (db.DerivedStat, error) {
+func (s *EventPublishingCharacterService) GetDerivedStats(ctx context.Context, input derivedStatsDTO.GetDerivedStatsInput) (db.DerivedStat, error) {
 	derivedStats, err := s.next.GetDerivedStats(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsGetFailed{
@@ -704,7 +713,7 @@ func (s *EventPublishingCharacterService) GetDerivedStats(ctx context.Context, i
 	return derivedStats, nil
 }
 
-func (s *EventPublishingCharacterService) UpsertDerivedStats(ctx context.Context, input characterModel.UpsertDerivedStatsInput) (db.DerivedStat, error) {
+func (s *EventPublishingCharacterService) UpsertDerivedStats(ctx context.Context, input derivedStatsDTO.UpsertDerivedStatsInput) (db.DerivedStat, error) {
 	derivedStats, err := s.next.UpsertDerivedStats(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsUpsertFailed{
@@ -723,7 +732,7 @@ func (s *EventPublishingCharacterService) UpsertDerivedStats(ctx context.Context
 	return derivedStats, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteDerivedStats(ctx context.Context, input characterModel.DeleteDerivedStatsInput) error {
+func (s *EventPublishingCharacterService) DeleteDerivedStats(ctx context.Context, input derivedStatsDTO.DeleteDerivedStatsInput) error {
 	err := s.next.DeleteDerivedStats(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsDeleteFailed{
@@ -743,7 +752,7 @@ func (s *EventPublishingCharacterService) DeleteDerivedStats(ctx context.Context
 }
 
 // Characteristics
-func (s *EventPublishingCharacterService) GetCharacteristics(ctx context.Context, input characterModel.GetCharacteristicsInput) (db.Characteristic, error) {
+func (s *EventPublishingCharacterService) GetCharacteristics(ctx context.Context, input characteristicsDTO.GetCharacteristicsInput) (db.Characteristic, error) {
 	characteristics, err := s.next.GetCharacteristics(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterCharacteristicsGetFailed{
@@ -762,7 +771,7 @@ func (s *EventPublishingCharacterService) GetCharacteristics(ctx context.Context
 	return characteristics, nil
 }
 
-func (s *EventPublishingCharacterService) UpsertCharacteristics(ctx context.Context, input characterModel.UpsertCharacteristicsInput) (db.Characteristic, error) {
+func (s *EventPublishingCharacterService) UpsertCharacteristics(ctx context.Context, input characteristicsDTO.UpsertCharacteristicsInput) (db.Characteristic, error) {
 	characteristics, err := s.next.UpsertCharacteristics(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterCharacteristicsUpsertFailed{
@@ -781,7 +790,7 @@ func (s *EventPublishingCharacterService) UpsertCharacteristics(ctx context.Cont
 	return characteristics, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteCharacteristics(ctx context.Context, input characterModel.DeleteCharacteristicsInput) error {
+func (s *EventPublishingCharacterService) DeleteCharacteristics(ctx context.Context, input characteristicsDTO.DeleteCharacteristicsInput) error {
 	err := s.next.DeleteCharacteristics(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterCharacteristicsDeleteFailed{
@@ -801,7 +810,7 @@ func (s *EventPublishingCharacterService) DeleteCharacteristics(ctx context.Cont
 }
 
 // Notes
-func (s *EventPublishingCharacterService) GetNotes(ctx context.Context, input characterModel.GetNotesInput) ([]db.Note, error) {
+func (s *EventPublishingCharacterService) GetNotes(ctx context.Context, input notesDTO.GetNotesInput) ([]db.Note, error) {
 	notes, err := s.next.GetNotes(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterNotesListFailed{
@@ -821,7 +830,7 @@ func (s *EventPublishingCharacterService) GetNotes(ctx context.Context, input ch
 	return notes, nil
 }
 
-func (s *EventPublishingCharacterService) GetNote(ctx context.Context, input characterModel.GetNoteInput) (db.Note, error) {
+func (s *EventPublishingCharacterService) GetNote(ctx context.Context, input notesDTO.GetNoteInput) (db.Note, error) {
 	note, err := s.next.GetNote(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterNoteGetFailed{
@@ -843,7 +852,7 @@ func (s *EventPublishingCharacterService) GetNote(ctx context.Context, input cha
 	return note, nil
 }
 
-func (s *EventPublishingCharacterService) CreateNote(ctx context.Context, input characterModel.CreateNoteInput) (db.Note, error) {
+func (s *EventPublishingCharacterService) CreateNote(ctx context.Context, input notesDTO.CreateNoteInput) (db.Note, error) {
 	note, err := s.next.CreateNote(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterNoteCreateFailed{
@@ -864,7 +873,7 @@ func (s *EventPublishingCharacterService) CreateNote(ctx context.Context, input 
 	return note, nil
 }
 
-func (s *EventPublishingCharacterService) UpdateNote(ctx context.Context, input characterModel.UpdateNoteInput) (db.Note, error) {
+func (s *EventPublishingCharacterService) UpdateNote(ctx context.Context, input notesDTO.UpdateNoteInput) (db.Note, error) {
 	note, err := s.next.UpdateNote(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterNoteUpdateFailed{
@@ -886,7 +895,7 @@ func (s *EventPublishingCharacterService) UpdateNote(ctx context.Context, input 
 	return note, nil
 }
 
-func (s *EventPublishingCharacterService) DeleteNote(ctx context.Context, input characterModel.DeleteNoteInput) error {
+func (s *EventPublishingCharacterService) DeleteNote(ctx context.Context, input notesDTO.DeleteNoteInput) error {
 	err := s.next.DeleteNote(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterNoteDeleteFailed{

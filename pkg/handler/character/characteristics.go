@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getCharacteristics(w http.ResponseWriter, r *http.Req
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	characteristics, err := h.service.GetCharacteristics(r.Context(), model.GetCharacteristicsInput{
+	characteristics, err := h.service.GetCharacteristics(r.Context(), characteristicsDTO.GetCharacteristicsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -38,7 +38,7 @@ func (h *CharacterHandler) upsertCharacteristics(w http.ResponseWriter, r *http.
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpsertCharacteristicsInput
+	var input characteristicsDTO.UpsertCharacteristicsInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -62,7 +62,7 @@ func (h *CharacterHandler) deleteCharacteristics(w http.ResponseWriter, r *http.
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteCharacteristics(r.Context(), model.DeleteCharacteristicsInput{
+	if err := h.service.DeleteCharacteristics(r.Context(), characteristicsDTO.DeleteCharacteristicsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

@@ -1,4 +1,4 @@
-package derivedstats
+package derivedStatsDTO
 
 type DerivedStatsRequest struct {
 	Speed       *int16  `json:"speed"`

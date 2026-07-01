@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/stretchr/testify/require"
 )
@@ -11,7 +11,7 @@ import (
 func TestToSkillModelCopiesSkillWithoutSpecialty(t *testing.T) {
 	row := testSkillRow()
 
-	result := model.ToSkillModel(row)
+	result := skillsDTO.ToSkillModel(row)
 
 	requireSameSkill(t, row, result)
 	require.Nil(t, result.Specialty)
@@ -20,7 +20,7 @@ func TestToSkillModelCopiesSkillWithoutSpecialty(t *testing.T) {
 func TestToSkillModelMapsSpecialtyWhenSpecialtyIDIsValid(t *testing.T) {
 	row := testSpecializedSkillRow()
 
-	result := model.ToSkillModel(row)
+	result := skillsDTO.ToSkillModel(row)
 
 	requireSameSkill(t, row, result)
 	require.NotNil(t, result.Specialty)
@@ -38,7 +38,7 @@ func TestToCharacterSkillModelsMapsAllRows(t *testing.T) {
 		testCharacterSkillsRowFromGetSkillsRow(testSpecializedSkillRow()),
 	}
 
-	result := model.ToCharacterSkillModels(rows)
+	result := skillsDTO.ToCharacterSkillModels(rows)
 
 	require.Len(t, result, 2)
 	require.Equal(t, rows[0].ID, result[0].ID)
@@ -50,7 +50,7 @@ func TestToCharacterSkillModelsMapsAllRows(t *testing.T) {
 }
 
 func TestToCharacterSkillModelsReturnsEmptySliceForEmptyInput(t *testing.T) {
-	result := model.ToCharacterSkillModels(nil)
+	result := skillsDTO.ToCharacterSkillModels(nil)
 
 	require.Empty(t, result)
 	require.NotNil(t, result)
@@ -59,7 +59,7 @@ func TestToCharacterSkillModelsReturnsEmptySliceForEmptyInput(t *testing.T) {
 func TestToSingleCharacterSkillModelMapsSpecialty(t *testing.T) {
 	row := testSingleCharacterSkillRowFromGetSkillsRow(testSpecializedSkillRow())
 
-	result := model.ToSingleCharacterSkillModel(row)
+	result := skillsDTO.ToSingleCharacterSkillModel(row)
 
 	require.Equal(t, row.ID, result.ID)
 	require.Equal(t, row.Name, result.Name)
@@ -75,7 +75,7 @@ func TestToSingleCharacterSkillModelMapsSpecialty(t *testing.T) {
 func TestToCreatedCharacterSkillModelMapsSpecialty(t *testing.T) {
 	row := testCreatedCharacterSkillRowFromGetSkillsRow(testSpecializedSkillRow())
 
-	result := model.ToCreatedCharacterSkillModel(row)
+	result := skillsDTO.ToCreatedCharacterSkillModel(row)
 
 	require.Equal(t, row.ID, result.ID)
 	require.Equal(t, row.Name, result.Name)
@@ -91,7 +91,7 @@ func TestToCreatedCharacterSkillModelMapsSpecialty(t *testing.T) {
 func TestToUpdatedCharacterSkillModelMapsSpecialty(t *testing.T) {
 	row := testUpdatedCharacterSkillRowFromGetSkillsRow(testSpecializedSkillRow())
 
-	result := model.ToUpdatedCharacterSkillModel(row)
+	result := skillsDTO.ToUpdatedCharacterSkillModel(row)
 
 	require.Equal(t, row.ID, result.ID)
 	require.Equal(t, row.Name, result.Name)

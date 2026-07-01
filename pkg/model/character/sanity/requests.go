@@ -1,4 +1,4 @@
-package sanity
+package sanityDTO
 
 type SanityRequest struct {
 	MaxSanity     *int16 `json:"max_sanity"`

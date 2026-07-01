@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getDerivedStats(w http.ResponseWriter, r *http.Reques
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	derivedStats, err := h.service.GetDerivedStats(r.Context(), model.GetDerivedStatsInput{
+	derivedStats, err := h.service.GetDerivedStats(r.Context(), derivedStatsDTO.GetDerivedStatsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -38,7 +38,7 @@ func (h *CharacterHandler) upsertDerivedStats(w http.ResponseWriter, r *http.Req
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpsertDerivedStatsInput
+	var input derivedStatsDTO.UpsertDerivedStatsInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -62,7 +62,7 @@ func (h *CharacterHandler) deleteDerivedStats(w http.ResponseWriter, r *http.Req
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteDerivedStats(r.Context(), model.DeleteDerivedStatsInput{
+	if err := h.service.DeleteDerivedStats(r.Context(), derivedStatsDTO.DeleteDerivedStatsInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {

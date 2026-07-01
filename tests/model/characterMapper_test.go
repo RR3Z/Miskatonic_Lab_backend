@@ -3,7 +3,14 @@ package tests
 import (
 	"testing"
 
-	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
+	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
+	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	luckDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
+	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
+	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
+	sanityDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/sanity"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/stretchr/testify/require"
 )
@@ -11,7 +18,7 @@ import (
 func TestToShortCharacterModelCopiesAllCharacterFields(t *testing.T) {
 	character := testCharacter()
 
-	result := characterModel.ToCharacterShortModel(character)
+	result := characterDTO.ToCharacterShortModel(character)
 
 	requireSameShortCharacter(t, character, result)
 }
@@ -25,7 +32,7 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 	character.Residence = nil
 	character.Birthplace = nil
 
-	result := characterModel.ToCharacterShortModel(character)
+	result := characterDTO.ToCharacterShortModel(character)
 
 	require.Nil(t, result.PlayerName)
 	require.Nil(t, result.Occupation)
@@ -38,7 +45,7 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 func TestToFullCharacterModelLeavesOptionalSectionsEmptyWhenIDsAreInvalid(t *testing.T) {
 	character := testCharacter()
 
-	result := characterModel.ToCharacterModel(characterModel.CharacterDBData{
+	result := characterDTO.ToCharacterModel(characterDTO.CharacterDBData{
 		Character:       character,
 		Characteristics: db.Characteristic{ID: invalidUUID()},
 		DerivedStats:    db.DerivedStat{ID: invalidUUID()},
@@ -84,7 +91,7 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 	sanity := db.SanityState{ID: testUUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"), CharacterID: character.ID, MaxSanity: 60, CurrentSanity: 40}
 	luck := db.LuckState{ID: testUUID("ffffffff-ffff-ffff-ffff-ffffffffffff"), CharacterID: character.ID, StartingLuck: 50, CurrentLuck: 30}
 
-	result := characterModel.ToCharacterModel(characterModel.CharacterDBData{
+	result := characterDTO.ToCharacterModel(characterDTO.CharacterDBData{
 		Character:       character,
 		Characteristics: characteristics,
 		DerivedStats:    derivedStats,
@@ -100,12 +107,12 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 	})
 
 	requireSameShortCharacter(t, character, result.CharacterShortModel)
-	require.Equal(t, characteristics, result.Characteristics)
-	require.Equal(t, derivedStats, result.DerivedStats)
-	require.Equal(t, hp, result.HP)
-	require.Equal(t, mp, result.MP)
-	require.Equal(t, sanity, result.Sanity)
-	require.Equal(t, luck, result.Luck)
+	requireEqualCharacteristic(t, characteristics, result.Characteristics)
+	requireEqualDerivedStats(t, derivedStats, result.DerivedStats)
+	requireEqualHealth(t, hp, result.HP)
+	requireEqualMagic(t, mp, result.MP)
+	requireEqualSanity(t, sanity, result.Sanity)
+	requireEqualLuck(t, luck, result.Luck)
 	require.Len(t, result.Skills, 2)
 	requireSameSkill(t, skill, result.Skills[0])
 	requireSameSkill(t, creditSkill, result.Skills[1])
@@ -115,14 +122,14 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 	require.Equal(t, finance.ID, result.Finances.ID)
 	require.NotNil(t, result.Finances.CreditRating)
 	require.Equal(t, creditSkill.ID, result.Finances.CreditRating.ID)
-	require.Equal(t, []db.Note{note}, result.Notes)
+	requireEqualNotes(t, []db.Note{note}, result.Notes)
 }
 
 func TestToFullCharacterModelLeavesCreditRatingNilWhenFinanceSkillDoesNotMatch(t *testing.T) {
 	finance := testFinance()
 	finance.CreditRatingSkillID = testUUID("abababab-abab-abab-abab-abababababab")
 
-	result := characterModel.ToCharacterModel(characterModel.CharacterDBData{
+	result := characterDTO.ToCharacterModel(characterDTO.CharacterDBData{
 		Character: testCharacter(),
 		Skills:    []db.GetSkillsRow{testSkillRow()},
 		Finances:  &finance,
@@ -130,4 +137,91 @@ func TestToFullCharacterModelLeavesCreditRatingNilWhenFinanceSkillDoesNotMatch(t
 
 	require.Equal(t, finance.ID, result.Finances.ID)
 	require.Nil(t, result.Finances.CreditRating)
+}
+
+func requireEqualCharacteristic(t *testing.T, expected db.Characteristic, actual characteristicsDTO.CharacteristicsModel) {
+	t.Helper()
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.CharacterID, actual.CharacterID)
+	require.Equal(t, expected.Strength, actual.Strength)
+	require.Equal(t, expected.Constitution, actual.Constitution)
+	require.Equal(t, expected.Size, actual.Size)
+	require.Equal(t, expected.Dexterity, actual.Dexterity)
+	require.Equal(t, expected.Appearance, actual.Appearance)
+	require.Equal(t, expected.Intelligence, actual.Intelligence)
+	require.Equal(t, expected.Power, actual.Power)
+	require.Equal(t, expected.Education, actual.Education)
+	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
+	require.Equal(t, expected.UpdatedAt, actual.UpdatedAt)
+}
+
+func requireEqualDerivedStats(t *testing.T, expected db.DerivedStat, actual derivedStatsDTO.DerivedStatsModel) {
+	t.Helper()
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.CharacterID, actual.CharacterID)
+	require.Equal(t, expected.Speed, actual.Speed)
+	require.Equal(t, expected.Physique, actual.Physique)
+	require.Equal(t, expected.DamageBonus, actual.DamageBonus)
+	require.Equal(t, expected.DodgeValue, actual.DodgeValue)
+	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
+	require.Equal(t, expected.UpdatedAt, actual.UpdatedAt)
+}
+
+func requireEqualHealth(t *testing.T, expected db.HealthState, actual healthDTO.HealthModel) {
+	t.Helper()
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.CharacterID, actual.CharacterID)
+	require.Equal(t, expected.MaxHp, actual.MaxHp)
+	require.Equal(t, expected.CurrentHp, actual.CurrentHp)
+	require.Equal(t, expected.MajorWound, actual.MajorWound)
+	require.Equal(t, expected.Unconscious, actual.Unconscious)
+	require.Equal(t, expected.Dying, actual.Dying)
+	require.Equal(t, expected.Dead, actual.Dead)
+	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
+	require.Equal(t, expected.UpdatedAt, actual.UpdatedAt)
+}
+
+func requireEqualMagic(t *testing.T, expected db.MagicState, actual magicDTO.MagicModel) {
+	t.Helper()
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.CharacterID, actual.CharacterID)
+	require.Equal(t, expected.MaxMp, actual.MaxMp)
+	require.Equal(t, expected.CurrentMp, actual.CurrentMp)
+	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
+	require.Equal(t, expected.UpdatedAt, actual.UpdatedAt)
+}
+
+func requireEqualSanity(t *testing.T, expected db.SanityState, actual sanityDTO.SanityModel) {
+	t.Helper()
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.CharacterID, actual.CharacterID)
+	require.Equal(t, expected.MaxSanity, actual.MaxSanity)
+	require.Equal(t, expected.CurrentSanity, actual.CurrentSanity)
+	require.Equal(t, expected.TempInsanity, actual.TempInsanity)
+	require.Equal(t, expected.IndefInsanity, actual.IndefInsanity)
+	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
+	require.Equal(t, expected.UpdatedAt, actual.UpdatedAt)
+}
+
+func requireEqualLuck(t *testing.T, expected db.LuckState, actual luckDTO.LuckModel) {
+	t.Helper()
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.CharacterID, actual.CharacterID)
+	require.Equal(t, expected.StartingLuck, actual.StartingLuck)
+	require.Equal(t, expected.CurrentLuck, actual.CurrentLuck)
+	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
+	require.Equal(t, expected.UpdatedAt, actual.UpdatedAt)
+}
+
+func requireEqualNotes(t *testing.T, expected []db.Note, actual []notesDTO.NoteModel) {
+	t.Helper()
+	require.Len(t, actual, len(expected))
+	for i, e := range expected {
+		require.Equal(t, e.ID, actual[i].ID)
+		require.Equal(t, e.CharacterID, actual[i].CharacterID)
+		require.Equal(t, e.Title, actual[i].Title)
+		require.Equal(t, e.Body, actual[i].Body)
+		require.Equal(t, e.CreatedAt, actual[i].CreatedAt)
+		require.Equal(t, e.UpdatedAt, actual[i].UpdatedAt)
+	}
 }

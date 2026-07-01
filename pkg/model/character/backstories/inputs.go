@@ -1,4 +1,4 @@
-package backstories
+package backstoriesDTO
 
 import "github.com/jackc/pgx/v5/pgtype"
 

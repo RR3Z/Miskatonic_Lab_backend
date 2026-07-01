@@ -1,4 +1,4 @@
-package characters
+package characterDTO
 
 type CharacterRequest struct {
 	Name       string  `json:"name"`

@@ -1,4 +1,4 @@
-package magic
+package magicDTO
 
 import "github.com/jackc/pgx/v5/pgtype"
 

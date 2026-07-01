@@ -1,4 +1,4 @@
-package magic
+package magicDTO
 
 type MagicRequest struct {
 	MaxMp     *int16 `json:"max_mp"`

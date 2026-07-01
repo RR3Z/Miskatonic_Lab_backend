@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getNotes(w http.ResponseWriter, r *http.Request) *myE
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	notes, err := h.service.GetNotes(r.Context(), model.GetNotesInput{
+	notes, err := h.service.GetNotes(r.Context(), notesDTO.GetNotesInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -43,7 +43,7 @@ func (h *CharacterHandler) getNote(w http.ResponseWriter, r *http.Request) *myEr
 		return characterErrors.InvalidPathIDError("invalid note id", err)
 	}
 
-	note, err := h.service.GetNote(r.Context(), model.GetNoteInput{
+	note, err := h.service.GetNote(r.Context(), notesDTO.GetNoteInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		NoteID:      noteID,
@@ -64,7 +64,7 @@ func (h *CharacterHandler) createNote(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.CreateNoteInput
+	var input notesDTO.CreateNoteInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -93,7 +93,7 @@ func (h *CharacterHandler) updateNote(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidPathIDError("invalid note id", err)
 	}
 
-	var input model.UpdateNoteInput
+	var input notesDTO.UpdateNoteInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -123,7 +123,7 @@ func (h *CharacterHandler) deleteNote(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidPathIDError("invalid note id", err)
 	}
 
-	if err := h.service.DeleteNote(r.Context(), model.DeleteNoteInput{
+	if err := h.service.DeleteNote(r.Context(), notesDTO.DeleteNoteInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		NoteID:      noteID,

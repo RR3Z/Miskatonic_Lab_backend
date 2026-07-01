@@ -1,4 +1,4 @@
-package sanity
+package sanityDTO
 
 import "github.com/jackc/pgx/v5/pgtype"
 

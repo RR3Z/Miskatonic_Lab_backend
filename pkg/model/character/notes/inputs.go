@@ -1,4 +1,4 @@
-package notes
+package notesDTO
 
 import "github.com/jackc/pgx/v5/pgtype"
 

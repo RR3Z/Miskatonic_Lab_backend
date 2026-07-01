@@ -3,8 +3,8 @@ package tests
 import (
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
-	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -126,7 +126,7 @@ func testFinance() db.Finance {
 	}
 }
 
-func requireSameShortCharacter(t *testing.T, expected db.Character, actual characterModel.CharacterShortModel) {
+func requireSameShortCharacter(t *testing.T, expected db.Character, actual characterDTO.CharacterShortModel) {
 	t.Helper()
 
 	require.Equal(t, expected.ID, actual.ID)
@@ -142,7 +142,7 @@ func requireSameShortCharacter(t *testing.T, expected db.Character, actual chara
 	require.Equal(t, expected.UpdatedAt.Time, actual.UpdatedAt.Time)
 }
 
-func requireSameSkill(t *testing.T, expected db.GetSkillsRow, actual model.SkillModel) {
+func requireSameSkill(t *testing.T, expected db.GetSkillsRow, actual skillsDTO.SkillModel) {
 	t.Helper()
 
 	require.Equal(t, expected.ID, actual.ID)

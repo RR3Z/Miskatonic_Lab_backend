@@ -3,14 +3,15 @@ package tests
 import (
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
+	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/stretchr/testify/require"
 )
 
 func TestToFinancesModelCopiesFieldsWithoutCreditRating(t *testing.T) {
 	finance := testFinance()
 
-	result := model.ToFinancesModel(finance, nil)
+	result := financesDTO.ToFinancesModel(finance, nil)
 
 	require.Equal(t, finance.ID, result.ID)
 	require.Equal(t, finance.SpendingLimit, result.SpendingLimit)
@@ -23,9 +24,9 @@ func TestToFinancesModelCopiesFieldsWithoutCreditRating(t *testing.T) {
 
 func TestToFinancesModelAttachesCreditRatingSkill(t *testing.T) {
 	finance := testFinance()
-	creditRating := model.ToSkillModel(testSpecializedSkillRow())
+	creditRating := skillsDTO.ToSkillModel(testSpecializedSkillRow())
 
-	result := model.ToFinancesModel(finance, &creditRating)
+	result := financesDTO.ToFinancesModel(finance, &creditRating)
 
 	require.NotNil(t, result.CreditRating)
 	require.Equal(t, creditRating.ID, result.CreditRating.ID)

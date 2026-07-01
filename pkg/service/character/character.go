@@ -3,64 +3,73 @@ package character
 import (
 	"context"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
-	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
+	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
+	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
+	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	luckDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
+	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
+	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
+	sanityDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/sanity"
+	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 )
 
 type ICharacter interface {
-	GetAllCharacters(ctx context.Context, userID string) ([]characterModel.CharacterShortModel, error)
-	GetCharacter(ctx context.Context, input characterModel.GetCharacterInput) (characterModel.CharacterModel, error)
-	CreateCharacter(ctx context.Context, input characterModel.CreateCharacterInput) (characterModel.CharacterShortModel, error)
-	UpdateCharacter(ctx context.Context, input characterModel.UpdateCharacterInput) (characterModel.CharacterShortModel, error)
-	DeleteCharacter(ctx context.Context, input characterModel.DeleteCharacterInput) error
+	GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterShortModel, error)
+	GetCharacter(ctx context.Context, input characterDTO.GetCharacterInput) (characterDTO.CharacterModel, error)
+	CreateCharacter(ctx context.Context, input characterDTO.CreateCharacterInput) (characterDTO.CharacterShortModel, error)
+	UpdateCharacter(ctx context.Context, input characterDTO.UpdateCharacterInput) (characterDTO.CharacterShortModel, error)
+	DeleteCharacter(ctx context.Context, input characterDTO.DeleteCharacterInput) error
 
-	GetHealth(ctx context.Context, input characterModel.GetHealthInput) (db.HealthState, error)
-	UpsertHealth(ctx context.Context, input characterModel.UpsertHealthInput) (db.HealthState, error)
-	DeleteHealth(ctx context.Context, input characterModel.DeleteHealthInput) error
+	GetHealth(ctx context.Context, input healthDTO.GetHealthInput) (db.HealthState, error)
+	UpsertHealth(ctx context.Context, input healthDTO.UpsertHealthInput) (db.HealthState, error)
+	DeleteHealth(ctx context.Context, input healthDTO.DeleteHealthInput) error
 
-	GetSanity(ctx context.Context, input characterModel.GetSanityInput) (db.SanityState, error)
-	UpsertSanity(ctx context.Context, input characterModel.UpsertSanityInput) (db.SanityState, error)
-	DeleteSanity(ctx context.Context, input characterModel.DeleteSanityInput) error
+	GetSanity(ctx context.Context, input sanityDTO.GetSanityInput) (db.SanityState, error)
+	UpsertSanity(ctx context.Context, input sanityDTO.UpsertSanityInput) (db.SanityState, error)
+	DeleteSanity(ctx context.Context, input sanityDTO.DeleteSanityInput) error
 
-	GetMagic(ctx context.Context, input characterModel.GetMagicInput) (db.MagicState, error)
-	UpsertMagic(ctx context.Context, input characterModel.UpsertMagicInput) (db.MagicState, error)
-	DeleteMagic(ctx context.Context, input characterModel.DeleteMagicInput) error
+	GetMagic(ctx context.Context, input magicDTO.GetMagicInput) (db.MagicState, error)
+	UpsertMagic(ctx context.Context, input magicDTO.UpsertMagicInput) (db.MagicState, error)
+	DeleteMagic(ctx context.Context, input magicDTO.DeleteMagicInput) error
 
-	GetLuck(ctx context.Context, input characterModel.GetLuckInput) (db.LuckState, error)
-	UpsertLuck(ctx context.Context, input characterModel.UpsertLuckInput) (db.LuckState, error)
-	DeleteLuck(ctx context.Context, input characterModel.DeleteLuckInput) error
+	GetLuck(ctx context.Context, input luckDTO.GetLuckInput) (db.LuckState, error)
+	UpsertLuck(ctx context.Context, input luckDTO.UpsertLuckInput) (db.LuckState, error)
+	DeleteLuck(ctx context.Context, input luckDTO.DeleteLuckInput) error
 
-	GetFinances(ctx context.Context, input characterModel.GetFinancesInput) (db.Finance, error)
-	UpsertFinances(ctx context.Context, input characterModel.UpsertFinancesInput) (db.Finance, error)
-	DeleteFinances(ctx context.Context, input characterModel.DeleteFinancesInput) error
+	GetFinances(ctx context.Context, input financesDTO.GetFinancesInput) (db.Finance, error)
+	UpsertFinances(ctx context.Context, input financesDTO.UpsertFinancesInput) (db.Finance, error)
+	DeleteFinances(ctx context.Context, input financesDTO.DeleteFinancesInput) error
 
-	GetBackstory(ctx context.Context, input characterModel.GetBackstoryInput) (model.BackstoryModel, error)
-	UpsertBackstory(ctx context.Context, input characterModel.UpsertBackstoryInput) (model.BackstoryModel, error)
-	DeleteBackstory(ctx context.Context, input characterModel.DeleteBackstoryInput) error
-	GetBackstoryItems(ctx context.Context, input characterModel.GetBackstoryItemsInput) ([]model.BackstoryItemModel, error)
-	GetBackstoryItem(ctx context.Context, input characterModel.GetBackstoryItemInput) (model.BackstoryItemModel, error)
-	CreateBackstoryItem(ctx context.Context, input characterModel.CreateBackstoryItemInput) (model.BackstoryItemModel, error)
-	UpdateBackstoryItem(ctx context.Context, input characterModel.UpdateBackstoryItemInput) (model.BackstoryItemModel, error)
-	DeleteBackstoryItem(ctx context.Context, input characterModel.DeleteBackstoryItemInput) error
+	GetBackstory(ctx context.Context, input backstoriesDTO.GetBackstoryInput) (backstoriesDTO.BackstoryModel, error)
+	UpsertBackstory(ctx context.Context, input backstoriesDTO.UpsertBackstoryInput) (backstoriesDTO.BackstoryModel, error)
+	DeleteBackstory(ctx context.Context, input backstoriesDTO.DeleteBackstoryInput) error
+	GetBackstoryItems(ctx context.Context, input backstoriesDTO.GetBackstoryItemsInput) ([]backstoriesDTO.BackstoryItemModel, error)
+	GetBackstoryItem(ctx context.Context, input backstoriesDTO.GetBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error)
+	CreateBackstoryItem(ctx context.Context, input backstoriesDTO.CreateBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error)
+	UpdateBackstoryItem(ctx context.Context, input backstoriesDTO.UpdateBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error)
+	DeleteBackstoryItem(ctx context.Context, input backstoriesDTO.DeleteBackstoryItemInput) error
 
-	GetSkills(ctx context.Context, input characterModel.GetSkillsInput) ([]model.SkillModel, error)
-	GetSkill(ctx context.Context, input characterModel.GetSkillInput) (model.SkillModel, error)
-	CreateSkill(ctx context.Context, input characterModel.CreateSkillInput) (model.SkillModel, error)
-	UpdateSkill(ctx context.Context, input characterModel.UpdateSkillInput) (model.SkillModel, error)
-	DeleteSkill(ctx context.Context, input characterModel.DeleteSkillInput) error
+	GetSkills(ctx context.Context, input skillsDTO.GetSkillsInput) ([]skillsDTO.SkillModel, error)
+	GetSkill(ctx context.Context, input skillsDTO.GetSkillInput) (skillsDTO.SkillModel, error)
+	CreateSkill(ctx context.Context, input skillsDTO.CreateSkillInput) (skillsDTO.SkillModel, error)
+	UpdateSkill(ctx context.Context, input skillsDTO.UpdateSkillInput) (skillsDTO.SkillModel, error)
+	DeleteSkill(ctx context.Context, input skillsDTO.DeleteSkillInput) error
 
-	GetDerivedStats(ctx context.Context, input characterModel.GetDerivedStatsInput) (db.DerivedStat, error)
-	UpsertDerivedStats(ctx context.Context, input characterModel.UpsertDerivedStatsInput) (db.DerivedStat, error)
-	DeleteDerivedStats(ctx context.Context, input characterModel.DeleteDerivedStatsInput) error
+	GetDerivedStats(ctx context.Context, input derivedStatsDTO.GetDerivedStatsInput) (db.DerivedStat, error)
+	UpsertDerivedStats(ctx context.Context, input derivedStatsDTO.UpsertDerivedStatsInput) (db.DerivedStat, error)
+	DeleteDerivedStats(ctx context.Context, input derivedStatsDTO.DeleteDerivedStatsInput) error
 
-	GetCharacteristics(ctx context.Context, input characterModel.GetCharacteristicsInput) (db.Characteristic, error)
-	UpsertCharacteristics(ctx context.Context, input characterModel.UpsertCharacteristicsInput) (db.Characteristic, error)
-	DeleteCharacteristics(ctx context.Context, input characterModel.DeleteCharacteristicsInput) error
+	GetCharacteristics(ctx context.Context, input characteristicsDTO.GetCharacteristicsInput) (db.Characteristic, error)
+	UpsertCharacteristics(ctx context.Context, input characteristicsDTO.UpsertCharacteristicsInput) (db.Characteristic, error)
+	DeleteCharacteristics(ctx context.Context, input characteristicsDTO.DeleteCharacteristicsInput) error
 
-	GetNotes(ctx context.Context, input characterModel.GetNotesInput) ([]db.Note, error)
-	GetNote(ctx context.Context, input characterModel.GetNoteInput) (db.Note, error)
-	CreateNote(ctx context.Context, input characterModel.CreateNoteInput) (db.Note, error)
-	UpdateNote(ctx context.Context, input characterModel.UpdateNoteInput) (db.Note, error)
-	DeleteNote(ctx context.Context, input characterModel.DeleteNoteInput) error
+	GetNotes(ctx context.Context, input notesDTO.GetNotesInput) ([]db.Note, error)
+	GetNote(ctx context.Context, input notesDTO.GetNoteInput) (db.Note, error)
+	CreateNote(ctx context.Context, input notesDTO.CreateNoteInput) (db.Note, error)
+	UpdateNote(ctx context.Context, input notesDTO.UpdateNoteInput) (db.Note, error)
+	DeleteNote(ctx context.Context, input notesDTO.DeleteNoteInput) error
 }

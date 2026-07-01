@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
@@ -29,8 +29,8 @@ func testHealthState() db.HealthState {
 	}
 }
 
-func testUpsertHealthInput(maxHp *int16, currentHp *int16) characterModel.UpsertHealthInput {
-	return characterModel.UpsertHealthInput{
+func testUpsertHealthInput(maxHp *int16, currentHp *int16) healthDTO.UpsertHealthInput {
+	return healthDTO.UpsertHealthInput{
 		UserID:      "user_1",
 		CharacterID: testHealthUUID("11111111-1111-1111-1111-111111111111"),
 		MaxHp:       maxHp,

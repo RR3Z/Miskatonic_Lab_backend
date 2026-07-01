@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/stretchr/testify/require"
 )
@@ -11,7 +11,7 @@ import (
 func TestToBackstoryItemModelCopiesAllFields(t *testing.T) {
 	item := testBackstoryItem()
 
-	result := model.ToBackstoryItemModel(item)
+	result := backstoriesDTO.ToBackstoryItemModel(item)
 
 	require.Equal(t, item.ID, result.ID)
 	require.Equal(t, item.Section, result.Section)
@@ -25,7 +25,7 @@ func TestToBackstoryModelCopiesBackstoryAndMapsItems(t *testing.T) {
 	backstory := testBackstory()
 	item := testBackstoryItem()
 
-	result := model.ToBackstoryModel(backstory, []db.BackstoryItem{item})
+	result := backstoriesDTO.ToBackstoryModel(backstory, []db.BackstoryItem{item})
 
 	require.Equal(t, backstory.ID, result.ID)
 	require.Equal(t, backstory.CharacterID, result.CharacterID)
@@ -41,7 +41,7 @@ func TestToBackstoryModelPreservesNilDescriptionAndEmptyItems(t *testing.T) {
 	backstory := testBackstory()
 	backstory.PersonalDescription = nil
 
-	result := model.ToBackstoryModel(backstory, nil)
+	result := backstoriesDTO.ToBackstoryModel(backstory, nil)
 
 	require.Nil(t, result.PersonalDescription)
 	require.Empty(t, result.Items)

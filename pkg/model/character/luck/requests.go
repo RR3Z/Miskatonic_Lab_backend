@@ -1,4 +1,4 @@
-package luck
+package luckDTO
 
 type LuckRequest struct {
 	StartingLuck *int16 `json:"starting_luck"`

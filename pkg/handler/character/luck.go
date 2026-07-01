@@ -6,7 +6,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
 	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	luckDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
 
@@ -18,7 +18,7 @@ func (h *CharacterHandler) getLuck(w http.ResponseWriter, r *http.Request) *myEr
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	luck, err := h.service.GetLuck(r.Context(), model.GetLuckInput{
+	luck, err := h.service.GetLuck(r.Context(), luckDTO.GetLuckInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	})
@@ -38,7 +38,7 @@ func (h *CharacterHandler) upsertLuck(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var input model.UpsertLuckInput
+	var input luckDTO.UpsertLuckInput
 	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
@@ -62,7 +62,7 @@ func (h *CharacterHandler) deleteLuck(w http.ResponseWriter, r *http.Request) *m
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	if err := h.service.DeleteLuck(r.Context(), model.DeleteLuckInput{
+	if err := h.service.DeleteLuck(r.Context(), luckDTO.DeleteLuckInput{
 		UserID:      userID,
 		CharacterID: characterID,
 	}); err != nil {
