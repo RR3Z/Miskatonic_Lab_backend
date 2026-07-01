@@ -5,6 +5,7 @@ import (
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
+	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
@@ -28,7 +29,7 @@ func (h *CharacterHandler) getAllCharacters(w http.ResponseWriter, r *http.Reque
 func (h *CharacterHandler) getCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
@@ -49,7 +50,7 @@ func (h *CharacterHandler) createCharacter(w http.ResponseWriter, r *http.Reques
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	var input model.CreateCharacterInput
-	if appErr := decodeJSON(r, &input); appErr != nil {
+	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
 	input.UserID = userID
@@ -66,13 +67,13 @@ func (h *CharacterHandler) createCharacter(w http.ResponseWriter, r *http.Reques
 func (h *CharacterHandler) updateCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
 	var input model.UpdateCharacterInput
-	if appErr := decodeJSON(r, &input); appErr != nil {
+	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
 	input.UserID = userID
@@ -90,7 +91,7 @@ func (h *CharacterHandler) updateCharacter(w http.ResponseWriter, r *http.Reques
 func (h *CharacterHandler) deleteCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}

@@ -1,4 +1,4 @@
-package character
+package characterHelpers
 
 import (
 	"encoding/json"
@@ -10,11 +10,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func decodeJSON(r *http.Request, target any) *myErrors.AppError {
+func DecodeJSON(r *http.Request, target any) *myErrors.AppError {
 	if err := json.NewDecoder(r.Body).Decode(target); err != nil {
 		return characterErrors.InvalidInputError("invalid request body", err)
 	}
 	return nil
+}
+
+func GetCharacterIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+	return getUUIDFromRequest(r, "characterID")
+}
+
+func GetNoteIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+	return getUUIDFromRequest(r, "noteID")
+}
+
+func GetBackstoryItemIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+	return getUUIDFromRequest(r, "itemID")
+}
+
+func GetSkillIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+	return getUUIDFromRequest(r, "skillID")
 }
 
 func getUUIDFromRequest(r *http.Request, param string) (pgtype.UUID, error) {
@@ -23,20 +39,4 @@ func getUUIDFromRequest(r *http.Request, param string) (pgtype.UUID, error) {
 		return pgtype.UUID{}, err
 	}
 	return id, nil
-}
-
-func getCharacterIDFromRequest(r *http.Request) (pgtype.UUID, error) {
-	return getUUIDFromRequest(r, "characterID")
-}
-
-func getNoteIDFromRequest(r *http.Request) (pgtype.UUID, error) {
-	return getUUIDFromRequest(r, "noteID")
-}
-
-func getBackstoryItemIDFromRequest(r *http.Request) (pgtype.UUID, error) {
-	return getUUIDFromRequest(r, "itemID")
-}
-
-func getSkillIDFromRequest(r *http.Request) (pgtype.UUID, error) {
-	return getUUIDFromRequest(r, "skillID")
 }

@@ -5,6 +5,7 @@ import (
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
+	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
@@ -12,7 +13,7 @@ import (
 func (h *CharacterHandler) getSkills(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
@@ -32,12 +33,12 @@ func (h *CharacterHandler) getSkills(w http.ResponseWriter, r *http.Request) *my
 func (h *CharacterHandler) getSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	skillID, err := getSkillIDFromRequest(r)
+	skillID, err := characterHelpers.GetSkillIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}
@@ -58,13 +59,13 @@ func (h *CharacterHandler) getSkill(w http.ResponseWriter, r *http.Request) *myE
 func (h *CharacterHandler) createSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
 	var input model.CreateSkillInput
-	if appErr := decodeJSON(r, &input); appErr != nil {
+	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
 	input.UserID = userID
@@ -82,18 +83,18 @@ func (h *CharacterHandler) createSkill(w http.ResponseWriter, r *http.Request) *
 func (h *CharacterHandler) updateSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	skillID, err := getSkillIDFromRequest(r)
+	skillID, err := characterHelpers.GetSkillIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}
 
 	var input model.UpdateSkillInput
-	if appErr := decodeJSON(r, &input); appErr != nil {
+	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
 	input.UserID = userID
@@ -112,12 +113,12 @@ func (h *CharacterHandler) updateSkill(w http.ResponseWriter, r *http.Request) *
 func (h *CharacterHandler) deleteSkill(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	skillID, err := getSkillIDFromRequest(r)
+	skillID, err := characterHelpers.GetSkillIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidPathIDError("invalid skill id", err)
 	}

@@ -5,6 +5,7 @@ import (
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
+	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
@@ -12,7 +13,7 @@ import (
 func (h *CharacterHandler) getLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
@@ -32,13 +33,13 @@ func (h *CharacterHandler) getLuck(w http.ResponseWriter, r *http.Request) *myEr
 func (h *CharacterHandler) upsertLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
 	var input model.UpsertLuckInput
-	if appErr := decodeJSON(r, &input); appErr != nil {
+	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
 	input.UserID = userID
@@ -56,7 +57,7 @@ func (h *CharacterHandler) upsertLuck(w http.ResponseWriter, r *http.Request) *m
 func (h *CharacterHandler) deleteLuck(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}

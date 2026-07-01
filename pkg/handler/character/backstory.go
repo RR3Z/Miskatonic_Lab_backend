@@ -5,6 +5,7 @@ import (
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
+	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/helpers"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 )
@@ -12,7 +13,7 @@ import (
 func (h *CharacterHandler) getBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
@@ -32,13 +33,13 @@ func (h *CharacterHandler) getBackstory(w http.ResponseWriter, r *http.Request) 
 func (h *CharacterHandler) upsertBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
 	var input model.UpsertBackstoryInput
-	if appErr := decodeJSON(r, &input); appErr != nil {
+	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
 	input.UserID = userID
@@ -56,7 +57,7 @@ func (h *CharacterHandler) upsertBackstory(w http.ResponseWriter, r *http.Reques
 func (h *CharacterHandler) deleteBackstory(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
@@ -75,7 +76,7 @@ func (h *CharacterHandler) deleteBackstory(w http.ResponseWriter, r *http.Reques
 func (h *CharacterHandler) getBackstoryItems(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
@@ -95,12 +96,12 @@ func (h *CharacterHandler) getBackstoryItems(w http.ResponseWriter, r *http.Requ
 func (h *CharacterHandler) getBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	itemID, err := getBackstoryItemIDFromRequest(r)
+	itemID, err := characterHelpers.GetBackstoryItemIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
@@ -121,13 +122,13 @@ func (h *CharacterHandler) getBackstoryItem(w http.ResponseWriter, r *http.Reque
 func (h *CharacterHandler) createBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
 	var input model.CreateBackstoryItemInput
-	if appErr := decodeJSON(r, &input); appErr != nil {
+	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
 	input.UserID = userID
@@ -145,18 +146,18 @@ func (h *CharacterHandler) createBackstoryItem(w http.ResponseWriter, r *http.Re
 func (h *CharacterHandler) updateBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	itemID, err := getBackstoryItemIDFromRequest(r)
+	itemID, err := characterHelpers.GetBackstoryItemIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
 
 	var input model.UpdateBackstoryItemInput
-	if appErr := decodeJSON(r, &input); appErr != nil {
+	if appErr := characterHelpers.DecodeJSON(r, &input); appErr != nil {
 		return appErr
 	}
 	input.UserID = userID
@@ -175,12 +176,12 @@ func (h *CharacterHandler) updateBackstoryItem(w http.ResponseWriter, r *http.Re
 func (h *CharacterHandler) deleteBackstoryItem(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	characterID, err := getCharacterIDFromRequest(r)
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	itemID, err := getBackstoryItemIDFromRequest(r)
+	itemID, err := characterHelpers.GetBackstoryItemIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidPathIDError("invalid backstory item id", err)
 	}
