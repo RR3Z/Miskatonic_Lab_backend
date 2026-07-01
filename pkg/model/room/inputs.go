@@ -1,4 +1,4 @@
-package room
+package roomDTO
 
 import "github.com/jackc/pgx/v5/pgtype"
 

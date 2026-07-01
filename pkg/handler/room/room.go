@@ -7,7 +7,7 @@ import (
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	roomErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room/errors"
 	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room/helpers"
-	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
+	roomDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
 	"github.com/go-chi/chi/v5"
 )
@@ -15,12 +15,12 @@ import (
 func (h *RoomHandler) createRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	var req model.CreateRoomRequest
+	var req roomDTO.CreateRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return roomErrors.InvalidInputError("invalid request body", err)
 	}
 
-	result, err := h.service.CreateRoom(r.Context(), model.CreateRoomInput{
+	result, err := h.service.CreateRoom(r.Context(), roomDTO.CreateRoomInput{
 		OwnerID:    userID,
 		MaxPlayers: req.MaxPlayers,
 	})
@@ -39,7 +39,7 @@ func (h *RoomHandler) getRoom(w http.ResponseWriter, r *http.Request) *myErrors.
 		return roomErrors.InvalidIDError(err)
 	}
 
-	result, err := h.service.GetRoom(r.Context(), model.GetRoomInput{
+	result, err := h.service.GetRoom(r.Context(), roomDTO.GetRoomInput{
 		RoomID: roomID,
 		UserID: userID,
 	})
@@ -58,12 +58,12 @@ func (h *RoomHandler) updateRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.InvalidIDError(err)
 	}
 
-	var req model.UpdateRoomRequest
+	var req roomDTO.UpdateRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return roomErrors.InvalidInputError("invalid request body", err)
 	}
 
-	result, err := h.service.UpdateRoom(r.Context(), model.UpdateRoomInput{
+	result, err := h.service.UpdateRoom(r.Context(), roomDTO.UpdateRoomInput{
 		RoomID:     roomID,
 		OwnerID:    userID,
 		MaxPlayers: req.MaxPlayers,
@@ -83,12 +83,12 @@ func (h *RoomHandler) transferRoomOwnership(w http.ResponseWriter, r *http.Reque
 		return roomErrors.InvalidIDError(err)
 	}
 
-	var req model.TransferRoomOwnershipRequest
+	var req roomDTO.TransferRoomOwnershipRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return roomErrors.InvalidInputError("invalid request body", err)
 	}
 
-	result, err := h.service.TransferOwnership(r.Context(), model.TransferOwnershipInput{
+	result, err := h.service.TransferOwnership(r.Context(), roomDTO.TransferOwnershipInput{
 		RoomID:     roomID,
 		OwnerID:    userID,
 		NewOwnerID: req.UserID,
@@ -108,7 +108,7 @@ func (h *RoomHandler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.InvalidIDError(err)
 	}
 
-	err = h.service.DeleteRoom(r.Context(), model.DeleteRoomInput{
+	err = h.service.DeleteRoom(r.Context(), roomDTO.DeleteRoomInput{
 		RoomID:  roomID,
 		OwnerID: userID,
 	})
@@ -127,14 +127,14 @@ func (h *RoomHandler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors
 		return roomErrors.InvalidIDError(err)
 	}
 
-	var req model.JoinRoomRequest
+	var req roomDTO.JoinRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return roomErrors.InvalidInputError("invalid request body", err)
 	}
 
 	result, err := h.service.JoinRoom(
 		r.Context(),
-		model.JoinRoomInput{
+		roomDTO.JoinRoomInput{
 			RoomID:      roomID,
 			UserID:      userID,
 			InviteToken: req.InviteToken,
@@ -155,7 +155,7 @@ func (h *RoomHandler) leaveRoom(w http.ResponseWriter, r *http.Request) *myError
 		return roomErrors.InvalidIDError(err)
 	}
 
-	err = h.service.LeaveRoom(r.Context(), model.LeaveRoomInput{
+	err = h.service.LeaveRoom(r.Context(), roomDTO.LeaveRoomInput{
 		RoomID: roomID,
 		UserID: userID,
 	})
@@ -177,7 +177,7 @@ func (h *RoomHandler) kickMember(w http.ResponseWriter, r *http.Request) *myErro
 
 	err = h.service.KickMember(
 		r.Context(),
-		model.KickMemberInput{
+		roomDTO.KickMemberInput{
 			RoomID:       roomID,
 			ActorUserID:  userID,
 			TargetUserID: targetUserID,
@@ -198,12 +198,12 @@ func (h *RoomHandler) selectCharacter(w http.ResponseWriter, r *http.Request) *m
 		return roomErrors.InvalidIDError(err)
 	}
 
-	var req model.SelectCharacterRequest
+	var req roomDTO.SelectCharacterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return roomErrors.InvalidInputError("invalid request body", err)
 	}
 
-	result, err := h.service.SelectCharacter(r.Context(), model.SelectCharacterInput{
+	result, err := h.service.SelectCharacter(r.Context(), roomDTO.SelectCharacterInput{
 		RoomID:      roomID,
 		UserID:      userID,
 		CharacterID: req.CharacterID,
@@ -224,14 +224,14 @@ func (h *RoomHandler) changeRole(w http.ResponseWriter, r *http.Request) *myErro
 	}
 	targetUserID := chi.URLParam(r, "userID")
 
-	var req model.ChangeRoleRequest
+	var req roomDTO.ChangeRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return roomErrors.InvalidInputError("invalid request body", err)
 	}
 
 	result, err := h.service.ChangeRole(
 		r.Context(),
-		model.ChangeRoleInput{
+		roomDTO.ChangeRoleInput{
 			RoomID:       roomID,
 			ActorUserID:  userID,
 			TargetUserID: targetUserID,
