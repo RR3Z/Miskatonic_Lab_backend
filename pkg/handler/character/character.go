@@ -1,0 +1,107 @@
+package character
+
+import (
+	"net/http"
+
+	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
+	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character/errors"
+	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
+)
+
+func (h *Handler) getAllCharacters(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characters, err := h.characters.GetAllCharacters(r.Context(), userID)
+	if err != nil {
+		return &myErrors.AppError{
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get user characters",
+			Err:     err,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, characters)
+	return nil
+}
+
+func (h *Handler) getCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return characterErrors.InvalidCharacterIDError(err)
+	}
+
+	character, err := h.characters.GetCharacter(r.Context(), model.GetCharacterInput{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil {
+		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to get character data")
+	}
+
+	utils.WriteJSON(w, http.StatusOK, character)
+	return nil
+}
+
+func (h *Handler) createCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	var input model.CreateCharacterInput
+	if appErr := decodeJSON(r, &input); appErr != nil {
+		return appErr
+	}
+	input.UserID = userID
+
+	character, err := h.characters.CreateCharacter(r.Context(), input)
+	if err != nil {
+		return characterErrors.MapServiceError(err, "failed to create character")
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, character)
+	return nil
+}
+
+func (h *Handler) updateCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return characterErrors.InvalidCharacterIDError(err)
+	}
+
+	var input model.UpdateCharacterInput
+	if appErr := decodeJSON(r, &input); appErr != nil {
+		return appErr
+	}
+	input.UserID = userID
+	input.ID = characterID
+
+	character, err := h.characters.UpdateCharacter(r.Context(), input)
+	if err != nil {
+		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to update character")
+	}
+
+	utils.WriteJSON(w, http.StatusOK, character)
+	return nil
+}
+
+func (h *Handler) deleteCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	characterID, err := getCharacterIDFromRequest(r)
+	if err != nil {
+		return characterErrors.InvalidCharacterIDError(err)
+	}
+
+	if err := h.characters.DeleteCharacter(r.Context(), model.DeleteCharacterInput{
+		UserID: userID,
+		ID:     characterID,
+	}); err != nil {
+		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to delete character")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
