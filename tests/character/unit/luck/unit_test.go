@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
+	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 )
@@ -155,4 +156,18 @@ func TestUpsertLuckAllowsPartialInputWhenExistingStateIsMissing(t *testing.T) {
 	require.Equal(t, 2, dbtx.QueryRowCalls)
 	require.Equal(t, []any{input.UserID, input.CharacterID, input.StartingLuck, input.CurrentLuck}, dbtx.LastQueryRowArgs)
 	requireSameLuckState(t, expectedLuck, luck)
+}
+
+func TestUpsertLuckRejectsNegativeStartingLuck(t *testing.T) {
+	_, service := newTestCharacterServiceForLuck()
+	startingLuck := int16(-5)
+	_, err := service.UpsertLuck(context.Background(), testUpsertLuckInput(&startingLuck, nil))
+	require.ErrorIs(t, err, characterErrors.ErrStateNegative)
+}
+
+func TestUpsertLuckRejectsNegativeCurrentLuck(t *testing.T) {
+	_, service := newTestCharacterServiceForLuck()
+	currentLuck := int16(-3)
+	_, err := service.UpsertLuck(context.Background(), testUpsertLuckInput(nil, &currentLuck))
+	require.ErrorIs(t, err, characterErrors.ErrStateNegative)
 }

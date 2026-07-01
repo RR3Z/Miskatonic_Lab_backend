@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
+	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 )
@@ -198,4 +199,18 @@ func TestUpsertHealthAllowsPartialInputWhenExistingStateIsMissing(t *testing.T) 
 		input.Dead,
 	}, dbtx.LastQueryRowArgs)
 	requireSameHealthState(t, expectedHealth, health)
+}
+
+func TestUpsertHealthRejectsNegativeMaxHp(t *testing.T) {
+	_, service := newTestCharacterServiceForHealth()
+	maxHp := int16(-5)
+	_, err := service.UpsertHealth(context.Background(), testUpsertHealthInput(&maxHp, nil))
+	require.ErrorIs(t, err, characterErrors.ErrStateNegative)
+}
+
+func TestUpsertHealthRejectsNegativeCurrentHp(t *testing.T) {
+	_, service := newTestCharacterServiceForHealth()
+	currentHp := int16(-3)
+	_, err := service.UpsertHealth(context.Background(), testUpsertHealthInput(nil, &currentHp))
+	require.ErrorIs(t, err, characterErrors.ErrStateNegative)
 }

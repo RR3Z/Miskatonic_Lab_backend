@@ -35,6 +35,35 @@ func TestUpdateCharacterRejectsBlankNameBeforeRepository(t *testing.T) {
 	require.ErrorIs(t, err, characterErrors.ErrNameRequired)
 }
 
+func TestCreateCharacterRejectsNameTooLong(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{})
+	longName := string(make([]byte, 256))
+	for i := range longName {
+		longName = longName[:i] + "a" + longName[i+1:]
+	}
+
+	_, err := service.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{
+		UserID: "user_1",
+		Name:   longName,
+	})
+	require.ErrorIs(t, err, characterErrors.ErrNameTooLong)
+}
+
+func TestUpdateCharacterRejectsNameTooLong(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{})
+	longName := string(make([]byte, 256))
+	for i := range longName {
+		longName = longName[:i] + "a" + longName[i+1:]
+	}
+
+	_, err := service.UpdateCharacter(context.Background(), characterDTO.UpdateCharacterInput{
+		UserID: "user_1",
+		ID:     testCoreUUID("11111111-1111-1111-1111-111111111111"),
+		Name:   longName,
+	})
+	require.ErrorIs(t, err, characterErrors.ErrNameTooLong)
+}
+
 func testCoreUUID(value string) pgtype.UUID {
 	var id pgtype.UUID
 	if err := id.Scan(value); err != nil {

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
+	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 )
@@ -192,4 +193,18 @@ func TestUpsertSanityAllowsPartialInputWhenExistingStateIsMissing(t *testing.T) 
 		input.IndefInsanity,
 	}, dbtx.LastQueryRowArgs)
 	requireSameSanityState(t, expectedSanity, sanity)
+}
+
+func TestUpsertSanityRejectsNegativeMaxSanity(t *testing.T) {
+	_, service := newTestCharacterServiceForSanity()
+	maxSanity := int16(-5)
+	_, err := service.UpsertSanity(context.Background(), testUpsertSanityInput(&maxSanity, nil))
+	require.ErrorIs(t, err, characterErrors.ErrStateNegative)
+}
+
+func TestUpsertSanityRejectsNegativeCurrentSanity(t *testing.T) {
+	_, service := newTestCharacterServiceForSanity()
+	currentSanity := int16(-3)
+	_, err := service.UpsertSanity(context.Background(), testUpsertSanityInput(nil, &currentSanity))
+	require.ErrorIs(t, err, characterErrors.ErrStateNegative)
 }

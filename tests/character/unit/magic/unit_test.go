@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
+	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 )
@@ -164,4 +165,18 @@ func TestUpsertMagicAllowsPartialInputWhenExistingStateIsMissing(t *testing.T) {
 	require.Equal(t, 2, dbtx.QueryRowCalls)
 	require.Equal(t, []any{input.UserID, input.CharacterID, input.MaxMp, input.CurrentMp}, dbtx.LastQueryRowArgs)
 	requireSameMagicState(t, expectedMagic, magic)
+}
+
+func TestUpsertMagicRejectsNegativeMaxMp(t *testing.T) {
+	_, service := newTestCharacterServiceForMagic()
+	maxMp := int16(-5)
+	_, err := service.UpsertMagic(context.Background(), testUpsertMagicInput(&maxMp, nil))
+	require.ErrorIs(t, err, characterErrors.ErrStateNegative)
+}
+
+func TestUpsertMagicRejectsNegativeCurrentMp(t *testing.T) {
+	_, service := newTestCharacterServiceForMagic()
+	currentMp := int16(-3)
+	_, err := service.UpsertMagic(context.Background(), testUpsertMagicInput(nil, &currentMp))
+	require.ErrorIs(t, err, characterErrors.ErrStateNegative)
 }
