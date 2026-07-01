@@ -6,15 +6,15 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct {
-	rooms roomService.IRoom
+type RoomHandler struct {
+	service roomService.IRoom
 }
 
-func New(rooms roomService.IRoom) *Handler {
-	return &Handler{rooms: rooms}
+func New(service roomService.IRoom) *RoomHandler {
+	return &RoomHandler{service: service}
 }
 
-func (h *Handler) RegisterRoutes(r chi.Router) {
+func (h *RoomHandler) RegisterRoutes(r chi.Router) {
 	r.Post("/", httpAdapter.AppHandler(h.createRoom).ServeHTTP)
 
 	r.Route("/{roomID}", func(r chi.Router) {

@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) createRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
 	var req model.CreateRoomRequest
@@ -18,7 +18,7 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) *myErrors.A
 		return invalidInputError("invalid request body", err)
 	}
 
-	result, err := h.rooms.CreateRoom(r.Context(), model.CreateRoomInput{
+	result, err := h.service.CreateRoom(r.Context(), model.CreateRoomInput{
 		OwnerID:    userID,
 		MaxPlayers: req.MaxPlayers,
 	})
@@ -30,14 +30,14 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) *myErrors.A
 	return nil
 }
 
-func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) getRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
 		return invalidIDError(err)
 	}
 
-	result, err := h.rooms.GetRoom(r.Context(), model.GetRoomInput{
+	result, err := h.service.GetRoom(r.Context(), model.GetRoomInput{
 		RoomID: roomID,
 		UserID: userID,
 	})
@@ -49,7 +49,7 @@ func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppE
 	return nil
 }
 
-func (h *Handler) updateRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) updateRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
@@ -61,7 +61,7 @@ func (h *Handler) updateRoom(w http.ResponseWriter, r *http.Request) *myErrors.A
 		return invalidInputError("invalid request body", err)
 	}
 
-	result, err := h.rooms.UpdateRoom(r.Context(), model.UpdateRoomInput{
+	result, err := h.service.UpdateRoom(r.Context(), model.UpdateRoomInput{
 		RoomID:     roomID,
 		OwnerID:    userID,
 		MaxPlayers: req.MaxPlayers,
@@ -74,7 +74,7 @@ func (h *Handler) updateRoom(w http.ResponseWriter, r *http.Request) *myErrors.A
 	return nil
 }
 
-func (h *Handler) transferRoomOwnership(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) transferRoomOwnership(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
@@ -86,7 +86,7 @@ func (h *Handler) transferRoomOwnership(w http.ResponseWriter, r *http.Request) 
 		return invalidInputError("invalid request body", err)
 	}
 
-	result, err := h.rooms.TransferOwnership(r.Context(), model.TransferOwnershipInput{
+	result, err := h.service.TransferOwnership(r.Context(), model.TransferOwnershipInput{
 		RoomID:     roomID,
 		OwnerID:    userID,
 		NewOwnerID: req.UserID,
@@ -99,14 +99,14 @@ func (h *Handler) transferRoomOwnership(w http.ResponseWriter, r *http.Request) 
 	return nil
 }
 
-func (h *Handler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
 		return invalidIDError(err)
 	}
 
-	err = h.rooms.DeleteRoom(r.Context(), model.DeleteRoomInput{
+	err = h.service.DeleteRoom(r.Context(), model.DeleteRoomInput{
 		RoomID:  roomID,
 		OwnerID: userID,
 	})
@@ -118,7 +118,7 @@ func (h *Handler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErrors.A
 	return nil
 }
 
-func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
@@ -130,7 +130,7 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors.App
 		return invalidInputError("invalid request body", err)
 	}
 
-	result, err := h.rooms.JoinRoom(
+	result, err := h.service.JoinRoom(
 		r.Context(),
 		model.JoinRoomInput{
 			RoomID:      roomID,
@@ -146,14 +146,14 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors.App
 	return nil
 }
 
-func (h *Handler) leaveRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) leaveRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
 		return invalidIDError(err)
 	}
 
-	err = h.rooms.LeaveRoom(r.Context(), model.LeaveRoomInput{
+	err = h.service.LeaveRoom(r.Context(), model.LeaveRoomInput{
 		RoomID: roomID,
 		UserID: userID,
 	})
@@ -165,7 +165,7 @@ func (h *Handler) leaveRoom(w http.ResponseWriter, r *http.Request) *myErrors.Ap
 	return nil
 }
 
-func (h *Handler) kickMember(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) kickMember(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
@@ -173,7 +173,7 @@ func (h *Handler) kickMember(w http.ResponseWriter, r *http.Request) *myErrors.A
 	}
 	targetUserID := chi.URLParam(r, "userID")
 
-	err = h.rooms.KickMember(
+	err = h.service.KickMember(
 		r.Context(),
 		model.KickMemberInput{
 			RoomID:       roomID,
@@ -189,7 +189,7 @@ func (h *Handler) kickMember(w http.ResponseWriter, r *http.Request) *myErrors.A
 	return nil
 }
 
-func (h *Handler) selectCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) selectCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
@@ -201,7 +201,7 @@ func (h *Handler) selectCharacter(w http.ResponseWriter, r *http.Request) *myErr
 		return invalidInputError("invalid request body", err)
 	}
 
-	result, err := h.rooms.SelectCharacter(r.Context(), model.SelectCharacterInput{
+	result, err := h.service.SelectCharacter(r.Context(), model.SelectCharacterInput{
 		RoomID:      roomID,
 		UserID:      userID,
 		CharacterID: req.CharacterID,
@@ -214,7 +214,7 @@ func (h *Handler) selectCharacter(w http.ResponseWriter, r *http.Request) *myErr
 	return nil
 }
 
-func (h *Handler) changeRole(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *RoomHandler) changeRole(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := getRoomIDFromRequest(r)
 	if err != nil {
@@ -227,7 +227,7 @@ func (h *Handler) changeRole(w http.ResponseWriter, r *http.Request) *myErrors.A
 		return invalidInputError("invalid request body", err)
 	}
 
-	result, err := h.rooms.ChangeRole(
+	result, err := h.service.ChangeRole(
 		r.Context(),
 		model.ChangeRoleInput{
 			RoomID:       roomID,
