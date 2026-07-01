@@ -1,4 +1,4 @@
-package room
+package roomHelpers
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func getRoomIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+func GetRoomIDFromRequest(r *http.Request) (pgtype.UUID, error) {
 	var id pgtype.UUID
 	if err := id.Scan(chi.URLParam(r, "roomID")); err != nil {
 		return pgtype.UUID{}, err

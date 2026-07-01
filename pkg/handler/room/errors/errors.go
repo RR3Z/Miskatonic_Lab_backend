@@ -1,4 +1,4 @@
-package room
+package roomErrors
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	serviceroom "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 )
 
-func mapServiceError(err error, fallbackMessage string) *myErrors.AppError {
+func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 	switch {
 	case errors.Is(err, serviceroom.ErrInvalidInput):
 		return &myErrors.AppError{
@@ -75,7 +75,7 @@ func mapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 	}
 }
 
-func invalidIDError(err error) *myErrors.AppError {
+func InvalidIDError(err error) *myErrors.AppError {
 	return &myErrors.AppError{
 		Status:  http.StatusBadRequest,
 		Code:    "room.invalid_id",
@@ -84,7 +84,7 @@ func invalidIDError(err error) *myErrors.AppError {
 	}
 }
 
-func invalidInputError(message string, err error) *myErrors.AppError {
+func InvalidInputError(message string, err error) *myErrors.AppError {
 	return &myErrors.AppError{
 		Status:  http.StatusBadRequest,
 		Code:    "room.invalid_input",
