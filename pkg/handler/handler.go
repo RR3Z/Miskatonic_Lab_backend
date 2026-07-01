@@ -14,12 +14,22 @@ import (
 )
 
 type Handler struct {
-	services *service.Service
+	services          *service.Service
+	auxiliaryHandlers *AuxiliaryHandlers
+}
+
+type AuxiliaryHandlers struct {
+	characterHandler *characterHandler.CharacterHandler
+	roomHandler      *roomHandler.RoomHandler
 }
 
 func NewHandler(services *service.Service) *Handler {
 	return &Handler{
 		services: services,
+		auxiliaryHandlers: new(AuxiliaryHandlers{
+			characterHandler: characterHandler.New(services.Character),
+			roomHandler:      roomHandler.New(services.Room),
+		}),
 	}
 }
 
@@ -47,7 +57,7 @@ func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *ch
 		r.Get("/me", AppHandler(h.getUserByID).ServeHTTP)
 
 		r.Route("/characters", func(r chi.Router) {
-			characterHandler.New(h.services.Character).RegisterRoutes(r)
+			h.auxiliaryHandlers.characterHandler.RegisterRoutes(r)
 		})
 
 		r.Route("/dice-roll/{characterID}", func(r chi.Router) {
@@ -56,7 +66,7 @@ func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *ch
 		})
 
 		r.Route("/rooms", func(r chi.Router) {
-			roomHandler.New(h.services.Room).RegisterRoutes(r)
+			h.auxiliaryHandlers.roomHandler.RegisterRoutes(r)
 		})
 	})
 
