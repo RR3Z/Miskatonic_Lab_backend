@@ -25,6 +25,22 @@ func (s *CharacterService) GetDerivedStats(ctx context.Context, input derivedSta
 }
 
 func (s *CharacterService) UpsertDerivedStats(ctx context.Context, input derivedStatsDTO.UpsertDerivedStatsInput) (db.DerivedStat, error) {
+	if err := validateNonNegative(characterErrors.ErrDerivedStatsNegative, input.Speed, input.DodgeValue); err != nil {
+		return db.DerivedStat{}, err
+	}
+	if input.DamageBonus != nil {
+		bonus := *input.DamageBonus
+		valid := false
+		if bonus == "-2" || bonus == "-1" || bonus == "0" {
+			valid = true
+		} else if len(bonus) > 1 && bonus[0] == '+' {
+			valid = true
+		}
+		if !valid {
+			return db.DerivedStat{}, characterErrors.ErrInvalidDamageBonus
+		}
+	}
+
 	derivedStats, err := s.repos.Queries.UpsertDerivedStats(ctx, db.UpsertDerivedStatsParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,

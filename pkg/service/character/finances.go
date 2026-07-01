@@ -22,6 +22,17 @@ func (s *CharacterService) GetFinances(ctx context.Context, input financesDTO.Ge
 }
 
 func (s *CharacterService) UpsertFinances(ctx context.Context, input financesDTO.UpsertFinancesInput) (db.Finance, error) {
+	if input.SpendingLimit != nil {
+		if err := validateRequiredString(*input.SpendingLimit, 120, nil, characterErrors.ErrFinancesMoneyTooLong); err != nil {
+			return db.Finance{}, err
+		}
+	}
+	if input.Cash != nil {
+		if err := validateRequiredString(*input.Cash, 120, nil, characterErrors.ErrFinancesMoneyTooLong); err != nil {
+			return db.Finance{}, err
+		}
+	}
+
 	finances, err := s.repos.Queries.UpsertFinances(ctx, db.UpsertFinancesParams{
 		UserID:              input.UserID,
 		CharacterID:         input.CharacterID,

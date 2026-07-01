@@ -2,13 +2,11 @@ package character
 
 import (
 	"context"
-	"errors"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
-	"github.com/jackc/pgx/v5"
 )
 
 // Magic
@@ -25,7 +23,22 @@ func (s *CharacterService) GetMagic(ctx context.Context, input magicDTO.GetMagic
 }
 
 func (s *CharacterService) UpsertMagic(ctx context.Context, input magicDTO.UpsertMagicInput) (db.MagicState, error) {
-	if err := s.validateMagicState(ctx, input); err != nil {
+	if err := validateNonNegative(characterErrors.ErrStateNegative, input.MaxMp, input.CurrentMp); err != nil {
+		return db.MagicState{}, err
+	}
+
+	if err := s.validateStateMax(ctx, input.MaxMp, input.CurrentMp,
+		func(ctx context.Context) (int16, int16, error) {
+			existing, err := s.repos.Queries.GetMagicState(ctx, db.GetMagicStateParams{
+				UserID: input.UserID, CharacterID: input.CharacterID,
+			})
+			if err != nil {
+				return 0, 0, err
+			}
+			return existing.MaxMp, existing.CurrentMp, nil
+		},
+		myErrors.ErrCurrentMagicExceedsMax,
+	); err != nil {
 		return db.MagicState{}, err
 	}
 
@@ -48,46 +61,6 @@ func (s *CharacterService) DeleteMagic(ctx context.Context, input magicDTO.Delet
 		CharacterID: input.CharacterID,
 	}); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (s *CharacterService) validateMagicState(ctx context.Context, input magicDTO.UpsertMagicInput) error {
-	if input.MaxMp != nil && input.CurrentMp != nil {
-		if *input.CurrentMp > *input.MaxMp {
-			return myErrors.ErrCurrentMagicExceedsMax
-		}
-		return nil
-	}
-
-	if input.MaxMp == nil && input.CurrentMp == nil {
-		return nil
-	}
-
-	existing, err := s.repos.Queries.GetMagicState(ctx, db.GetMagicStateParams{
-		UserID:      input.UserID,
-		CharacterID: input.CharacterID,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-
-	maxMp := existing.MaxMp
-	if input.MaxMp != nil {
-		maxMp = *input.MaxMp
-	}
-
-	currentMp := existing.CurrentMp
-	if input.CurrentMp != nil {
-		currentMp = *input.CurrentMp
-	}
-
-	if currentMp > maxMp {
-		return myErrors.ErrCurrentMagicExceedsMax
 	}
 
 	return nil

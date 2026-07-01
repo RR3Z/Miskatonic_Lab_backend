@@ -35,6 +35,10 @@ func (s *CharacterService) GetSkill(ctx context.Context, input skillsDTO.GetSkil
 }
 
 func (s *CharacterService) CreateSkill(ctx context.Context, input skillsDTO.CreateSkillInput) (skillsDTO.SkillModel, error) {
+	if err := validateSkillInput(input.Name, input.BaseValue, input.Value); err != nil {
+		return skillsDTO.SkillModel{}, err
+	}
+
 	skill, err := s.repos.Queries.CreateCharacterSkill(ctx, db.CreateCharacterSkillParams{
 		Name:        input.Name,
 		CategoryID:  input.CategoryID,
@@ -54,6 +58,10 @@ func (s *CharacterService) CreateSkill(ctx context.Context, input skillsDTO.Crea
 }
 
 func (s *CharacterService) UpdateSkill(ctx context.Context, input skillsDTO.UpdateSkillInput) (skillsDTO.SkillModel, error) {
+	if err := validateSkillInput(input.Name, input.BaseValue, input.Value); err != nil {
+		return skillsDTO.SkillModel{}, err
+	}
+
 	skill, err := s.repos.Queries.UpdateCharacterSkill(ctx, db.UpdateCharacterSkillParams{
 		Name:        input.Name,
 		CategoryID:  input.CategoryID,

@@ -5,6 +5,7 @@ import (
 
 	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
 )
 
 // Characteristics
@@ -21,6 +22,10 @@ func (s *CharacterService) GetCharacteristics(ctx context.Context, input charact
 }
 
 func (s *CharacterService) UpsertCharacteristics(ctx context.Context, input characteristicsDTO.UpsertCharacteristicsInput) (db.Characteristic, error) {
+	if err := validateNonNegative(characterErrors.ErrCharacteristicsNegative, input.Strength, input.Constitution, input.Size, input.Dexterity, input.Appearance, input.Intelligence, input.Power, input.Education); err != nil {
+		return db.Characteristic{}, err
+	}
+
 	characteristics, err := s.repos.Queries.UpsertCharacteristics(ctx, db.UpsertCharacteristicsParams{
 		Strength:     input.Strength,
 		Constitution: input.Constitution,

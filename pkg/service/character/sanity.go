@@ -2,13 +2,11 @@ package character
 
 import (
 	"context"
-	"errors"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	sanityDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/sanity"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
-	"github.com/jackc/pgx/v5"
 )
 
 // Sanity
@@ -25,7 +23,22 @@ func (s *CharacterService) GetSanity(ctx context.Context, input sanityDTO.GetSan
 }
 
 func (s *CharacterService) UpsertSanity(ctx context.Context, input sanityDTO.UpsertSanityInput) (db.SanityState, error) {
-	if err := s.validateSanityState(ctx, input); err != nil {
+	if err := validateNonNegative(characterErrors.ErrStateNegative, input.MaxSanity, input.CurrentSanity); err != nil {
+		return db.SanityState{}, err
+	}
+
+	if err := s.validateStateMax(ctx, input.MaxSanity, input.CurrentSanity,
+		func(ctx context.Context) (int16, int16, error) {
+			existing, err := s.repos.Queries.GetSanityState(ctx, db.GetSanityStateParams{
+				UserID: input.UserID, CharacterID: input.CharacterID,
+			})
+			if err != nil {
+				return 0, 0, err
+			}
+			return existing.MaxSanity, existing.CurrentSanity, nil
+		},
+		myErrors.ErrCurrentSanityExceedsMax,
+	); err != nil {
 		return db.SanityState{}, err
 	}
 
@@ -50,46 +63,6 @@ func (s *CharacterService) DeleteSanity(ctx context.Context, input sanityDTO.Del
 		CharacterID: input.CharacterID,
 	}); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (s *CharacterService) validateSanityState(ctx context.Context, input sanityDTO.UpsertSanityInput) error {
-	if input.MaxSanity != nil && input.CurrentSanity != nil {
-		if *input.CurrentSanity > *input.MaxSanity {
-			return myErrors.ErrCurrentSanityExceedsMax
-		}
-		return nil
-	}
-
-	if input.MaxSanity == nil && input.CurrentSanity == nil {
-		return nil
-	}
-
-	existing, err := s.repos.Queries.GetSanityState(ctx, db.GetSanityStateParams{
-		UserID:      input.UserID,
-		CharacterID: input.CharacterID,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-
-	maxSanity := existing.MaxSanity
-	if input.MaxSanity != nil {
-		maxSanity = *input.MaxSanity
-	}
-
-	currentSanity := existing.CurrentSanity
-	if input.CurrentSanity != nil {
-		currentSanity = *input.CurrentSanity
-	}
-
-	if currentSanity > maxSanity {
-		return myErrors.ErrCurrentSanityExceedsMax
 	}
 
 	return nil

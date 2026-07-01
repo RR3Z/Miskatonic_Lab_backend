@@ -34,6 +34,10 @@ func (s *CharacterService) GetNote(ctx context.Context, input notesDTO.GetNoteIn
 }
 
 func (s *CharacterService) CreateNote(ctx context.Context, input notesDTO.CreateNoteInput) (db.Note, error) {
+	if err := validateNoteInput(input.Title, input.Body); err != nil {
+		return db.Note{}, err
+	}
+
 	note, err := s.repos.Queries.CreateNote(ctx, db.CreateNoteParams{
 		Title:       input.Title,
 		Body:        input.Body,
@@ -48,6 +52,10 @@ func (s *CharacterService) CreateNote(ctx context.Context, input notesDTO.Create
 }
 
 func (s *CharacterService) UpdateNote(ctx context.Context, input notesDTO.UpdateNoteInput) (db.Note, error) {
+	if err := validateNoteInput(input.Title, input.Body); err != nil {
+		return db.Note{}, err
+	}
+
 	note, err := s.repos.Queries.UpdateNote(ctx, db.UpdateNoteParams{
 		Title:       input.Title,
 		Body:        input.Body,

@@ -87,6 +87,10 @@ func (s *CharacterService) GetBackstoryItem(ctx context.Context, input backstori
 }
 
 func (s *CharacterService) CreateBackstoryItem(ctx context.Context, input backstoriesDTO.CreateBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error) {
+	if err := validateBackstoryItemInput(input.Section, input.Title, input.Text); err != nil {
+		return backstoriesDTO.BackstoryItemModel{}, err
+	}
+
 	item, err := s.repos.Queries.CreateBackstoryItem(ctx, db.CreateBackstoryItemParams{
 		Section:     input.Section,
 		Title:       input.Title,
@@ -102,6 +106,10 @@ func (s *CharacterService) CreateBackstoryItem(ctx context.Context, input backst
 }
 
 func (s *CharacterService) UpdateBackstoryItem(ctx context.Context, input backstoriesDTO.UpdateBackstoryItemInput) (backstoriesDTO.BackstoryItemModel, error) {
+	if err := validateBackstoryItemInput(input.Section, input.Title, input.Text); err != nil {
+		return backstoriesDTO.BackstoryItemModel{}, err
+	}
+
 	item, err := s.repos.Queries.UpdateBackstoryItem(ctx, db.UpdateBackstoryItemParams{
 		Section:         input.Section,
 		Title:           input.Title,

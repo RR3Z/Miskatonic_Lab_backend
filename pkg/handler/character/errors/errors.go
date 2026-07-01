@@ -13,6 +13,40 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 	switch {
 	case errors.Is(err, characterErrors.ErrNameRequired):
 		return characterNameRequiredError(err)
+	case errors.Is(err, characterErrors.ErrNameTooLong):
+		return badRequestError("character.name_too_long", "name exceeds maximum length", err)
+	case errors.Is(err, characterErrors.ErrAgeNegative):
+		return badRequestError("character.age_negative", "age must be >= 0", err)
+	case errors.Is(err, characterErrors.ErrCharacteristicsNegative):
+		return badRequestError("character.characteristics_negative", "characteristic values must be >= 0", err)
+	case errors.Is(err, characterErrors.ErrDerivedStatsNegative):
+		return badRequestError("character.derived_stats_negative", "speed and dodge must be >= 0", err)
+	case errors.Is(err, characterErrors.ErrInvalidDamageBonus):
+		return badRequestError("character.invalid_damage_bonus", "invalid damage bonus format", err)
+	case errors.Is(err, characterErrors.ErrStateNegative):
+		return badRequestError("character.state_negative", "state values must be >= 0", err)
+	case errors.Is(err, characterErrors.ErrSectionTooLong):
+		return badRequestError("character.section_too_long", "backstory item section exceeds max length", err)
+	case errors.Is(err, characterErrors.ErrBackstoryTitleRequired):
+		return badRequestError("character.backstory_title_required", "backstory item title is required", err)
+	case errors.Is(err, characterErrors.ErrBackstoryTitleTooLong):
+		return badRequestError("character.backstory_title_too_long", "backstory item title exceeds max length", err)
+	case errors.Is(err, characterErrors.ErrBackstoryTextRequired):
+		return badRequestError("character.backstory_text_required", "backstory item text is required", err)
+	case errors.Is(err, characterErrors.ErrSkillNameRequired):
+		return badRequestError("character.skill_name_required", "skill name is required", err)
+	case errors.Is(err, characterErrors.ErrSkillNameTooLong):
+		return badRequestError("character.skill_name_too_long", "skill name exceeds max length", err)
+	case errors.Is(err, characterErrors.ErrSkillValueNegative):
+		return badRequestError("character.skill_value_negative", "skill values must be >= 0", err)
+	case errors.Is(err, characterErrors.ErrFinancesMoneyTooLong):
+		return badRequestError("character.finances_money_too_long", "money field exceeds max length", err)
+	case errors.Is(err, characterErrors.ErrNoteTitleRequired):
+		return badRequestError("character.note_title_required", "note title is required", err)
+	case errors.Is(err, characterErrors.ErrNoteTitleTooLong):
+		return badRequestError("character.note_title_too_long", "note title exceeds max length", err)
+	case errors.Is(err, characterErrors.ErrNoteBodyRequired):
+		return badRequestError("character.note_body_required", "note body is required", err)
 	case isHealthStateValidationError(err):
 		return badRequestError("character.state_current_exceeds_max", "current_hp value cannot exceed max_hp value", err)
 	case isMagicStateValidationError(err):

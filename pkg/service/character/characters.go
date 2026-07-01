@@ -3,7 +3,6 @@ package character
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
@@ -152,8 +151,8 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterDTO.
 }
 
 func (s *CharacterService) CreateCharacter(ctx context.Context, input characterDTO.CreateCharacterInput) (characterDTO.CharacterShortModel, error) {
-	if strings.TrimSpace(input.Name) == "" {
-		return characterDTO.CharacterShortModel{}, characterErrors.ErrNameRequired
+	if err := validateRequiredString(input.Name, 255, characterErrors.ErrNameRequired, characterErrors.ErrNameTooLong); err != nil {
+		return characterDTO.CharacterShortModel{}, err
 	}
 
 	character, err := s.repos.Queries.CreateCharacter(ctx, db.CreateCharacterParams{
@@ -174,8 +173,8 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 }
 
 func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterDTO.UpdateCharacterInput) (characterDTO.CharacterShortModel, error) {
-	if strings.TrimSpace(input.Name) == "" {
-		return characterDTO.CharacterShortModel{}, characterErrors.ErrNameRequired
+	if err := validateRequiredString(input.Name, 255, characterErrors.ErrNameRequired, characterErrors.ErrNameTooLong); err != nil {
+		return characterDTO.CharacterShortModel{}, err
 	}
 
 	character, err := s.repos.Queries.UpdateCharacter(ctx, db.UpdateCharacterParams{
