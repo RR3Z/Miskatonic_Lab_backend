@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/stretchr/testify/require"
 )
@@ -11,13 +11,9 @@ import (
 func TestToShortCharacterModelCopiesAllCharacterFields(t *testing.T) {
 	character := testCharacter()
 
-	result := model.ToShortCharacterModel(character)
+	result := characterModel.ToCharacterShortModel(character)
 
 	requireSameShortCharacter(t, character, result)
-	require.Empty(t, result.Skills)
-	require.False(t, result.Characteristics.ID.Valid)
-	require.False(t, result.Backstory.ID.Valid)
-	require.False(t, result.Finances.ID.Valid)
 }
 
 func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
@@ -29,7 +25,7 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 	character.Residence = nil
 	character.Birthplace = nil
 
-	result := model.ToShortCharacterModel(character)
+	result := characterModel.ToCharacterShortModel(character)
 
 	require.Nil(t, result.PlayerName)
 	require.Nil(t, result.Occupation)
@@ -42,7 +38,7 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 func TestToFullCharacterModelLeavesOptionalSectionsEmptyWhenIDsAreInvalid(t *testing.T) {
 	character := testCharacter()
 
-	result := model.ToFullCharacterModel(model.CharacterDBData{
+	result := characterModel.ToCharacterModel(characterModel.CharacterDBData{
 		Character:       character,
 		Characteristics: db.Characteristic{ID: invalidUUID()},
 		DerivedStats:    db.DerivedStat{ID: invalidUUID()},
@@ -52,7 +48,7 @@ func TestToFullCharacterModelLeavesOptionalSectionsEmptyWhenIDsAreInvalid(t *tes
 		Luck:            db.LuckState{ID: invalidUUID()},
 	})
 
-	requireSameShortCharacter(t, character, result)
+	requireSameShortCharacter(t, character, result.CharacterShortModel)
 	require.False(t, result.Characteristics.ID.Valid)
 	require.False(t, result.DerivedStats.ID.Valid)
 	require.False(t, result.HP.ID.Valid)
@@ -88,7 +84,7 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 	sanity := db.SanityState{ID: testUUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"), CharacterID: character.ID, MaxSanity: 60, CurrentSanity: 40}
 	luck := db.LuckState{ID: testUUID("ffffffff-ffff-ffff-ffff-ffffffffffff"), CharacterID: character.ID, StartingLuck: 50, CurrentLuck: 30}
 
-	result := model.ToFullCharacterModel(model.CharacterDBData{
+	result := characterModel.ToCharacterModel(characterModel.CharacterDBData{
 		Character:       character,
 		Characteristics: characteristics,
 		DerivedStats:    derivedStats,
@@ -103,7 +99,7 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 		Notes:           []db.Note{note},
 	})
 
-	requireSameShortCharacter(t, character, result)
+	requireSameShortCharacter(t, character, result.CharacterShortModel)
 	require.Equal(t, characteristics, result.Characteristics)
 	require.Equal(t, derivedStats, result.DerivedStats)
 	require.Equal(t, hp, result.HP)
@@ -126,7 +122,7 @@ func TestToFullCharacterModelLeavesCreditRatingNilWhenFinanceSkillDoesNotMatch(t
 	finance := testFinance()
 	finance.CreditRatingSkillID = testUUID("abababab-abab-abab-abab-abababababab")
 
-	result := model.ToFullCharacterModel(model.CharacterDBData{
+	result := characterModel.ToCharacterModel(characterModel.CharacterDBData{
 		Character: testCharacter(),
 		Skills:    []db.GetSkillsRow{testSkillRow()},
 		Finances:  &finance,

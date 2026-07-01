@@ -6,6 +6,7 @@ import (
 	"time"
 
 	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
+	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
@@ -468,7 +469,7 @@ func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithou
 	recorder := &characterEventRecorder{}
 	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
 
-	characteristics, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+	characteristics, err := service.UpsertCharacteristics(context.Background(), characterModel.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
 		CharacterID: character.ID,
 		Strength:    characterInt16(60),
@@ -498,7 +499,7 @@ func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithou
 	recorder := &characterEventRecorder{}
 	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
 
-	characteristics, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+	characteristics, err := service.UpsertCharacteristics(context.Background(), characterModel.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
 		CharacterID: character.ID,
 		Strength:    characterInt16(60),
@@ -528,7 +529,7 @@ func TestCharacterServiceUpsertCharacteristicsRecalculatesDerivedStats(t *testin
 	recorder := &characterEventRecorder{}
 	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
 
-	_, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+	_, err := service.UpsertCharacteristics(context.Background(), characterModel.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
 		CharacterID: character.ID,
 		Strength:    characterInt16(60),
@@ -560,7 +561,7 @@ func TestCharacterServiceUpdateCharacterAgeRecalculatesDerivedStats(t *testing.T
 	recorder := &characterEventRecorder{}
 	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
 
-	_, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+	_, err := service.UpsertCharacteristics(context.Background(), characterModel.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
 		CharacterID: character.ID,
 		Strength:    characterInt16(60),
@@ -572,7 +573,7 @@ func TestCharacterServiceUpdateCharacterAgeRecalculatesDerivedStats(t *testing.T
 	recorder.events = nil
 
 	age := int16(80)
-	_, err = service.UpdateCharacter(context.Background(), db.UpdateCharacterParams{
+	_, err = service.UpdateCharacter(context.Background(), characterModel.UpdateCharacterInput{
 		UserID:     testUser.ID,
 		ID:         character.ID,
 		Name:       character.Name,
@@ -605,7 +606,7 @@ func TestCharacterServiceUpdateCharacterSkipsDerivedStatsRecalculationWithoutAge
 	recorder := &characterEventRecorder{}
 	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
 
-	_, err := service.UpsertCharacteristics(context.Background(), db.UpsertCharacteristicsParams{
+	_, err := service.UpsertCharacteristics(context.Background(), characterModel.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
 		CharacterID: character.ID,
 		Strength:    characterInt16(60),
@@ -616,7 +617,7 @@ func TestCharacterServiceUpdateCharacterSkipsDerivedStatsRecalculationWithoutAge
 
 	recorder.events = nil
 
-	_, err = service.UpdateCharacter(context.Background(), db.UpdateCharacterParams{
+	_, err = service.UpdateCharacter(context.Background(), characterModel.UpdateCharacterInput{
 		UserID:     testUser.ID,
 		ID:         character.ID,
 		Name:       character.Name,

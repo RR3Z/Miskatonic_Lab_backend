@@ -3,6 +3,7 @@ package tests
 import (
 	"testing"
 
+	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
@@ -28,8 +29,8 @@ func testLuckState() db.LuckState {
 	}
 }
 
-func testUpsertLuckInput(startingLuck *int16, currentLuck *int16) db.UpsertLuckStateParams {
-	return db.UpsertLuckStateParams{
+func testUpsertLuckInput(startingLuck *int16, currentLuck *int16) characterModel.UpsertLuckInput {
+	return characterModel.UpsertLuckInput{
 		UserID:       "user_1",
 		CharacterID:  testLuckUUID("11111111-1111-1111-1111-111111111111"),
 		StartingLuck: startingLuck,

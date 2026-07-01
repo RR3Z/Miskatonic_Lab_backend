@@ -5,6 +5,7 @@ import (
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -28,8 +29,8 @@ func newEventPublishingTestSubject() (*FakeCharacterService, *FakeEventPublisher
 
 func newFakeCharacterService() *FakeCharacterService {
 	return &FakeCharacterService{
-		Characters: []model.CharacterModel{
-			testCharacterModel(),
+		Characters: []characterModel.CharacterShortModel{
+			testCharacterShortModel(),
 			{ID: testUUID("55555555-5555-5555-5555-555555555555"), UserID: testUserID, Name: "Second Character"},
 		},
 		Character:       testCharacterModel(),
@@ -60,11 +61,17 @@ func testUUID(value string) pgtype.UUID {
 	return uuid
 }
 
-func testCharacterModel() model.CharacterModel {
-	return model.CharacterModel{
+func testCharacterShortModel() characterModel.CharacterShortModel {
+	return characterModel.CharacterShortModel{
 		ID:     testUUID(testCharacterID),
 		UserID: testUserID,
 		Name:   "Dr. Armitage",
+	}
+}
+
+func testCharacterModel() characterModel.CharacterModel {
+	return characterModel.CharacterModel{
+		CharacterShortModel: testCharacterShortModel(),
 	}
 }
 

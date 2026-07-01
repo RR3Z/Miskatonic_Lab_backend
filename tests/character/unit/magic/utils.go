@@ -3,6 +3,7 @@ package tests
 import (
 	"testing"
 
+	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
@@ -28,8 +29,8 @@ func testMagicState() db.MagicState {
 	}
 }
 
-func testUpsertMagicInput(maxMp *int16, currentMp *int16) db.UpsertMagicStateParams {
-	return db.UpsertMagicStateParams{
+func testUpsertMagicInput(maxMp *int16, currentMp *int16) characterModel.UpsertMagicInput {
+	return characterModel.UpsertMagicInput{
 		UserID:      "user_1",
 		CharacterID: testMagicUUID("11111111-1111-1111-1111-111111111111"),
 		MaxMp:       maxMp,

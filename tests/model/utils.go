@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model"
+	characterModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -125,7 +126,7 @@ func testFinance() db.Finance {
 	}
 }
 
-func requireSameShortCharacter(t *testing.T, expected db.Character, actual model.CharacterModel) {
+func requireSameShortCharacter(t *testing.T, expected db.Character, actual characterModel.CharacterShortModel) {
 	t.Helper()
 
 	require.Equal(t, expected.ID, actual.ID)
