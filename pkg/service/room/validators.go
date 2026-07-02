@@ -22,7 +22,3 @@ func validatePassword(password string) error {
 	}
 	return nil
 }
-
-func hasJoinCredential(input string) bool {
-	return strings.TrimSpace(input) != ""
-}

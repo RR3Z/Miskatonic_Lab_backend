@@ -2,7 +2,6 @@ package room
 
 import (
 	"net/http"
-	"strings"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	roomErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room/errors"
@@ -64,16 +63,11 @@ func (h *RoomHandler) updateRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return appErr
 	}
 
-	var password *string
-	if strings.TrimSpace(req.Password) != "" {
-		password = &req.Password
-	}
-
 	result, err := h.service.UpdateRoom(r.Context(), roomDTO.UpdateRoomInput{
 		RoomID:     roomID,
 		OwnerID:    userID,
 		MaxPlayers: req.MaxPlayers,
-		Password:   password,
+		Password:   roomHelpers.OptionalPassword(req.Password),
 	})
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to update room")

@@ -6,8 +6,9 @@ import (
 	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
 	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
-	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/calculators"
+	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
+	characterHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/helpers"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -91,7 +92,7 @@ func (s *CharacterService) recalculateDerivedStats(
 	characteristics db.Characteristic,
 	source string,
 ) {
-	if reason, canCalculate := derivedStatsRecalculationReadiness(age, characteristics); !canCalculate {
+	if reason, canCalculate := characterHelpers.DerivedStatsRecalculationReadiness(age, characteristics); !canCalculate {
 		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsAutoRecalculateSkipped{
 			UserID:      userID,
 			CharacterID: characterID.String(),
@@ -131,16 +132,4 @@ func (s *CharacterService) recalculateDerivedStats(
 		CharacterID: characterID.String(),
 		Source:      source,
 	})
-}
-
-func derivedStatsRecalculationReadiness(age *int16, characteristics db.Characteristic) (string, bool) {
-	if age == nil {
-		return "age_missing", false
-	}
-
-	if characteristics.Strength == nil || characteristics.Size == nil || characteristics.Dexterity == nil {
-		return "required_characteristics_missing", false
-	}
-
-	return "", true
 }

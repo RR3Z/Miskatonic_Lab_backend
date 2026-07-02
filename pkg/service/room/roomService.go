@@ -2,16 +2,13 @@ package room
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
-	"strings"
 
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room/helpers"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type RoomService struct {
@@ -34,7 +31,7 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 		return model.RoomModel{}, err
 	}
 
-	passwordHash, err := hashPassword(input.Password)
+	passwordHash, err := roomHelpers.HashPassword(input.Password)
 	if err != nil {
 		return model.RoomModel{}, err
 	}
@@ -46,7 +43,7 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 	defer tx.Rollback(ctx)
 
 	queries := s.repos.Queries.WithTx(tx)
-	inviteToken, err := generateInviteToken()
+	inviteToken, err := roomHelpers.GenerateInviteToken()
 	if err != nil {
 		return model.RoomModel{}, err
 	}
@@ -111,7 +108,7 @@ func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInpu
 			return model.RoomModel{}, err
 		}
 
-		hash, err := hashPassword(*input.Password)
+		hash, err := roomHelpers.HashPassword(*input.Password)
 		if err != nil {
 			return model.RoomModel{}, err
 		}
@@ -193,7 +190,7 @@ func (s *RoomService) DeleteRoom(ctx context.Context, input model.DeleteRoomInpu
 }
 
 func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMemberModel, error) {
-	if !hasJoinCredential(input.InviteToken) && !hasJoinCredential(input.Password) {
+	if !roomHelpers.HasAnyJoinCredential(input) {
 		return model.RoomMemberModel{}, ErrInvalidInput
 	}
 
@@ -212,7 +209,7 @@ func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (
 		return model.RoomMemberModel{}, err
 	}
 
-	if !canJoinRoom(meta.InviteToken, meta.PasswordHash, input) {
+	if !roomHelpers.CanUseJoinCredential(meta.InviteToken, meta.PasswordHash, input) {
 		return model.RoomMemberModel{}, ErrRoomNotFound
 	}
 
@@ -345,42 +342,4 @@ func (s *RoomService) ChangeRole(ctx context.Context, input model.ChangeRoleInpu
 	}
 
 	return model.ToRoomMemberModel(member), nil
-}
-
-func generateInviteToken() (string, error) {
-	token := make([]byte, 32)
-	if _, err := rand.Read(token); err != nil {
-		return "", err
-	}
-
-	return base64.RawURLEncoding.EncodeToString(token), nil
-}
-
-func hashPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(strings.TrimSpace(password)), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hash), nil
-}
-
-func canJoinRoom(inviteToken string, passwordHash string, input model.JoinRoomInput) bool {
-	if hasJoinCredential(input.InviteToken) && input.InviteToken == inviteToken {
-		return true
-	}
-
-	if hasJoinCredential(input.Password) && passwordMatches(passwordHash, input.Password) {
-		return true
-	}
-
-	return false
-}
-
-func passwordMatches(hash string, password string) bool {
-	if strings.TrimSpace(hash) == "" {
-		return false
-	}
-
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(strings.TrimSpace(password)))
-	return err == nil
 }
