@@ -121,6 +121,35 @@ func (h *RoomHandler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErro
 	return nil
 }
 
+func (h *RoomHandler) listRoomEvents(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+	roomID, err := roomHelpers.GetRoomIDFromRequest(r)
+	if err != nil {
+		return roomErrors.InvalidIDError(err)
+	}
+
+	limit, err := roomHelpers.OptionalInt32Query(r, "limit")
+	if err != nil {
+		return roomErrors.InvalidInputError("invalid events limit", err)
+	}
+
+	input := roomDTO.ListRoomEventsInput{
+		RoomID: roomID,
+		UserID: userID,
+	}
+	if limit != nil {
+		input.Limit = *limit
+	}
+
+	result, err := h.service.ListRoomEvents(r.Context(), input)
+	if err != nil {
+		return roomErrors.MapServiceError(err, "failed to list room events")
+	}
+
+	utils.WriteJSON(w, http.StatusOK, result)
+	return nil
+}
+
 func (h *RoomHandler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := roomHelpers.GetRoomIDFromRequest(r)

@@ -21,6 +21,7 @@ func (h *RoomHandler) RegisterRoutes(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getRoom).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.updateRoom).ServeHTTP)
 		r.Delete("/", httpAdapter.AppHandler(h.deleteRoom).ServeHTTP)
+		r.Get("/events", httpAdapter.AppHandler(h.listRoomEvents).ServeHTTP)
 		r.Put("/owner", httpAdapter.AppHandler(h.transferRoomOwnership).ServeHTTP)
 
 		r.Post("/join", httpAdapter.AppHandler(h.joinRoom).ServeHTTP)
