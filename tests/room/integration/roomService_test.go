@@ -2,9 +2,11 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
+	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -181,6 +183,72 @@ func TestRoomServiceTransferOwnershipDoesNotChangeRole(t *testing.T) {
 		OwnerID: owner.ID,
 	})
 	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+}
+
+func TestRoomServiceOwnerLeaveTransfersOwnershipAndCreatesEvent(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	firstMember := createRoomTestUser(t, subject)
+	secondMember := createRoomTestUser(t, subject)
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
+	time.Sleep(5 * time.Millisecond)
+	addRoomTestMember(t, subject, room.ID, firstMember.ID, roomService.RolePlayer)
+	time.Sleep(5 * time.Millisecond)
+	addRoomTestMember(t, subject, room.ID, secondMember.ID, roomService.RolePlayer)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{
+		RoomID: room.ID,
+		UserID: owner.ID,
+	})
+	require.NoError(t, err)
+
+	transferredRoom, err := subject.queries.GetRoomByID(context.Background(), db.GetRoomByIDParams{
+		ID:     room.ID,
+		UserID: firstMember.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, firstMember.ID, transferredRoom.OwnerID)
+
+	_, err = subject.queries.GetMember(context.Background(), db.GetMemberParams{RoomID: room.ID, UserID: owner.ID})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	events, err := subject.queries.ListRoomEvents(context.Background(), db.ListRoomEventsParams{
+		RoomID:     room.ID,
+		UserID:     firstMember.ID,
+		LimitCount: 10,
+	})
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	require.Equal(t, string(roomEvents.EventOwnerTransferred), events[0].EventType)
+	require.Equal(t, owner.ID, events[0].ActorID)
+
+	var payload roomEvents.OwnerTransferredPayload
+	require.NoError(t, json.Unmarshal(events[0].Payload, &payload))
+	require.Equal(t, owner.ID, payload.PreviousOwnerID)
+	require.Equal(t, firstMember.ID, payload.NewOwnerID)
+}
+
+func TestRoomServiceLastMemberLeaveDeletesRoom(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{
+		RoomID: room.ID,
+		UserID: owner.ID,
+	})
+	require.NoError(t, err)
+
+	_, err = subject.queries.GetRoomJoinMetaData(context.Background(), room.ID)
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	count, err := subject.queries.GetRoomMembersCount(context.Background(), room.ID)
+	require.NoError(t, err)
+	require.Equal(t, int32(0), count)
 }
 
 func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
