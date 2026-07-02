@@ -10,7 +10,7 @@ import (
 
 func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 	switch {
-	case errors.Is(err, serviceroom.ErrInvalidInput):
+	case errors.Is(err, serviceroom.ErrInvalidInput), errors.Is(err, serviceroom.ErrInvalidPassword):
 		return &myErrors.AppError{
 			Status:  http.StatusBadRequest,
 			Code:    "room.invalid_input",

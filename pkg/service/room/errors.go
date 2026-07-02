@@ -11,4 +11,5 @@ var (
 	ErrNotOwner          = errors.New("only the room owner can perform this action")
 	ErrCannotKickOwner   = errors.New("cannot kick the room owner")
 	ErrCharacterNotOwned = errors.New("character does not belong to you")
+	ErrInvalidPassword   = errors.New("invalid room password")
 )

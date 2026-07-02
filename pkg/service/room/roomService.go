@@ -5,11 +5,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"strings"
 
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type RoomService struct {
@@ -28,6 +30,14 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 	if err := validateMaxPlayers(maxPlayers); err != nil {
 		return model.RoomModel{}, err
 	}
+	if err := validatePassword(input.Password); err != nil {
+		return model.RoomModel{}, err
+	}
+
+	passwordHash, err := hashPassword(input.Password)
+	if err != nil {
+		return model.RoomModel{}, err
+	}
 
 	tx, err := s.repos.DB.Begin(ctx)
 	if err != nil {
@@ -42,9 +52,10 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 	}
 
 	room, err := queries.CreateRoom(ctx, db.CreateRoomParams{
-		OwnerID:     input.OwnerID,
-		MaxPlayers:  maxPlayers,
-		InviteToken: inviteToken,
+		OwnerID:      input.OwnerID,
+		MaxPlayers:   maxPlayers,
+		InviteToken:  inviteToken,
+		PasswordHash: passwordHash,
 	})
 	if err != nil {
 		return model.RoomModel{}, err
@@ -94,6 +105,19 @@ func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInpu
 		return model.RoomModel{}, err
 	}
 
+	var passwordHash *string
+	if input.Password != nil {
+		if err := validatePassword(*input.Password); err != nil {
+			return model.RoomModel{}, err
+		}
+
+		hash, err := hashPassword(*input.Password)
+		if err != nil {
+			return model.RoomModel{}, err
+		}
+		passwordHash = &hash
+	}
+
 	if err := s.EnsureOwner(ctx, input.RoomID, input.OwnerID); err != nil {
 		return model.RoomModel{}, err
 	}
@@ -107,9 +131,10 @@ func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInpu
 	}
 
 	room, err := s.repos.Queries.UpdateRoom(ctx, db.UpdateRoomParams{
-		ID:         input.RoomID,
-		OwnerID:    input.OwnerID,
-		MaxPlayers: input.MaxPlayers,
+		ID:           input.RoomID,
+		OwnerID:      input.OwnerID,
+		MaxPlayers:   input.MaxPlayers,
+		PasswordHash: passwordHash,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -168,8 +193,8 @@ func (s *RoomService) DeleteRoom(ctx context.Context, input model.DeleteRoomInpu
 }
 
 func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMemberModel, error) {
-	if err := validateInviteToken(input.InviteToken); err != nil {
-		return model.RoomMemberModel{}, err
+	if !hasJoinCredential(input.InviteToken) && !hasJoinCredential(input.Password) {
+		return model.RoomMemberModel{}, ErrInvalidInput
 	}
 
 	tx, err := s.repos.DB.Begin(ctx)
@@ -179,15 +204,16 @@ func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (
 	defer tx.Rollback(ctx)
 
 	queries := s.repos.Queries.WithTx(tx)
-	meta, err := queries.GetRoomMetaData(ctx, db.GetRoomMetaDataParams{
-		ID:          input.RoomID,
-		InviteToken: input.InviteToken,
-	})
+	meta, err := queries.GetRoomJoinMetaData(ctx, input.RoomID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.RoomMemberModel{}, ErrRoomNotFound
 		}
 		return model.RoomMemberModel{}, err
+	}
+
+	if !canJoinRoom(meta.InviteToken, meta.PasswordHash, input) {
+		return model.RoomMemberModel{}, ErrRoomNotFound
 	}
 
 	_, err = queries.GetMember(ctx, db.GetMemberParams{
@@ -328,4 +354,33 @@ func generateInviteToken() (string, error) {
 	}
 
 	return base64.RawURLEncoding.EncodeToString(token), nil
+}
+
+func hashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(strings.TrimSpace(password)), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
+func canJoinRoom(inviteToken string, passwordHash string, input model.JoinRoomInput) bool {
+	if hasJoinCredential(input.InviteToken) && input.InviteToken == inviteToken {
+		return true
+	}
+
+	if hasJoinCredential(input.Password) && passwordMatches(passwordHash, input.Password) {
+		return true
+	}
+
+	return false
+}
+
+func passwordMatches(hash string, password string) bool {
+	if strings.TrimSpace(hash) == "" {
+		return false
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(strings.TrimSpace(password)))
+	return err == nil
 }

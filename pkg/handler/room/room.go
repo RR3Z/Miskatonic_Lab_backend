@@ -2,6 +2,7 @@ package room
 
 import (
 	"net/http"
+	"strings"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	roomErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room/errors"
@@ -22,6 +23,7 @@ func (h *RoomHandler) createRoom(w http.ResponseWriter, r *http.Request) *myErro
 	result, err := h.service.CreateRoom(r.Context(), roomDTO.CreateRoomInput{
 		OwnerID:    userID,
 		MaxPlayers: req.MaxPlayers,
+		Password:   req.Password,
 	})
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to create room")
@@ -62,10 +64,16 @@ func (h *RoomHandler) updateRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return appErr
 	}
 
+	var password *string
+	if strings.TrimSpace(req.Password) != "" {
+		password = &req.Password
+	}
+
 	result, err := h.service.UpdateRoom(r.Context(), roomDTO.UpdateRoomInput{
 		RoomID:     roomID,
 		OwnerID:    userID,
 		MaxPlayers: req.MaxPlayers,
+		Password:   password,
 	})
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to update room")
@@ -137,6 +145,7 @@ func (h *RoomHandler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors
 			RoomID:      roomID,
 			UserID:      userID,
 			InviteToken: req.InviteToken,
+			Password:    req.Password,
 		},
 	)
 	if err != nil {

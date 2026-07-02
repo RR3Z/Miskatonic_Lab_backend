@@ -15,3 +15,14 @@ func validateInviteToken(token string) error {
 	}
 	return nil
 }
+
+func validatePassword(password string) error {
+	if strings.TrimSpace(password) == "" {
+		return ErrInvalidPassword
+	}
+	return nil
+}
+
+func hasJoinCredential(input string) bool {
+	return strings.TrimSpace(input) != ""
+}
