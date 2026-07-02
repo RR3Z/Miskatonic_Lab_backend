@@ -69,3 +69,15 @@ type ChangeRoleInput struct {
 type CleanupRoomsInput struct {
 	Now time.Time
 }
+
+type ListRoomEventsInput struct {
+	RoomID pgtype.UUID
+	UserID string
+	Limit  int32
+}
+
+type CreateChatMessageInput struct {
+	RoomID  pgtype.UUID
+	ActorID string
+	Text    string
+}

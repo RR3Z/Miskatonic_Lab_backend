@@ -28,3 +28,7 @@ type ChangeRoleRequest struct {
 type TransferRoomOwnershipRequest struct {
 	UserID string `json:"user_id"`
 }
+
+type CreateChatMessageRequest struct {
+	Text string `json:"text"`
+}
