@@ -12,7 +12,7 @@ import (
 )
 
 const getRoomByID = `-- name: GetRoomByID :one
-SELECT r.id, r.owner_id, r.max_players, r.invite_token, r.created_at, r.updated_at FROM rooms r
+SELECT r.id, r.owner_id, r.max_players, r.invite_token, r.created_at, r.updated_at, r.password_hash FROM rooms r
 WHERE r.id = $1
   AND EXISTS (SELECT 1 FROM room_members WHERE room_id = $1 AND user_id = $2)
 `
@@ -32,6 +32,7 @@ func (q *Queries) GetRoomByID(ctx context.Context, arg GetRoomByIDParams) (Room,
 		&i.InviteToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
 	return i, err
 }

@@ -13,7 +13,7 @@ import (
 
 const deleteRoom = `-- name: DeleteRoom :one
 DELETE FROM rooms WHERE id = $1 AND owner_id = $2
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash
 `
 
 type DeleteRoomParams struct {
@@ -31,6 +31,7 @@ func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) (Room, e
 		&i.InviteToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
 	return i, err
 }

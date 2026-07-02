@@ -12,7 +12,7 @@ import (
 const createRoom = `-- name: CreateRoom :one
 INSERT INTO rooms (owner_id, max_players, invite_token)
 VALUES ($1, $2, $3)
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash
 `
 
 type CreateRoomParams struct {
@@ -31,6 +31,7 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (Room, e
 		&i.InviteToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
 	return i, err
 }
