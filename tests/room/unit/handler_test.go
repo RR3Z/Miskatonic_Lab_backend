@@ -88,6 +88,8 @@ func TestRoomRoutesRejectInvalidRoomID(t *testing.T) {
 		{name: "get", method: http.MethodGet, path: "/api/rooms/not-a-uuid/"},
 		{name: "update", method: http.MethodPut, path: "/api/rooms/not-a-uuid/", body: `{"max_players":5}`},
 		{name: "delete", method: http.MethodDelete, path: "/api/rooms/not-a-uuid/"},
+		{name: "events", method: http.MethodGet, path: "/api/rooms/not-a-uuid/events"},
+		{name: "websocket", method: http.MethodGet, path: "/api/rooms/not-a-uuid/ws"},
 		{name: "transfer owner", method: http.MethodPut, path: "/api/rooms/not-a-uuid/owner", body: `{"user_id":"user_2"}`},
 		{name: "join", method: http.MethodPost, path: "/api/rooms/not-a-uuid/join", body: `{"invite_token":"token"}`},
 		{name: "leave", method: http.MethodDelete, path: "/api/rooms/not-a-uuid/leave"},
@@ -107,6 +109,40 @@ func TestRoomRoutesRejectInvalidRoomID(t *testing.T) {
 			require.Zero(t, roomService.totalCalls())
 		})
 	}
+}
+
+func TestListRoomEventsPassesParams(t *testing.T) {
+	roomID := testRoomUnitUUID("11111111-1111-1111-1111-111111111111")
+	eventID := testRoomUnitUUID("22222222-2222-2222-2222-222222222222")
+	roomService := &fakeRoomHandlerService{
+		events: []roomModels.RoomEventModel{{
+			ID:      eventID,
+			RoomID:  roomID,
+			ActorID: "user_2",
+			Type:    "chat.message",
+			Payload: []byte(`{"text":"hello"}`),
+		}},
+	}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodGet, "/api/rooms/11111111-1111-1111-1111-111111111111/events?limit=25", "")
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, 1, roomService.listEventsCalls)
+	require.Equal(t, roomID, roomService.listEventsInput.RoomID)
+	require.Equal(t, "user_1", roomService.listEventsInput.UserID)
+	require.Equal(t, int32(25), roomService.listEventsInput.Limit)
+	require.JSONEq(t, `[{"id":"22222222-2222-2222-2222-222222222222","room_id":"11111111-1111-1111-1111-111111111111","actor_id":"user_2","type":"chat.message","payload":{"text":"hello"},"created_at":null}]`, recorder.Body.String())
+}
+
+func TestListRoomEventsRejectsInvalidLimitBeforeService(t *testing.T) {
+	roomService := &fakeRoomHandlerService{}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodGet, "/api/rooms/11111111-1111-1111-1111-111111111111/events?limit=nope", "")
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Zero(t, roomService.listEventsCalls)
 }
 
 func TestJoinRoomAcceptsInviteTokenAndPassesParams(t *testing.T) {
@@ -299,10 +335,21 @@ type fakeRoomHandlerService struct {
 
 	changeRoleCalls int
 	changeRoleInput roomModels.ChangeRoleInput
+
+	events          []roomModels.RoomEventModel
+	listEventsCalls int
+	listEventsInput roomModels.ListRoomEventsInput
+
+	chatEvent       roomModels.RoomEventModel
+	createChatCalls int
+	createChatInput roomModels.CreateChatMessageInput
+
+	touchActivityCalls int
+	touchActivityInput roomModels.TouchRoomActivityInput
 }
 
 func (f *fakeRoomHandlerService) totalCalls() int {
-	return f.createCalls + f.getCalls + f.updateCalls + f.transferCalls + f.deleteCalls + f.joinCalls + f.leaveCalls + f.kickCalls + f.selectCharacterCalls + f.changeRoleCalls
+	return f.createCalls + f.getCalls + f.updateCalls + f.transferCalls + f.deleteCalls + f.joinCalls + f.leaveCalls + f.kickCalls + f.selectCharacterCalls + f.changeRoleCalls + f.listEventsCalls + f.createChatCalls
 }
 
 func (f *fakeRoomHandlerService) CreateRoom(_ context.Context, input roomModels.CreateRoomInput) (roomModels.RoomModel, error) {
@@ -363,6 +410,24 @@ func (f *fakeRoomHandlerService) ChangeRole(_ context.Context, input roomModels.
 	f.changeRoleCalls++
 	f.changeRoleInput = input
 	return f.member, f.err
+}
+
+func (f *fakeRoomHandlerService) ListRoomEvents(_ context.Context, input roomModels.ListRoomEventsInput) ([]roomModels.RoomEventModel, error) {
+	f.listEventsCalls++
+	f.listEventsInput = input
+	return f.events, f.err
+}
+
+func (f *fakeRoomHandlerService) CreateChatMessage(_ context.Context, input roomModels.CreateChatMessageInput) (roomModels.RoomEventModel, error) {
+	f.createChatCalls++
+	f.createChatInput = input
+	return f.chatEvent, f.err
+}
+
+func (f *fakeRoomHandlerService) TouchRoomActivity(_ context.Context, input roomModels.TouchRoomActivityInput) error {
+	f.touchActivityCalls++
+	f.touchActivityInput = input
+	return f.err
 }
 
 func (f *fakeRoomHandlerService) EnsureMember(_ context.Context, _ pgtype.UUID, _ string) error {

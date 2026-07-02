@@ -53,7 +53,7 @@ func TestRoomServiceCreateRoomDefaultsAndValidatesMaxPlayers(t *testing.T) {
 
 	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: owner.ID, Password: "keeper-password"})
 	require.NoError(t, err)
-	require.Equal(t, roomService.DefaultMaxPlayers, roomModel.MaxPlayers)
+	require.Equal(t, roomService.DEFAULT_MAX_PLAYERS, roomModel.MaxPlayers)
 
 	invalidMaxPlayers := int32(0)
 	_, err = service.CreateRoom(context.Background(), model.CreateRoomInput{
@@ -146,7 +146,7 @@ func TestRoomServiceJoinRoomWithPassword(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, player.ID, memberModel.UserID)
-	require.Equal(t, roomService.RolePlayer, memberModel.Role)
+	require.Equal(t, roomService.ROLE_PLAYER, memberModel.Role)
 }
 
 func TestRoomServiceTransferOwnershipDoesNotChangeRole(t *testing.T) {
@@ -191,11 +191,11 @@ func TestRoomServiceOwnerLeaveTransfersOwnershipAndCreatesEvent(t *testing.T) {
 	firstMember := createRoomTestUser(t, subject)
 	secondMember := createRoomTestUser(t, subject)
 	room := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
 	time.Sleep(5 * time.Millisecond)
-	addRoomTestMember(t, subject, room.ID, firstMember.ID, roomService.RolePlayer)
+	addRoomTestMember(t, subject, room.ID, firstMember.ID, roomService.ROLE_PLAYER)
 	time.Sleep(5 * time.Millisecond)
-	addRoomTestMember(t, subject, room.ID, secondMember.ID, roomService.RolePlayer)
+	addRoomTestMember(t, subject, room.ID, secondMember.ID, roomService.ROLE_PLAYER)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
 	err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{
@@ -234,7 +234,7 @@ func TestRoomServiceLastMemberLeaveDeletesRoom(t *testing.T) {
 	subject := newRoomIntegrationSubject(t)
 	owner := createRoomTestUser(t, subject)
 	room := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
 	err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{
@@ -251,6 +251,71 @@ func TestRoomServiceLastMemberLeaveDeletesRoom(t *testing.T) {
 	require.Equal(t, int32(0), count)
 }
 
+func TestRoomServiceCreatesChatMessagesAndListsEventsOldToNew(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	memberUser := createRoomTestUser(t, subject)
+	outsider := createRoomTestUser(t, subject)
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.ROLE_PLAYER)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+	oldActivity := time.Now().UTC().Add(-2 * time.Hour)
+	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
+
+	firstEvent, err := service.CreateChatMessage(context.Background(), model.CreateChatMessageInput{
+		RoomID:  room.ID,
+		ActorID: owner.ID,
+		Text:    " first message ",
+	})
+	require.NoError(t, err)
+	require.Equal(t, string(roomEvents.EventChatMessage), firstEvent.Type)
+	require.Equal(t, owner.ID, firstEvent.ActorID)
+	var firstPayload roomEvents.ChatMessagePayload
+	require.NoError(t, json.Unmarshal(firstEvent.Payload, &firstPayload))
+	require.Equal(t, "first message", firstPayload.Text)
+	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
+
+	time.Sleep(5 * time.Millisecond)
+	secondEvent, err := service.CreateChatMessage(context.Background(), model.CreateChatMessageInput{
+		RoomID:  room.ID,
+		ActorID: memberUser.ID,
+		Text:    "second message",
+	})
+	require.NoError(t, err)
+
+	events, err := service.ListRoomEvents(context.Background(), model.ListRoomEventsInput{
+		RoomID: room.ID,
+		UserID: memberUser.ID,
+		Limit:  10,
+	})
+	require.NoError(t, err)
+	require.Len(t, events, 2)
+	require.Equal(t, firstEvent.ID, events[0].ID)
+	require.Equal(t, secondEvent.ID, events[1].ID)
+
+	_, err = service.ListRoomEvents(context.Background(), model.ListRoomEventsInput{
+		RoomID: room.ID,
+		UserID: outsider.ID,
+		Limit:  10,
+	})
+	require.ErrorIs(t, err, roomService.ErrNotMember)
+
+	_, err = service.CreateChatMessage(context.Background(), model.CreateChatMessageInput{
+		RoomID:  room.ID,
+		ActorID: outsider.ID,
+		Text:    "hello",
+	})
+	require.ErrorIs(t, err, roomService.ErrNotMember)
+
+	_, err = service.CreateChatMessage(context.Background(), model.CreateChatMessageInput{
+		RoomID:  room.ID,
+		ActorID: owner.ID,
+		Text:    " ",
+	})
+	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+}
+
 func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
 	subject := newRoomIntegrationSubject(t)
 	owner := createRoomTestUser(t, subject)
@@ -258,8 +323,8 @@ func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
 	targetUser := createRoomTestUser(t, subject)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 	room := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
-	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.RolePlayer)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.ROLE_PLAYER)
 
 	oldActivity := time.Now().UTC().Add(-2 * time.Hour)
 
@@ -295,7 +360,7 @@ func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
 		RoomID:       room.ID,
 		ActorUserID:  memberUser.ID,
 		TargetUserID: owner.ID,
-		Role:         roomService.RolePlayer,
+		Role:         roomService.ROLE_PLAYER,
 	})
 	require.NoError(t, err)
 	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
@@ -326,18 +391,18 @@ func TestRoomServiceCleanupRoomsDeletesInactiveAndInvalidRooms(t *testing.T) {
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
 	inactiveRoom := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, inactiveRoom.ID, owner.ID, roomService.RoleGM)
+	addRoomTestMember(t, subject, inactiveRoom.ID, owner.ID, roomService.ROLE_GM)
 	setRoomLastActivityAt(t, subject, inactiveRoom.ID, time.Now().UTC().Add(-13*time.Hour))
 
 	activeRoom := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, activeRoom.ID, owner.ID, roomService.RoleGM)
+	addRoomTestMember(t, subject, activeRoom.ID, owner.ID, roomService.ROLE_GM)
 	setRoomLastActivityAt(t, subject, activeRoom.ID, time.Now().UTC())
 
 	noMembersRoom := createRoomTestRoom(t, subject, owner.ID)
 	setRoomLastActivityAt(t, subject, noMembersRoom.ID, time.Now().UTC())
 
 	ownerNotMemberRoom := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, ownerNotMemberRoom.ID, memberUser.ID, roomService.RolePlayer)
+	addRoomTestMember(t, subject, ownerNotMemberRoom.ID, memberUser.ID, roomService.ROLE_PLAYER)
 	setRoomLastActivityAt(t, subject, ownerNotMemberRoom.ID, time.Now().UTC())
 
 	result, err := service.CleanupRooms(context.Background(), model.CleanupRoomsInput{Now: time.Now().UTC()})
@@ -363,8 +428,8 @@ func TestRoomServiceUpdateRoomValidatesMaxPlayersAgainstCurrentMembers(t *testin
 	owner := createRoomTestUser(t, subject)
 	memberUser := createRoomTestUser(t, subject)
 	room := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
-	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.RolePlayer)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.ROLE_PLAYER)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
 	_, err := service.UpdateRoom(context.Background(), model.UpdateRoomInput{
@@ -443,7 +508,7 @@ func TestRoomServiceMapsNoRowsForMembershipOperations(t *testing.T) {
 
 	_, err = service.ChangeRole(
 		context.Background(),
-		model.ChangeRoleInput{RoomID: room.ID, ActorUserID: owner.ID, TargetUserID: memberUser.ID, Role: roomService.RoleGM},
+		model.ChangeRoleInput{RoomID: room.ID, ActorUserID: owner.ID, TargetUserID: memberUser.ID, Role: roomService.ROLE_GM},
 	)
 	require.ErrorIs(t, err, roomService.ErrNotMember)
 
@@ -470,8 +535,8 @@ func TestRoomServiceSelectCharacterRejectsCharacterNotOwnedForMember(t *testing.
 	memberUser := createRoomTestUser(t, subject)
 	otherUser := createRoomTestUser(t, subject)
 	room := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
-	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.RolePlayer)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.ROLE_PLAYER)
 	otherCharacter := createRoomTestCharacter(t, subject, otherUser.ID)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
@@ -489,8 +554,8 @@ func TestRoomServiceReusablePermissionChecks(t *testing.T) {
 	memberUser := createRoomTestUser(t, subject)
 	outsider := createRoomTestUser(t, subject)
 	room := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
-	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.RolePlayer)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.ROLE_PLAYER)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
 	require.NoError(t, service.EnsureMember(context.Background(), room.ID, memberUser.ID))
