@@ -2,6 +2,7 @@ package room
 
 import (
 	"context"
+	"time"
 
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -24,4 +25,9 @@ type IRoom interface {
 	EnsureMember(ctx context.Context, roomID pgtype.UUID, userID string) error
 	EnsureOwner(ctx context.Context, roomID pgtype.UUID, userID string) error
 	EnsureCanPublishRoomEvent(ctx context.Context, roomID pgtype.UUID, userID string) error
+}
+
+type IRoomMaintenance interface {
+	CleanupRooms(ctx context.Context, input model.CleanupRoomsInput) (model.CleanupRoomsResult, error)
+	StartCleanupWorker(ctx context.Context, interval time.Duration)
 }

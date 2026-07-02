@@ -167,6 +167,10 @@ func (s *RoomService) TransferOwnership(ctx context.Context, input model.Transfe
 		return model.RoomModel{}, err
 	}
 
+	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
+		return model.RoomModel{}, err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return model.RoomModel{}, err
 	}
@@ -242,6 +246,10 @@ func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (
 		return model.RoomMemberModel{}, err
 	}
 
+	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
+		return model.RoomMemberModel{}, err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return model.RoomMemberModel{}, err
 	}
@@ -250,7 +258,14 @@ func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (
 }
 
 func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput) error {
-	_, err := s.repos.Queries.RemoveMember(ctx, db.RemoveMemberParams{
+	tx, err := s.repos.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.repos.Queries.WithTx(tx)
+	_, err = queries.RemoveMember(ctx, db.RemoveMemberParams{
 		RoomID: input.RoomID,
 		UserID: input.UserID,
 	})
@@ -262,11 +277,22 @@ func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput)
 		return err
 	}
 
-	return nil
+	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *RoomService) KickMember(ctx context.Context, input model.KickMemberInput) error {
-	room, err := s.repos.Queries.GetRoomByID(ctx, db.GetRoomByIDParams{
+	tx, err := s.repos.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.repos.Queries.WithTx(tx)
+	room, err := queries.GetRoomByID(ctx, db.GetRoomByIDParams{
 		ID:     input.RoomID,
 		UserID: input.ActorUserID,
 	})
@@ -285,7 +311,7 @@ func (s *RoomService) KickMember(ctx context.Context, input model.KickMemberInpu
 		return ErrCannotKickOwner
 	}
 
-	_, err = s.repos.Queries.RemoveMember(ctx, db.RemoveMemberParams{
+	_, err = queries.RemoveMember(ctx, db.RemoveMemberParams{
 		RoomID: input.RoomID,
 		UserID: input.TargetUserID,
 	})
@@ -296,7 +322,11 @@ func (s *RoomService) KickMember(ctx context.Context, input model.KickMemberInpu
 		return err
 	}
 
-	return nil
+	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *RoomService) SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMemberModel, error) {
@@ -304,7 +334,14 @@ func (s *RoomService) SelectCharacter(ctx context.Context, input model.SelectCha
 		return model.RoomMemberModel{}, err
 	}
 
-	member, err := s.repos.Queries.UpdateMemberCharacter(ctx, db.UpdateMemberCharacterParams{
+	tx, err := s.repos.DB.Begin(ctx)
+	if err != nil {
+		return model.RoomMemberModel{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.repos.Queries.WithTx(tx)
+	member, err := queries.UpdateMemberCharacter(ctx, db.UpdateMemberCharacterParams{
 		RoomID:      input.RoomID,
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
@@ -314,6 +351,14 @@ func (s *RoomService) SelectCharacter(ctx context.Context, input model.SelectCha
 			return model.RoomMemberModel{}, ErrCharacterNotOwned
 		}
 
+		return model.RoomMemberModel{}, err
+	}
+
+	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
+		return model.RoomMemberModel{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return model.RoomMemberModel{}, err
 	}
 
@@ -329,7 +374,14 @@ func (s *RoomService) ChangeRole(ctx context.Context, input model.ChangeRoleInpu
 		return model.RoomMemberModel{}, err
 	}
 
-	member, err := s.repos.Queries.UpdateMemberRole(ctx, db.UpdateMemberRoleParams{
+	tx, err := s.repos.DB.Begin(ctx)
+	if err != nil {
+		return model.RoomMemberModel{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.repos.Queries.WithTx(tx)
+	member, err := queries.UpdateMemberRole(ctx, db.UpdateMemberRoleParams{
 		RoomID: input.RoomID,
 		UserID: input.TargetUserID,
 		Role:   input.Role,
@@ -338,6 +390,14 @@ func (s *RoomService) ChangeRole(ctx context.Context, input model.ChangeRoleInpu
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.RoomMemberModel{}, ErrNotMember
 		}
+		return model.RoomMemberModel{}, err
+	}
+
+	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
+		return model.RoomMemberModel{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return model.RoomMemberModel{}, err
 	}
 

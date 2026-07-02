@@ -73,7 +73,10 @@ func run() int {
 
 	// Launch Server
 	repos := repository.NewRepository(dbConnection)
+
 	service := service.NewService(repos, eventBus)
+	service.StartBackgroundWorkers(ctx)
+
 	handlers := handler.NewHandler(service)
 
 	serverPort := os.Getenv("PORT")

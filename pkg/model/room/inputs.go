@@ -1,6 +1,10 @@
 package roomDTO
 
-import "github.com/jackc/pgx/v5/pgtype"
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type CreateRoomInput struct {
 	OwnerID    string
@@ -60,4 +64,8 @@ type ChangeRoleInput struct {
 	ActorUserID  string
 	TargetUserID string
 	Role         string
+}
+
+type CleanupRoomsInput struct {
+	Now time.Time
 }
