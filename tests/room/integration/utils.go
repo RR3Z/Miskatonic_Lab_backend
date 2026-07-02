@@ -155,6 +155,41 @@ func createRoomTestCharacter(t *testing.T, subject *roomIntegrationSubject, user
 	return character
 }
 
+func setRoomLastActivityAt(t *testing.T, subject *roomIntegrationSubject, roomID pgtype.UUID, activityAt time.Time) {
+	t.Helper()
+
+	_, err := subject.pool.Exec(
+		context.Background(),
+		"UPDATE rooms SET last_activity_at = $1, updated_at = $1 WHERE id = $2",
+		activityAt,
+		roomID,
+	)
+	require.NoError(t, err)
+}
+
+func requireRoomLastActivityAfter(
+	t *testing.T,
+	subject *roomIntegrationSubject,
+	roomID pgtype.UUID,
+	userID string,
+	activityAt time.Time,
+) {
+	t.Helper()
+
+	room, err := subject.queries.GetRoomByID(context.Background(), db.GetRoomByIDParams{
+		ID:     roomID,
+		UserID: userID,
+	})
+	require.NoError(t, err)
+	require.Truef(
+		t,
+		room.LastActivityAt.Time.After(activityAt),
+		"expected room activity %s to be after %s",
+		room.LastActivityAt.Time,
+		activityAt,
+	)
+}
+
 func uniqueRoomIntegrationSuffix() string {
 	randomBytes := make([]byte, 8)
 	if _, err := rand.Read(randomBytes); err != nil {

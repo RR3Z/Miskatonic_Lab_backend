@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
@@ -180,6 +181,113 @@ func TestRoomServiceTransferOwnershipDoesNotChangeRole(t *testing.T) {
 		OwnerID: owner.ID,
 	})
 	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+}
+
+func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	memberUser := createRoomTestUser(t, subject)
+	targetUser := createRoomTestUser(t, subject)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.RoleGM)
+	addRoomTestMember(t, subject, room.ID, memberUser.ID, roomService.RolePlayer)
+
+	oldActivity := time.Now().UTC().Add(-2 * time.Hour)
+
+	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
+	_, err := service.TransferOwnership(context.Background(), model.TransferOwnershipInput{
+		RoomID:     room.ID,
+		OwnerID:    owner.ID,
+		NewOwnerID: memberUser.ID,
+	})
+	require.NoError(t, err)
+	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
+
+	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
+	_, err = service.JoinRoom(context.Background(), model.JoinRoomInput{
+		RoomID:      room.ID,
+		UserID:      targetUser.ID,
+		InviteToken: room.InviteToken,
+	})
+	require.NoError(t, err)
+	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
+
+	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
+	err = service.KickMember(context.Background(), model.KickMemberInput{
+		RoomID:       room.ID,
+		ActorUserID:  memberUser.ID,
+		TargetUserID: targetUser.ID,
+	})
+	require.NoError(t, err)
+	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
+
+	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
+	_, err = service.ChangeRole(context.Background(), model.ChangeRoleInput{
+		RoomID:       room.ID,
+		ActorUserID:  memberUser.ID,
+		TargetUserID: owner.ID,
+		Role:         roomService.RolePlayer,
+	})
+	require.NoError(t, err)
+	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
+
+	character := createRoomTestCharacter(t, subject, owner.ID)
+	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
+	_, err = service.SelectCharacter(context.Background(), model.SelectCharacterInput{
+		RoomID:      room.ID,
+		UserID:      owner.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
+
+	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
+	err = service.LeaveRoom(context.Background(), model.LeaveRoomInput{
+		RoomID: room.ID,
+		UserID: owner.ID,
+	})
+	require.NoError(t, err)
+	requireRoomLastActivityAfter(t, subject, room.ID, memberUser.ID, oldActivity)
+}
+
+func TestRoomServiceCleanupRoomsDeletesInactiveAndInvalidRooms(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	memberUser := createRoomTestUser(t, subject)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	inactiveRoom := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, inactiveRoom.ID, owner.ID, roomService.RoleGM)
+	setRoomLastActivityAt(t, subject, inactiveRoom.ID, time.Now().UTC().Add(-13*time.Hour))
+
+	activeRoom := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, activeRoom.ID, owner.ID, roomService.RoleGM)
+	setRoomLastActivityAt(t, subject, activeRoom.ID, time.Now().UTC())
+
+	noMembersRoom := createRoomTestRoom(t, subject, owner.ID)
+	setRoomLastActivityAt(t, subject, noMembersRoom.ID, time.Now().UTC())
+
+	ownerNotMemberRoom := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, ownerNotMemberRoom.ID, memberUser.ID, roomService.RolePlayer)
+	setRoomLastActivityAt(t, subject, ownerNotMemberRoom.ID, time.Now().UTC())
+
+	result, err := service.CleanupRooms(context.Background(), model.CleanupRoomsInput{Now: time.Now().UTC()})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, result.InactiveDeleted, 1)
+	require.GreaterOrEqual(t, result.InvalidDeleted, 2)
+
+	_, err = subject.queries.GetRoomByID(context.Background(), db.GetRoomByIDParams{ID: inactiveRoom.ID, UserID: owner.ID})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	_, err = subject.queries.GetRoomJoinMetaData(context.Background(), noMembersRoom.ID)
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	_, err = subject.queries.GetRoomJoinMetaData(context.Background(), ownerNotMemberRoom.ID)
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	_, err = subject.queries.GetRoomByID(context.Background(), db.GetRoomByIDParams{ID: activeRoom.ID, UserID: owner.ID})
+	require.NoError(t, err)
 }
 
 func TestRoomServiceUpdateRoomValidatesMaxPlayersAgainstCurrentMembers(t *testing.T) {
