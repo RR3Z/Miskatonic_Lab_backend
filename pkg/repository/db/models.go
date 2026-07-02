@@ -128,23 +128,23 @@ type Note struct {
 }
 
 type Room struct {
-	ID           pgtype.UUID        `json:"id"`
-	OwnerID      string             `json:"owner_id"`
-	MaxPlayers   int32              `json:"max_players"`
-	InviteToken  string             `json:"invite_token"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	PasswordHash string             `json:"password_hash"`
+	ID             pgtype.UUID        `json:"id"`
+	OwnerID        string             `json:"owner_id"`
+	MaxPlayers     int32              `json:"max_players"`
+	InviteToken    string             `json:"invite_token"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	PasswordHash   string             `json:"password_hash"`
+	LastActivityAt pgtype.Timestamptz `json:"last_activity_at"`
 }
 
-type RoomDiceRoll struct {
-	ID         pgtype.UUID        `json:"id"`
-	RoomID     pgtype.UUID        `json:"room_id"`
-	DiceRollID pgtype.UUID        `json:"dice_roll_id"`
-	UserID     string             `json:"user_id"`
-	Kind       string             `json:"kind"`
-	Metadata   []byte             `json:"metadata"`
-	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+type RoomEvent struct {
+	ID        pgtype.UUID        `json:"id"`
+	RoomID    pgtype.UUID        `json:"room_id"`
+	ActorID   string             `json:"actor_id"`
+	EventType string             `json:"event_type"`
+	Payload   []byte             `json:"payload"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type RoomMember struct {
@@ -154,14 +154,6 @@ type RoomMember struct {
 	CharacterID pgtype.UUID        `json:"character_id"`
 	Role        string             `json:"role"`
 	JoinedAt    pgtype.Timestamptz `json:"joined_at"`
-}
-
-type RoomMessage struct {
-	ID        pgtype.UUID        `json:"id"`
-	RoomID    pgtype.UUID        `json:"room_id"`
-	UserID    string             `json:"user_id"`
-	Text      string             `json:"text"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type SanityState struct {

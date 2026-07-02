@@ -4,10 +4,12 @@ import "github.com/jackc/pgx/v5/pgtype"
 
 type CreateRoomRequest struct {
 	MaxPlayers *int32 `json:"max_players"`
+	Password   string `json:"password"`
 }
 
 type UpdateRoomRequest struct {
-	MaxPlayers int32 `json:"max_players"`
+	MaxPlayers int32  `json:"max_players"`
+	Password   string `json:"password,omitempty"`
 }
 
 type SelectCharacterRequest struct {
@@ -16,6 +18,7 @@ type SelectCharacterRequest struct {
 
 type JoinRoomRequest struct {
 	InviteToken string `json:"invite_token"`
+	Password    string `json:"password"`
 }
 
 type ChangeRoleRequest struct {

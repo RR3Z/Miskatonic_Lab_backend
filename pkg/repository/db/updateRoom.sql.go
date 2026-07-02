@@ -13,19 +13,28 @@ import (
 
 const updateRoom = `-- name: UpdateRoom :one
 UPDATE rooms
-SET max_players = $2, updated_at = NOW()
-WHERE id = $1 AND owner_id = $3
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash
+SET
+    max_players = $1,
+    password_hash = COALESCE($2, password_hash),
+    updated_at = NOW()
+WHERE id = $3 AND owner_id = $4
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at
 `
 
 type UpdateRoomParams struct {
-	ID         pgtype.UUID `json:"id"`
-	MaxPlayers int32       `json:"max_players"`
-	OwnerID    string      `json:"owner_id"`
+	MaxPlayers   int32       `json:"max_players"`
+	PasswordHash *string     `json:"password_hash"`
+	ID           pgtype.UUID `json:"id"`
+	OwnerID      string      `json:"owner_id"`
 }
 
 func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (Room, error) {
-	row := q.db.QueryRow(ctx, updateRoom, arg.ID, arg.MaxPlayers, arg.OwnerID)
+	row := q.db.QueryRow(ctx, updateRoom,
+		arg.MaxPlayers,
+		arg.PasswordHash,
+		arg.ID,
+		arg.OwnerID,
+	)
 	var i Room
 	err := row.Scan(
 		&i.ID,
@@ -35,6 +44,7 @@ func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (Room, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.PasswordHash,
+		&i.LastActivityAt,
 	)
 	return i, err
 }

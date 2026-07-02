@@ -6,13 +6,14 @@ import (
 )
 
 type RoomModel struct {
-	ID          pgtype.UUID        `json:"id"`
-	OwnerID     string             `json:"owner_id"`
-	MaxPlayers  int32              `json:"max_players"`
-	InviteToken string             `json:"invite_token"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
-	Members     []RoomMemberModel  `json:"members"`
+	ID             pgtype.UUID        `json:"id"`
+	OwnerID        string             `json:"owner_id"`
+	MaxPlayers     int32              `json:"max_players"`
+	InviteToken    string             `json:"invite_token"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	LastActivityAt pgtype.Timestamptz `json:"last_activity_at"`
+	Members        []RoomMemberModel  `json:"members"`
 }
 
 func ToRoomModel(r db.Room, members []db.RoomMember) RoomModel {
@@ -22,12 +23,13 @@ func ToRoomModel(r db.Room, members []db.RoomMember) RoomModel {
 	}
 
 	return RoomModel{
-		ID:          r.ID,
-		OwnerID:     r.OwnerID,
-		MaxPlayers:  r.MaxPlayers,
-		InviteToken: r.InviteToken,
-		CreatedAt:   r.CreatedAt,
-		UpdatedAt:   r.UpdatedAt,
-		Members:     m,
+		ID:             r.ID,
+		OwnerID:        r.OwnerID,
+		MaxPlayers:     r.MaxPlayers,
+		InviteToken:    r.InviteToken,
+		CreatedAt:      r.CreatedAt,
+		UpdatedAt:      r.UpdatedAt,
+		LastActivityAt: r.LastActivityAt,
+		Members:        m,
 	}
 }

@@ -1,5 +1,8 @@
 -- name: UpdateRoom :one
 UPDATE rooms
-SET max_players = $2, updated_at = NOW()
-WHERE id = $1 AND owner_id = $3
+SET
+    max_players = sqlc.arg(max_players),
+    password_hash = COALESCE(sqlc.narg(password_hash), password_hash),
+    updated_at = NOW()
+WHERE id = sqlc.arg(id) AND owner_id = sqlc.arg(owner_id)
 RETURNING *;

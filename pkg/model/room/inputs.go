@@ -5,6 +5,7 @@ import "github.com/jackc/pgx/v5/pgtype"
 type CreateRoomInput struct {
 	OwnerID    string
 	MaxPlayers *int32
+	Password   string
 }
 
 type GetRoomInput struct {
@@ -16,6 +17,7 @@ type UpdateRoomInput struct {
 	RoomID     pgtype.UUID
 	OwnerID    string
 	MaxPlayers int32
+	Password   *string
 }
 
 type TransferOwnershipInput struct {
@@ -33,6 +35,7 @@ type JoinRoomInput struct {
 	RoomID      pgtype.UUID
 	UserID      string
 	InviteToken string
+	Password    string
 }
 
 type LeaveRoomInput struct {

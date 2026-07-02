@@ -10,19 +10,25 @@ import (
 )
 
 const createRoom = `-- name: CreateRoom :one
-INSERT INTO rooms (owner_id, max_players, invite_token)
-VALUES ($1, $2, $3)
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash
+INSERT INTO rooms (owner_id, max_players, invite_token, password_hash)
+VALUES ($1, $2, $3, $4)
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at
 `
 
 type CreateRoomParams struct {
-	OwnerID     string `json:"owner_id"`
-	MaxPlayers  int32  `json:"max_players"`
-	InviteToken string `json:"invite_token"`
+	OwnerID      string `json:"owner_id"`
+	MaxPlayers   int32  `json:"max_players"`
+	InviteToken  string `json:"invite_token"`
+	PasswordHash string `json:"password_hash"`
 }
 
 func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (Room, error) {
-	row := q.db.QueryRow(ctx, createRoom, arg.OwnerID, arg.MaxPlayers, arg.InviteToken)
+	row := q.db.QueryRow(ctx, createRoom,
+		arg.OwnerID,
+		arg.MaxPlayers,
+		arg.InviteToken,
+		arg.PasswordHash,
+	)
 	var i Room
 	err := row.Scan(
 		&i.ID,
@@ -32,6 +38,7 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (Room, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.PasswordHash,
+		&i.LastActivityAt,
 	)
 	return i, err
 }
