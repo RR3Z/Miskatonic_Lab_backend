@@ -21,7 +21,7 @@ func NewRoomService(repos *repository.Repository) *RoomService {
 }
 
 func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.RoomModel, error) {
-	maxPlayers := DefaultMaxPlayers
+	maxPlayers := DEFAULT_MAX_PLAYERS
 	if input.MaxPlayers != nil {
 		maxPlayers = *input.MaxPlayers
 	}
@@ -62,7 +62,7 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 	member, err := queries.AddMember(ctx, db.AddMemberParams{
 		RoomID: room.ID,
 		UserID: input.OwnerID,
-		Role:   RoleGM,
+		Role:   ROLE_GM,
 	})
 	if err != nil {
 		return model.RoomModel{}, err
@@ -241,7 +241,7 @@ func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (
 	member, err := queries.AddMember(ctx, db.AddMemberParams{
 		RoomID: input.RoomID,
 		UserID: input.UserID,
-		Role:   RolePlayer,
+		Role:   ROLE_PLAYER,
 	})
 	if err != nil {
 		return model.RoomMemberModel{}, err
