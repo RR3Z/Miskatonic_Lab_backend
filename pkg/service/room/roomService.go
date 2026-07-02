@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -265,7 +266,15 @@ func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput)
 	defer tx.Rollback(ctx)
 
 	queries := s.repos.Queries.WithTx(tx)
-	_, err = queries.RemoveMember(ctx, db.RemoveMemberParams{
+	room, err := queries.GetRoomForUpdate(ctx, input.RoomID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotMember
+		}
+		return err
+	}
+
+	removedMember, err := queries.RemoveMember(ctx, db.RemoveMemberParams{
 		RoomID: input.RoomID,
 		UserID: input.UserID,
 	})
@@ -275,6 +284,45 @@ func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput)
 		}
 
 		return err
+	}
+
+	count, err := queries.GetRoomMembersCount(ctx, input.RoomID)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		if _, err := queries.DeleteRoomByID(ctx, input.RoomID); err != nil {
+			return err
+		}
+		return tx.Commit(ctx)
+	}
+
+	if removedMember.UserID == room.OwnerID {
+		nextOwner, err := queries.GetNextRoomOwner(ctx, input.RoomID)
+		if err != nil {
+			return err
+		}
+
+		if _, err := queries.TransferRoomOwnership(ctx, db.TransferRoomOwnershipParams{
+			ID:         input.RoomID,
+			OwnerID:    room.OwnerID,
+			NewOwnerID: nextOwner.UserID,
+		}); err != nil {
+			return err
+		}
+
+		payload, err := roomHelpers.OwnerTransferredPayload(room.OwnerID, nextOwner.UserID)
+		if err != nil {
+			return err
+		}
+		if _, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
+			RoomID:    input.RoomID,
+			ActorID:   removedMember.UserID,
+			EventType: string(roomEvents.EventOwnerTransferred),
+			Payload:   payload,
+		}); err != nil {
+			return err
+		}
 	}
 
 	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
@@ -292,11 +340,18 @@ func (s *RoomService) KickMember(ctx context.Context, input model.KickMemberInpu
 	defer tx.Rollback(ctx)
 
 	queries := s.repos.Queries.WithTx(tx)
-	room, err := queries.GetRoomByID(ctx, db.GetRoomByIDParams{
-		ID:     input.RoomID,
-		UserID: input.ActorUserID,
-	})
+	room, err := queries.GetRoomForUpdate(ctx, input.RoomID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotMember
+		}
+		return err
+	}
+
+	if _, err := queries.GetMember(ctx, db.GetMemberParams{
+		RoomID: input.RoomID,
+		UserID: input.ActorUserID,
+	}); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotMember
 		}
@@ -324,6 +379,16 @@ func (s *RoomService) KickMember(ctx context.Context, input model.KickMemberInpu
 
 	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
 		return err
+	}
+
+	count, err := queries.GetRoomMembersCount(ctx, input.RoomID)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		if _, err := queries.DeleteRoomByID(ctx, input.RoomID); err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit(ctx)
