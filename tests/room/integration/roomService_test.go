@@ -10,6 +10,7 @@ import (
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
@@ -21,6 +22,7 @@ func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
 	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{
 		OwnerID:    owner.ID,
 		MaxPlayers: &maxPlayers,
+		Password:   "keeper-password",
 	})
 	require.NoError(t, err)
 	require.True(t, roomModel.ID.Valid)
@@ -34,6 +36,11 @@ func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
 	member, err := subject.queries.GetMember(context.Background(), db.GetMemberParams{RoomID: roomModel.ID, UserID: owner.ID})
 	require.NoError(t, err)
 	require.Equal(t, "gm", member.Role)
+
+	meta, err := subject.queries.GetRoomJoinMetaData(context.Background(), roomModel.ID)
+	require.NoError(t, err)
+	require.NotEqual(t, "keeper-password", meta.PasswordHash)
+	require.NoError(t, bcrypt.CompareHashAndPassword([]byte(meta.PasswordHash), []byte("keeper-password")))
 }
 
 func TestRoomServiceCreateRoomDefaultsAndValidatesMaxPlayers(t *testing.T) {
@@ -41,7 +48,7 @@ func TestRoomServiceCreateRoomDefaultsAndValidatesMaxPlayers(t *testing.T) {
 	owner := createRoomTestUser(t, subject)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
-	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: owner.ID})
+	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: owner.ID, Password: "keeper-password"})
 	require.NoError(t, err)
 	require.Equal(t, roomService.DefaultMaxPlayers, roomModel.MaxPlayers)
 
@@ -49,24 +56,39 @@ func TestRoomServiceCreateRoomDefaultsAndValidatesMaxPlayers(t *testing.T) {
 	_, err = service.CreateRoom(context.Background(), model.CreateRoomInput{
 		OwnerID:    owner.ID,
 		MaxPlayers: &invalidMaxPlayers,
+		Password:   "keeper-password",
 	})
 	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+
+	_, err = service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: owner.ID})
+	require.ErrorIs(t, err, roomService.ErrInvalidPassword)
 }
 
-func TestRoomServiceJoinRoomRequiresInviteAndCapacity(t *testing.T) {
+func TestRoomServiceJoinRoomRequiresInviteOrPasswordAndCapacity(t *testing.T) {
 	subject := newRoomIntegrationSubject(t)
 	owner := createRoomTestUser(t, subject)
 	firstPlayer := createRoomTestUser(t, subject)
 	secondPlayer := createRoomTestUser(t, subject)
-	room := createRoomTestRoom(t, subject, owner.ID)
-	room, err := subject.queries.UpdateRoom(context.Background(), db.UpdateRoomParams{ID: room.ID, OwnerID: owner.ID, MaxPlayers: 2})
-	require.NoError(t, err)
-	addRoomTestMember(t, subject, room.ID, owner.ID, "gm")
+	thirdPlayer := createRoomTestUser(t, subject)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+	maxPlayers := int32(2)
+	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{
+		OwnerID:    owner.ID,
+		MaxPlayers: &maxPlayers,
+		Password:   "keeper-password",
+	})
+	require.NoError(t, err)
+	room := db.Room{ID: roomModel.ID, InviteToken: roomModel.InviteToken}
 
 	_, err = service.JoinRoom(
 		context.Background(),
 		model.JoinRoomInput{RoomID: room.ID, InviteToken: "wrong_token", UserID: firstPlayer.ID},
+	)
+	require.ErrorIs(t, err, roomService.ErrRoomNotFound)
+
+	_, err = service.JoinRoom(
+		context.Background(),
+		model.JoinRoomInput{RoomID: room.ID, Password: "wrong-password", UserID: firstPlayer.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrRoomNotFound)
 
@@ -92,9 +114,36 @@ func TestRoomServiceJoinRoomRequiresInviteAndCapacity(t *testing.T) {
 
 	_, err = service.JoinRoom(
 		context.Background(),
-		model.JoinRoomInput{RoomID: room.ID, UserID: secondPlayer.ID},
+		model.JoinRoomInput{RoomID: room.ID, Password: "keeper-password", UserID: thirdPlayer.ID},
+	)
+	require.ErrorIs(t, err, roomService.ErrRoomFull)
+
+	_, err = service.JoinRoom(
+		context.Background(),
+		model.JoinRoomInput{RoomID: room.ID, UserID: thirdPlayer.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+}
+
+func TestRoomServiceJoinRoomWithPassword(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	player := createRoomTestUser(t, subject)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{
+		OwnerID:  owner.ID,
+		Password: "keeper-password",
+	})
+	require.NoError(t, err)
+
+	memberModel, err := service.JoinRoom(
+		context.Background(),
+		model.JoinRoomInput{RoomID: roomModel.ID, Password: "keeper-password", UserID: player.ID},
+	)
+	require.NoError(t, err)
+	require.Equal(t, player.ID, memberModel.UserID)
+	require.Equal(t, roomService.RolePlayer, memberModel.Role)
 }
 
 func TestRoomServiceTransferOwnershipDoesNotChangeRole(t *testing.T) {
@@ -156,6 +205,41 @@ func TestRoomServiceUpdateRoomValidatesMaxPlayersAgainstCurrentMembers(t *testin
 	})
 	require.NoError(t, err)
 	require.Equal(t, int32(2), updated.MaxPlayers)
+}
+
+func TestRoomServiceUpdateRoomCanChangePassword(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	player := createRoomTestUser(t, subject)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{
+		OwnerID:  owner.ID,
+		Password: "old-password",
+	})
+	require.NoError(t, err)
+
+	newPassword := "new-password"
+	_, err = service.UpdateRoom(context.Background(), model.UpdateRoomInput{
+		RoomID:     roomModel.ID,
+		OwnerID:    owner.ID,
+		MaxPlayers: roomModel.MaxPlayers,
+		Password:   &newPassword,
+	})
+	require.NoError(t, err)
+
+	_, err = service.JoinRoom(
+		context.Background(),
+		model.JoinRoomInput{RoomID: roomModel.ID, Password: "old-password", UserID: player.ID},
+	)
+	require.ErrorIs(t, err, roomService.ErrRoomNotFound)
+
+	memberModel, err := service.JoinRoom(
+		context.Background(),
+		model.JoinRoomInput{RoomID: roomModel.ID, Password: "new-password", UserID: player.ID},
+	)
+	require.NoError(t, err)
+	require.Equal(t, player.ID, memberModel.UserID)
 }
 
 func TestRoomServiceMapsNoRowsForMembershipOperations(t *testing.T) {

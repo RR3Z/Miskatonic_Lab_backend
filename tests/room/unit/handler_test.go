@@ -21,12 +21,13 @@ func TestCreateRoomDefaultsMaxPlayersAndPassesUserID(t *testing.T) {
 	roomService := &fakeRoomHandlerService{room: roomModels.RoomModel{OwnerID: "user_1", MaxPlayers: 7}}
 	router := newRoomHandlerTestRouter(roomService)
 
-	recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/", `{}`)
+	recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/", `{"password":"keeper-password"}`)
 
 	require.Equal(t, http.StatusCreated, recorder.Code)
 	require.Equal(t, 1, roomService.createCalls)
 	require.Equal(t, "user_1", roomService.createInput.OwnerID)
 	require.Nil(t, roomService.createInput.MaxPlayers)
+	require.Equal(t, "keeper-password", roomService.createInput.Password)
 }
 
 func TestCreateRoomRejectsInvalidBodyBeforeService(t *testing.T) {
@@ -45,8 +46,8 @@ func TestCreateRoomPassesMaxPlayersValidationToService(t *testing.T) {
 		body       string
 		maxPlayers int32
 	}{
-		{name: "zero max players", body: `{"max_players":0}`, maxPlayers: 0},
-		{name: "negative max players", body: `{"max_players":-1}`, maxPlayers: -1},
+		{name: "zero max players", body: `{"max_players":0,"password":"keeper-password"}`, maxPlayers: 0},
+		{name: "negative max players", body: `{"max_players":-1,"password":"keeper-password"}`, maxPlayers: -1},
 	}
 
 	for _, tt := range tests {
@@ -63,6 +64,18 @@ func TestCreateRoomPassesMaxPlayersValidationToService(t *testing.T) {
 			require.JSONEq(t, `{"code":"room.invalid_input","message":"invalid room input"}`, recorder.Body.String())
 		})
 	}
+}
+
+func TestCreateRoomPassesMissingPasswordToService(t *testing.T) {
+	roomService := &fakeRoomHandlerService{err: room.ErrInvalidPassword}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/", `{}`)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, 1, roomService.createCalls)
+	require.Empty(t, roomService.createInput.Password)
+	require.JSONEq(t, `{"code":"room.invalid_input","message":"invalid room input"}`, recorder.Body.String())
 }
 
 func TestRoomRoutesRejectInvalidRoomID(t *testing.T) {
@@ -96,7 +109,7 @@ func TestRoomRoutesRejectInvalidRoomID(t *testing.T) {
 	}
 }
 
-func TestJoinRoomRequiresInviteTokenAndPassesParams(t *testing.T) {
+func TestJoinRoomAcceptsInviteTokenAndPassesParams(t *testing.T) {
 	roomID := testRoomUnitUUID("11111111-1111-1111-1111-111111111111")
 	roomService := &fakeRoomHandlerService{member: roomModels.RoomMemberModel{RoomID: roomID, UserID: "user_1"}}
 	router := newRoomHandlerTestRouter(roomService)
@@ -107,16 +120,32 @@ func TestJoinRoomRequiresInviteTokenAndPassesParams(t *testing.T) {
 	require.Equal(t, 1, roomService.joinCalls)
 	require.Equal(t, roomID, roomService.joinInput.RoomID)
 	require.Equal(t, "token_1", roomService.joinInput.InviteToken)
+	require.Empty(t, roomService.joinInput.Password)
 	require.Equal(t, "user_1", roomService.joinInput.UserID)
 }
 
-func TestJoinRoomPassesMissingOrBlankInviteTokenToService(t *testing.T) {
+func TestJoinRoomAcceptsPasswordAndPassesParams(t *testing.T) {
+	roomID := testRoomUnitUUID("11111111-1111-1111-1111-111111111111")
+	roomService := &fakeRoomHandlerService{member: roomModels.RoomMemberModel{RoomID: roomID, UserID: "user_1"}}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/11111111-1111-1111-1111-111111111111/join", `{"password":"keeper-password"}`)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, 1, roomService.joinCalls)
+	require.Equal(t, roomID, roomService.joinInput.RoomID)
+	require.Empty(t, roomService.joinInput.InviteToken)
+	require.Equal(t, "keeper-password", roomService.joinInput.Password)
+	require.Equal(t, "user_1", roomService.joinInput.UserID)
+}
+
+func TestJoinRoomPassesMissingCredentialsToService(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
 	}{
 		{name: "missing", body: `{}`},
-		{name: "blank", body: `{"invite_token":""}`},
+		{name: "blank", body: `{"invite_token":"","password":""}`},
 	}
 
 	for _, tt := range tests {
@@ -129,9 +158,26 @@ func TestJoinRoomPassesMissingOrBlankInviteTokenToService(t *testing.T) {
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
 			require.Equal(t, 1, roomService.joinCalls)
 			require.Empty(t, roomService.joinInput.InviteToken)
+			require.Empty(t, roomService.joinInput.Password)
 			require.JSONEq(t, `{"code":"room.invalid_input","message":"invalid room input"}`, recorder.Body.String())
 		})
 	}
+}
+
+func TestUpdateRoomPassesOptionalPassword(t *testing.T) {
+	roomID := testRoomUnitUUID("11111111-1111-1111-1111-111111111111")
+	roomService := &fakeRoomHandlerService{room: roomModels.RoomModel{ID: roomID, OwnerID: "user_1", MaxPlayers: 5}}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodPut, "/api/rooms/11111111-1111-1111-1111-111111111111/", `{"max_players":5,"password":"new-password"}`)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, 1, roomService.updateCalls)
+	require.Equal(t, roomID, roomService.updateInput.RoomID)
+	require.Equal(t, "user_1", roomService.updateInput.OwnerID)
+	require.Equal(t, int32(5), roomService.updateInput.MaxPlayers)
+	require.NotNil(t, roomService.updateInput.Password)
+	require.Equal(t, "new-password", *roomService.updateInput.Password)
 }
 
 func TestTransferOwnershipPassesMissingUserIDToServiceAndMapsNotOwner(t *testing.T) {

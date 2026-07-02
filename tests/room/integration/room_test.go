@@ -17,9 +17,10 @@ func TestRoomCreateGetUpdateDeleteAndMemberList(t *testing.T) {
 	outsider := createRoomTestUser(t, subject)
 
 	room, err := subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
-		OwnerID:     owner.ID,
-		MaxPlayers:  3,
-		InviteToken: "invite_" + uniqueRoomIntegrationSuffix(),
+		OwnerID:      owner.ID,
+		MaxPlayers:   3,
+		InviteToken:  "invite_" + uniqueRoomIntegrationSuffix(),
+		PasswordHash: "test_password_hash",
 	})
 	require.NoError(t, err)
 	require.True(t, room.ID.Valid)
@@ -51,6 +52,7 @@ func TestRoomCreateGetUpdateDeleteAndMemberList(t *testing.T) {
 	updated, err := subject.queries.UpdateRoom(context.Background(), db.UpdateRoomParams{ID: room.ID, OwnerID: owner.ID, MaxPlayers: 5})
 	require.NoError(t, err)
 	require.Equal(t, int32(5), updated.MaxPlayers)
+	require.Equal(t, room.PasswordHash, updated.PasswordHash)
 	require.True(t, updated.UpdatedAt.Time.After(room.UpdatedAt.Time) || updated.UpdatedAt.Time.Equal(room.UpdatedAt.Time))
 
 	_, err = subject.queries.UpdateRoom(context.Background(), db.UpdateRoomParams{ID: room.ID, OwnerID: memberUser.ID, MaxPlayers: 6})
@@ -73,31 +75,35 @@ func TestRoomConstraintsAndInviteMetadata(t *testing.T) {
 	inviteToken := "invite_" + uniqueRoomIntegrationSuffix()
 
 	room, err := subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
-		OwnerID:     owner.ID,
-		MaxPlayers:  2,
-		InviteToken: inviteToken,
+		OwnerID:      owner.ID,
+		MaxPlayers:   2,
+		InviteToken:  inviteToken,
+		PasswordHash: "test_password_hash",
 	})
 	require.NoError(t, err)
 	addRoomTestMember(t, subject, room.ID, owner.ID, "gm")
 
 	_, err = subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
-		OwnerID:     "missing_user",
-		MaxPlayers:  2,
-		InviteToken: "invite_" + uniqueRoomIntegrationSuffix(),
+		OwnerID:      "missing_user",
+		MaxPlayers:   2,
+		InviteToken:  "invite_" + uniqueRoomIntegrationSuffix(),
+		PasswordHash: "test_password_hash",
 	})
 	requireRoomPostgresErrorCode(t, err, "23503")
 
 	_, err = subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
-		OwnerID:     owner.ID,
-		MaxPlayers:  0,
-		InviteToken: "invite_" + uniqueRoomIntegrationSuffix(),
+		OwnerID:      owner.ID,
+		MaxPlayers:   0,
+		InviteToken:  "invite_" + uniqueRoomIntegrationSuffix(),
+		PasswordHash: "test_password_hash",
 	})
 	requireRoomPostgresErrorCode(t, err, "23514")
 
 	_, err = subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
-		OwnerID:     owner.ID,
-		MaxPlayers:  2,
-		InviteToken: inviteToken,
+		OwnerID:      owner.ID,
+		MaxPlayers:   2,
+		InviteToken:  inviteToken,
+		PasswordHash: "test_password_hash",
 	})
 	requireRoomPostgresErrorCode(t, err, "23505")
 
@@ -105,6 +111,12 @@ func TestRoomConstraintsAndInviteMetadata(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, room.ID, meta.ID)
 	require.Equal(t, int32(2), meta.MaxPlayers)
+
+	joinMeta, err := subject.queries.GetRoomJoinMetaData(context.Background(), room.ID)
+	require.NoError(t, err)
+	require.Equal(t, room.ID, joinMeta.ID)
+	require.Equal(t, inviteToken, joinMeta.InviteToken)
+	require.Equal(t, "test_password_hash", joinMeta.PasswordHash)
 
 	_, err = subject.queries.GetRoomMetaData(context.Background(), db.GetRoomMetaDataParams{ID: room.ID, InviteToken: "wrong_token"})
 	require.ErrorIs(t, err, pgx.ErrNoRows)

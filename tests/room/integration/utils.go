@@ -120,9 +120,10 @@ func createRoomTestRoom(t *testing.T, subject *roomIntegrationSubject, ownerID s
 	t.Helper()
 
 	room, err := subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
-		OwnerID:     ownerID,
-		MaxPlayers:  4,
-		InviteToken: "invite_" + uniqueRoomIntegrationSuffix(),
+		OwnerID:      ownerID,
+		MaxPlayers:   4,
+		InviteToken:  "invite_" + uniqueRoomIntegrationSuffix(),
+		PasswordHash: "test_password_hash",
 	})
 	require.NoError(t, err)
 
