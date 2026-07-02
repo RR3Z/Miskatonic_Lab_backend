@@ -76,3 +76,12 @@ func (s *RoomService) CreateChatMessage(ctx context.Context, input model.CreateC
 
 	return model.ToRoomEventModel(event), nil
 }
+
+func (s *RoomService) TouchRoomActivity(ctx context.Context, input model.TouchRoomActivityInput) error {
+	if err := s.EnsureMember(ctx, input.RoomID, input.UserID); err != nil {
+		return err
+	}
+
+	_, err := s.repos.Queries.TouchRoomActivity(ctx, input.RoomID)
+	return err
+}

@@ -81,3 +81,8 @@ type CreateChatMessageInput struct {
 	ActorID string
 	Text    string
 }
+
+type TouchRoomActivityInput struct {
+	RoomID pgtype.UUID
+	UserID string
+}

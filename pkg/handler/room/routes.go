@@ -1,17 +1,26 @@
 package room
 
 import (
+	"context"
+
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpAdapter"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
 	"github.com/go-chi/chi/v5"
 )
 
 type RoomHandler struct {
 	service roomService.IRoom
+	hub     *ws.RoomHub
 }
 
 func New(service roomService.IRoom) *RoomHandler {
-	return &RoomHandler{service: service}
+	hub := ws.NewRoomHub()
+	go hub.Run(context.Background())
+	return &RoomHandler{
+		service: service,
+		hub:     hub,
+	}
 }
 
 func (h *RoomHandler) RegisterRoutes(r chi.Router) {
@@ -22,6 +31,7 @@ func (h *RoomHandler) RegisterRoutes(r chi.Router) {
 		r.Put("/", httpAdapter.AppHandler(h.updateRoom).ServeHTTP)
 		r.Delete("/", httpAdapter.AppHandler(h.deleteRoom).ServeHTTP)
 		r.Get("/events", httpAdapter.AppHandler(h.listRoomEvents).ServeHTTP)
+		r.Get("/ws", h.serveRoomWS)
 		r.Put("/owner", httpAdapter.AppHandler(h.transferRoomOwnership).ServeHTTP)
 
 		r.Post("/join", httpAdapter.AppHandler(h.joinRoom).ServeHTTP)

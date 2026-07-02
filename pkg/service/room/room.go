@@ -23,6 +23,7 @@ type IRoom interface {
 	ChangeRole(ctx context.Context, input model.ChangeRoleInput) (model.RoomMemberModel, error)
 	ListRoomEvents(ctx context.Context, input model.ListRoomEventsInput) ([]model.RoomEventModel, error)
 	CreateChatMessage(ctx context.Context, input model.CreateChatMessageInput) (model.RoomEventModel, error)
+	TouchRoomActivity(ctx context.Context, input model.TouchRoomActivityInput) error
 
 	EnsureMember(ctx context.Context, roomID pgtype.UUID, userID string) error
 	EnsureOwner(ctx context.Context, roomID pgtype.UUID, userID string) error
