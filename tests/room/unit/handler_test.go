@@ -506,6 +506,10 @@ func (f *fakeRoomHandlerService) CreateDiceRollRoomEvent(_ context.Context, _ ro
 	return roomModels.RoomEventModel{}, f.err
 }
 
+func (f *fakeRoomHandlerService) CreateCharacterChangedRoomEvents(_ context.Context, _ roomModels.CreateCharacterChangedRoomEventsInput) ([]roomModels.RoomEventModel, error) {
+	return nil, f.err
+}
+
 func testRoomUnitUUID(value string) pgtype.UUID {
 	var id pgtype.UUID
 	if err := id.Scan(value); err != nil {

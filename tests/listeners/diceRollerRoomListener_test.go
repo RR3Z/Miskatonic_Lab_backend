@@ -16,12 +16,15 @@ import (
 )
 
 type fakeListenerRoomService struct {
-	diceEvent  roomModel.RoomEventModel
-	diceErr    error
-	diceCalls  int
-	diceInput  roomModel.CreateDiceRollRoomEventInput
-	memberErr  error
-	publishErr error
+	diceEvent      roomModel.RoomEventModel
+	diceErr        error
+	diceCalls      int
+	diceInput      roomModel.CreateDiceRollRoomEventInput
+	characterErr   error
+	characterCalls int
+	characterInput roomModel.CreateCharacterChangedRoomEventsInput
+	memberErr      error
+	publishErr     error
 }
 
 func (f *fakeListenerRoomService) CreateRoom(_ context.Context, _ roomModel.CreateRoomInput) (roomModel.RoomModel, error) {
@@ -79,6 +82,11 @@ func (f *fakeListenerRoomService) CreateDiceRollRoomEvent(_ context.Context, inp
 	f.diceCalls++
 	f.diceInput = input
 	return f.diceEvent, f.diceErr
+}
+func (f *fakeListenerRoomService) CreateCharacterChangedRoomEvents(_ context.Context, input roomModel.CreateCharacterChangedRoomEventsInput) ([]roomModel.RoomEventModel, error) {
+	f.characterCalls++
+	f.characterInput = input
+	return nil, f.characterErr
 }
 
 func listenerTestUUID(value string) pgtype.UUID {

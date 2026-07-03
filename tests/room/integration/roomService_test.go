@@ -7,11 +7,14 @@ import (
 	"time"
 
 	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
+	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	characterService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -338,6 +341,7 @@ func TestRoomServiceListSelectedCharactersAppliesRoleVisibility(t *testing.T) {
 		RoomID:      room.ID,
 		UserID:      gm.ID,
 		CharacterID: gmCharacter.ID,
+	})
 	require.NoError(t, err)
 	_, err = service.SelectCharacter(context.Background(), model.SelectCharacterInput{
 		RoomID:      room.ID,
@@ -395,6 +399,145 @@ func TestRoomServiceListSelectedCharactersAppliesRoleVisibility(t *testing.T) {
 		UserID: outsider.ID,
 	})
 	require.ErrorIs(t, err, roomService.ErrNotMember)
+}
+
+func TestRoomServiceCreateCharacterChangedRoomEventsPersistsForSelectedRooms(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	character := createRoomTestCharacter(t, subject, owner.ID)
+	firstRoom := createRoomTestRoom(t, subject, owner.ID)
+	secondRoom := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, firstRoom.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, secondRoom.ID, owner.ID, roomService.ROLE_GM)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	_, err := service.SelectCharacter(context.Background(), model.SelectCharacterInput{
+		RoomID:      firstRoom.ID,
+		UserID:      owner.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	_, err = service.SelectCharacter(context.Background(), model.SelectCharacterInput{
+		RoomID:      secondRoom.ID,
+		UserID:      owner.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+
+	oldActivity := time.Now().UTC().Add(-2 * time.Hour)
+	setRoomLastActivityAt(t, subject, firstRoom.ID, oldActivity)
+	setRoomLastActivityAt(t, subject, secondRoom.ID, oldActivity)
+
+	sourceEvent := "character.health.upsert_succeeded"
+	createdEvents, err := service.CreateCharacterChangedRoomEvents(context.Background(), model.CreateCharacterChangedRoomEventsInput{
+		CharacterID: character.ID,
+		ActorID:     owner.ID,
+		Change: model.CharacterChangedRoomEventChange{
+			Resource:    "health",
+			Action:      "upsert",
+			SourceEvent: &sourceEvent,
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, createdEvents, 2)
+	for _, event := range createdEvents {
+		require.Equal(t, owner.ID, event.ActorID)
+		require.Equal(t, string(roomEvents.EventCharacterChanged), event.Type)
+	}
+
+	requireRoomCharacterChangedEvent(t, subject, firstRoom.ID, owner.ID, character.ID.String(), "health", "upsert", nil, &sourceEvent)
+	requireRoomCharacterChangedEvent(t, subject, secondRoom.ID, owner.ID, character.ID.String(), "health", "upsert", nil, &sourceEvent)
+	requireRoomLastActivityAfter(t, subject, firstRoom.ID, owner.ID, oldActivity)
+	requireRoomLastActivityAfter(t, subject, secondRoom.ID, owner.ID, oldActivity)
+}
+
+func TestRoomServiceCreateCharacterChangedRoomEventsNoOpsForUnselectedCharacter(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	character := createRoomTestCharacter(t, subject, owner.ID)
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	sourceEvent := "character.health.upsert_succeeded"
+	createdEvents, err := service.CreateCharacterChangedRoomEvents(context.Background(), model.CreateCharacterChangedRoomEventsInput{
+		CharacterID: character.ID,
+		ActorID:     owner.ID,
+		Change: model.CharacterChangedRoomEventChange{
+			Resource:    "health",
+			Action:      "upsert",
+			SourceEvent: &sourceEvent,
+		},
+	})
+	require.NoError(t, err)
+	require.Empty(t, createdEvents)
+
+	events, err := subject.queries.ListRoomEvents(context.Background(), db.ListRoomEventsParams{
+		RoomID:     room.ID,
+		UserID:     owner.ID,
+		LimitCount: 10,
+	})
+	require.NoError(t, err)
+	require.Empty(t, events)
+}
+
+func TestRoomOwnerCannotEditAnotherUsersCharacterThroughCharacterService(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	player := createRoomTestUser(t, subject)
+	room := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, room.ID, player.ID, roomService.ROLE_PLAYER)
+	playerCharacter := createRoomTestCharacter(t, subject, player.ID)
+	roomSvc := roomService.NewRoomService(repository.NewRepository(subject.pool))
+	_, err := roomSvc.SelectCharacter(context.Background(), model.SelectCharacterInput{
+		RoomID:      room.ID,
+		UserID:      player.ID,
+		CharacterID: playerCharacter.ID,
+	})
+	require.NoError(t, err)
+
+	maxHP := int16(10)
+	currentHP := int16(7)
+	characterSvc := characterService.NewCharacterService(repository.NewRepository(subject.pool))
+	_, err = characterSvc.UpsertHealth(context.Background(), healthDTO.UpsertHealthInput{
+		UserID:      owner.ID,
+		CharacterID: playerCharacter.ID,
+		MaxHp:       &maxHP,
+		CurrentHp:   &currentHP,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+}
+
+func requireRoomCharacterChangedEvent(
+	t *testing.T,
+	subject *roomIntegrationSubject,
+	roomID pgtype.UUID,
+	userID string,
+	characterID string,
+	resource string,
+	action string,
+	resourceID *string,
+	sourceEvent *string,
+) {
+	t.Helper()
+
+	events, err := subject.queries.ListRoomEvents(context.Background(), db.ListRoomEventsParams{
+		RoomID:     roomID,
+		UserID:     userID,
+		LimitCount: 10,
+	})
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	require.Equal(t, string(roomEvents.EventCharacterChanged), events[0].EventType)
+
+	var payload roomEvents.CharacterChangedPayload
+	require.NoError(t, json.Unmarshal(events[0].Payload, &payload))
+	require.Equal(t, characterID, payload.CharacterID)
+	require.Equal(t, resource, payload.Resource)
+	require.Equal(t, action, payload.Action)
+	require.Equal(t, resourceID, payload.ResourceID)
+	require.Equal(t, sourceEvent, payload.SourceEvent)
 }
 
 func requireSelectedCharacterUsers(t *testing.T, characters []model.SelectedCharacterModel, expectedUsers ...string) {
