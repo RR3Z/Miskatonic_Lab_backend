@@ -16,7 +16,7 @@ type IRoom interface {
 	DeleteRoom(ctx context.Context, input model.DeleteRoomInput) error
 
 	JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMemberModel, error)
-	LeaveRoom(ctx context.Context, input model.LeaveRoomInput) error
+	LeaveRoom(ctx context.Context, input model.LeaveRoomInput) (model.LeaveRoomResult, error)
 	KickMember(ctx context.Context, input model.KickMemberInput) error
 
 	SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMemberModel, error)
@@ -36,5 +36,5 @@ type IRoom interface {
 
 type IRoomMaintenance interface {
 	CleanupRooms(ctx context.Context, input model.CleanupRoomsInput) (model.CleanupRoomsResult, error)
-	StartCleanupWorker(ctx context.Context, interval time.Duration)
+	StartCleanupWorker(ctx context.Context, interval time.Duration, afterCleanup func(model.CleanupRoomsResult))
 }

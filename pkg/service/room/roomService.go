@@ -258,10 +258,10 @@ func (s *RoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (
 	return model.ToRoomMemberModel(member), nil
 }
 
-func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput) error {
+func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput) (model.LeaveRoomResult, error) {
 	tx, err := s.repos.DB.Begin(ctx)
 	if err != nil {
-		return err
+		return model.LeaveRoomResult{}, err
 	}
 	defer tx.Rollback(ctx)
 
@@ -269,9 +269,9 @@ func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput)
 	room, err := queries.GetRoomForUpdate(ctx, input.RoomID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrNotMember
+			return model.LeaveRoomResult{}, ErrNotMember
 		}
-		return err
+		return model.LeaveRoomResult{}, err
 	}
 
 	removedMember, err := queries.RemoveMember(ctx, db.RemoveMemberParams{
@@ -280,27 +280,31 @@ func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput)
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrNotMember
+			return model.LeaveRoomResult{}, ErrNotMember
 		}
 
-		return err
+		return model.LeaveRoomResult{}, err
 	}
 
 	count, err := queries.GetRoomMembersCount(ctx, input.RoomID)
 	if err != nil {
-		return err
+		return model.LeaveRoomResult{}, err
 	}
 	if count == 0 {
 		if _, err := queries.DeleteRoomByID(ctx, input.RoomID); err != nil {
-			return err
+			return model.LeaveRoomResult{}, err
 		}
-		return tx.Commit(ctx)
+		if err := tx.Commit(ctx); err != nil {
+			return model.LeaveRoomResult{}, err
+		}
+		deletedRoomID := input.RoomID
+		return model.LeaveRoomResult{DeletedRoomID: &deletedRoomID}, nil
 	}
 
 	if removedMember.UserID == room.OwnerID {
 		nextOwner, err := queries.GetNextRoomOwner(ctx, input.RoomID)
 		if err != nil {
-			return err
+			return model.LeaveRoomResult{}, err
 		}
 
 		if _, err := queries.TransferRoomOwnership(ctx, db.TransferRoomOwnershipParams{
@@ -308,12 +312,12 @@ func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput)
 			OwnerID:    room.OwnerID,
 			NewOwnerID: nextOwner.UserID,
 		}); err != nil {
-			return err
+			return model.LeaveRoomResult{}, err
 		}
 
 		payload, err := roomHelpers.OwnerTransferredPayload(room.OwnerID, nextOwner.UserID)
 		if err != nil {
-			return err
+			return model.LeaveRoomResult{}, err
 		}
 		if _, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
 			RoomID:    input.RoomID,
@@ -321,15 +325,19 @@ func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput)
 			EventType: string(roomEvents.EventOwnerTransferred),
 			Payload:   payload,
 		}); err != nil {
-			return err
+			return model.LeaveRoomResult{}, err
 		}
 	}
 
 	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
-		return err
+		return model.LeaveRoomResult{}, err
 	}
 
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return model.LeaveRoomResult{}, err
+	}
+
+	return model.LeaveRoomResult{}, nil
 }
 
 func (s *RoomService) KickMember(ctx context.Context, input model.KickMemberInput) error {

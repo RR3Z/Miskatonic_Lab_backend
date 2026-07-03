@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
+	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
@@ -20,6 +21,10 @@ type Service struct {
 	roomMaintenance room.IRoomMaintenance
 }
 
+type BackgroundWorkerHooks struct {
+	RoomCleanup func(roomModel.CleanupRoomsResult)
+}
+
 func NewService(repos *repository.Repository, publisher events.EventPublisher) *Service {
 	characterService := character.NewCharacterService(repos, publisher)
 	diceRollerService := diceRoller.NewDiceRollerService(repos)
@@ -34,6 +39,6 @@ func NewService(repos *repository.Repository, publisher events.EventPublisher) *
 	}
 }
 
-func (s *Service) StartBackgroundWorkers(ctx context.Context) {
-	s.roomMaintenance.StartCleanupWorker(ctx, room.DEFAULT_ROOM_CLEANUP_INTERVAL)
+func (s *Service) StartBackgroundWorkers(ctx context.Context, hooks BackgroundWorkerHooks) {
+	s.roomMaintenance.StartCleanupWorker(ctx, room.DEFAULT_ROOM_CLEANUP_INTERVAL, hooks.RoomCleanup)
 }

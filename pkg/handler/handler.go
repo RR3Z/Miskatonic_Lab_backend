@@ -12,6 +12,7 @@ import (
 	roomHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room"
 	userHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/user"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
+	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
 	"github.com/go-chi/chi/v5"
@@ -53,6 +54,10 @@ func NewHandler(services *service.Service) *Handler {
 
 func (h *Handler) RoomHub() *ws.RoomHub {
 	return h.auxiliaryHandlers.roomHandler.Hub()
+}
+
+func (h *Handler) CloseDeletedRoomSockets(result roomModel.CleanupRoomsResult, reason string) {
+	h.auxiliaryHandlers.roomHandler.CloseDeletedRooms(result.DeletedRoomIDs, reason)
 }
 
 func (h *Handler) InitRoutes() *chi.Mux {

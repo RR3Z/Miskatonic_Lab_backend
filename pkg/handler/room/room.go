@@ -117,6 +117,7 @@ func (h *RoomHandler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to delete room")
 	}
 
+	h.closeRoom(roomID, "room deleted")
 	w.WriteHeader(http.StatusNoContent)
 	return nil
 }
@@ -205,12 +206,16 @@ func (h *RoomHandler) leaveRoom(w http.ResponseWriter, r *http.Request) *myError
 		return roomErrors.InvalidIDError(err)
 	}
 
-	err = h.service.LeaveRoom(r.Context(), roomDTO.LeaveRoomInput{
+	result, err := h.service.LeaveRoom(r.Context(), roomDTO.LeaveRoomInput{
 		RoomID: roomID,
 		UserID: userID,
 	})
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to leave room")
+	}
+
+	if result.DeletedRoomID != nil {
+		h.closeRoom(*result.DeletedRoomID, "room deleted")
 	}
 
 	w.WriteHeader(http.StatusNoContent)

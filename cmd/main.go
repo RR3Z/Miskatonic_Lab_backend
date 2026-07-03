@@ -13,9 +13,10 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners"
 	listenerHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners/helpers"
+	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	EventsLogging "github.com/RR3Z/Miskatonic_Lab_backend/pkg/observability/logging"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
+	appService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
@@ -66,7 +67,7 @@ func run() int {
 	}
 	clerk.SetKey(clerkSecretKey)
 
-	// Logging
+	// Events Bus
 	syncPublisher := publishers.NewSyncPublisher()
 	asyncPublisher := publishers.NewAsyncPublisher(100, slog.Default())
 	asyncPublisher.Start(ctx, 4)
@@ -75,18 +76,24 @@ func run() int {
 	// Launch Server
 	repos := repository.NewRepository(dbConnection)
 
-	service := service.NewService(repos, eventBus)
-	service.StartBackgroundWorkers(ctx)
+	services := appService.NewService(repos, eventBus)
+	handlers := handler.NewHandler(services)
 
-	handlers := handler.NewHandler(service)
+	// Background Workers
+	services.StartBackgroundWorkers(ctx, appService.BackgroundWorkerHooks{
+		RoomCleanup: func(result roomModel.CleanupRoomsResult) {
+			handlers.CloseDeletedRoomSockets(result, "room deleted by cleanup")
+		},
+	})
+
 	// Character Events Listener
 	eventBus.SubscribeAllSync(EventsLogging.NewCharacterEventLogger(slog.Default()))
-	characterRoomListener := listeners.NewCharacterRoomListener(service.Room, handlers.RoomHub())
+	characterRoomListener := listeners.NewCharacterRoomListener(services.Room, handlers.RoomHub())
 	for _, event := range listenerHelpers.MutationCharacterEvents() {
 		eventBus.SubscribeAsync(event, characterRoomListener)
 	}
 	// Dice Roller Listener (for Room)
-	eventBus.SubscribeAsync(diceEvents.DiceRollMakeSucceeded{}, listeners.NewDiceRollerRoomListener(service.Room, handlers.RoomHub()))
+	eventBus.SubscribeAsync(diceEvents.DiceRollMakeSucceeded{}, listeners.NewDiceRollerRoomListener(services.Room, handlers.RoomHub()))
 
 	serverPort := os.Getenv("PORT")
 	if serverPort == "" {

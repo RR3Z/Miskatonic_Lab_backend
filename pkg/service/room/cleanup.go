@@ -6,6 +6,7 @@ import (
 	"time"
 
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
+	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room/helpers"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -33,13 +34,19 @@ func (s *RoomService) CleanupRooms(ctx context.Context, input model.CleanupRooms
 		return model.CleanupRoomsResult{}, err
 	}
 
+	inactiveRoomIDs := roomHelpers.RoomIDsFromRooms(inactiveRooms)
+	invalidRoomIDs := roomHelpers.RoomIDsFromRooms(invalidRooms)
+
 	return model.CleanupRoomsResult{
-		InactiveDeleted: len(inactiveRooms),
-		InvalidDeleted:  len(invalidRooms),
+		InactiveDeleted:        len(inactiveRooms),
+		InvalidDeleted:         len(invalidRooms),
+		InactiveDeletedRoomIDs: inactiveRoomIDs,
+		InvalidDeletedRoomIDs:  invalidRoomIDs,
+		DeletedRoomIDs:         roomHelpers.AppendRoomIDs(inactiveRoomIDs, invalidRoomIDs),
 	}, nil
 }
 
-func (s *RoomService) StartCleanupWorker(ctx context.Context, interval time.Duration) {
+func (s *RoomService) StartCleanupWorker(ctx context.Context, interval time.Duration, afterCleanup func(model.CleanupRoomsResult)) {
 	if interval <= 0 {
 		interval = DEFAULT_ROOM_CLEANUP_INTERVAL
 	}
@@ -65,6 +72,9 @@ func (s *RoomService) StartCleanupWorker(ctx context.Context, interval time.Dura
 						"inactive_deleted", result.InactiveDeleted,
 						"invalid_deleted", result.InvalidDeleted,
 					)
+				}
+				if afterCleanup != nil {
+					afterCleanup(result)
 				}
 			}
 		}
