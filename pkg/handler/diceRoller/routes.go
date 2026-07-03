@@ -1,17 +1,29 @@
 package diceRoller
 
 import (
+	"context"
+
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpAdapter"
 	diceRollerService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type RoomAccessChecker interface {
+	EnsureCanPublishRoomEvent(ctx context.Context, roomID pgtype.UUID, userID string) error
+}
+
 type DiceRollerHandler struct {
-	service diceRollerService.IDiceRoller
+	service     diceRollerService.IDiceRoller
+	roomChecker RoomAccessChecker
 }
 
 func New(service diceRollerService.IDiceRoller) *DiceRollerHandler {
 	return &DiceRollerHandler{service: service}
+}
+
+func NewWithRoomChecker(service diceRollerService.IDiceRoller, checker RoomAccessChecker) *DiceRollerHandler {
+	return &DiceRollerHandler{service: service, roomChecker: checker}
 }
 
 func (h *DiceRollerHandler) RegisterRoutes(r chi.Router) {

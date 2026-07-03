@@ -38,6 +38,16 @@ func CharacterNotFoundError(err error) *myErrors.AppError {
 func InvalidInputError(message string, err error) *myErrors.AppError {
 	return &myErrors.AppError{
 		Status:  http.StatusBadRequest,
+		Code:    "dice.invalid_input",
+		Message: message,
+		Err:     err,
+	}
+}
+
+func RoomNotAvailableError(err error, message string) *myErrors.AppError {
+	return &myErrors.AppError{
+		Status:  http.StatusForbidden,
+		Code:    "dice.room_not_available",
 		Message: message,
 		Err:     err,
 	}

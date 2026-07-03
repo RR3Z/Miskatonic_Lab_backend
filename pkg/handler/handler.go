@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	userHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/user"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -28,12 +30,22 @@ type AuxiliaryHandlers struct {
 }
 
 func NewHandler(services *service.Service) *Handler {
+	roomHub := ws.NewRoomHub()
+	go roomHub.Run(context.Background())
+
+	var diceHandler *diceRollerHandler.DiceRollerHandler
+	if services.Room != nil {
+		diceHandler = diceRollerHandler.NewWithRoomChecker(services.DiceRoller, services.Room)
+	} else {
+		diceHandler = diceRollerHandler.New(services.DiceRoller)
+	}
+
 	return &Handler{
 		services: services,
 		auxiliaryHandlers: new(AuxiliaryHandlers{
 			characterHandler:  characterHandler.New(services.Character),
-			diceRollerHandler: diceRollerHandler.New(services.DiceRoller),
-			roomHandler:       roomHandler.New(services.Room),
+			diceRollerHandler: diceHandler,
+			roomHandler:       roomHandler.NewWithHub(services.Room, roomHub),
 			userHandler:       userHandler.New(services.User),
 		}),
 	}

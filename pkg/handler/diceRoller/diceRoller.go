@@ -23,10 +23,20 @@ func (h *DiceRollerHandler) makeRoll(w http.ResponseWriter, r *http.Request) *my
 		return appErr
 	}
 
+	if req.RoomID != nil && req.RoomID.Valid {
+		if h.roomChecker == nil {
+			return diceRollerErrors.RoomNotAvailableError(nil, "room dice rolls are not available")
+		}
+		if checkErr := h.roomChecker.EnsureCanPublishRoomEvent(r.Context(), *req.RoomID, userID); checkErr != nil {
+			return diceRollerErrors.RoomNotAvailableError(checkErr, "room not available for dice roll")
+		}
+	}
+
 	roll, err := h.service.MakeRoll(r.Context(), diceRollerDTO.MakeRollInput{
 		UserID:      userID,
 		CharacterID: characterID,
 		Formula:     req.Expression,
+		RoomID:      req.RoomID,
 	})
 	if err != nil {
 		return diceRollerErrors.MapServiceError(err, "failed to create dice roll")
