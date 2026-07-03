@@ -76,6 +76,11 @@ type ListRoomEventsInput struct {
 	Limit  int32
 }
 
+type ListSelectedCharactersInput struct {
+	RoomID pgtype.UUID
+	UserID string
+}
+
 type CreateChatMessageInput struct {
 	RoomID  pgtype.UUID
 	ActorID string
