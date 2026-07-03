@@ -2,14 +2,9 @@ package room
 
 import (
 	"context"
-	"errors"
-	"strings"
 
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
-	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room/helpers"
-	"github.com/jackc/pgx/v5"
 )
 
 func (s *RoomService) ListRoomEvents(ctx context.Context, input model.ListRoomEventsInput) ([]model.RoomEventModel, error) {
@@ -27,143 +22,6 @@ func (s *RoomService) ListRoomEvents(ctx context.Context, input model.ListRoomEv
 	}
 
 	return model.ToRoomEventModels(events), nil
-}
-
-func (s *RoomService) CreateChatMessage(ctx context.Context, input model.CreateChatMessageInput) (model.RoomEventModel, error) {
-	if err := validateChatMessage(input.Text); err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	tx, err := s.repos.DB.Begin(ctx)
-	if err != nil {
-		return model.RoomEventModel{}, err
-	}
-	defer tx.Rollback(ctx)
-
-	queries := s.repos.Queries.WithTx(tx)
-	if _, err := queries.GetMember(ctx, db.GetMemberParams{
-		RoomID: input.RoomID,
-		UserID: input.ActorID,
-	}); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.RoomEventModel{}, ErrNotMember
-		}
-		return model.RoomEventModel{}, err
-	}
-
-	payload, err := roomHelpers.ChatMessagePayload(strings.TrimSpace(input.Text))
-	if err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	event, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
-		RoomID:    input.RoomID,
-		ActorID:   input.ActorID,
-		EventType: string(roomEvents.EventChatMessage),
-		Payload:   payload,
-	})
-	if err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	return model.ToRoomEventModel(event), nil
-}
-
-func (s *RoomService) CreateDiceRollRoomEvent(ctx context.Context, input model.CreateDiceRollRoomEventInput) (model.RoomEventModel, error) {
-	if err := s.EnsureMember(ctx, input.RoomID, input.ActorID); err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	tx, err := s.repos.DB.Begin(ctx)
-	if err != nil {
-		return model.RoomEventModel{}, err
-	}
-	defer tx.Rollback(ctx)
-
-	queries := s.repos.Queries.WithTx(tx)
-
-	payload, err := roomHelpers.DiceRollPayload(input.RollID, input.CharacterID, input.Expression, input.Result, input.Details)
-	if err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	event, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
-		RoomID:    input.RoomID,
-		ActorID:   input.ActorID,
-		EventType: string(roomEvents.EventDiceRoll),
-		Payload:   payload,
-	})
-	if err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return model.RoomEventModel{}, err
-	}
-
-	return model.ToRoomEventModel(event), nil
-}
-
-func (s *RoomService) CreateCharacterChangedRoomEvents(ctx context.Context, input model.CreateCharacterChangedRoomEventsInput) ([]model.RoomEventModel, error) {
-	tx, err := s.repos.DB.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback(ctx)
-
-	queries := s.repos.Queries.WithTx(tx)
-	roomIDs, err := queries.ListRoomIDsBySelectedCharacter(ctx, input.CharacterID)
-	if err != nil {
-		return nil, err
-	}
-
-	events := make([]model.RoomEventModel, 0, len(roomIDs))
-	for _, roomID := range roomIDs {
-		payload, err := roomHelpers.CharacterChangedPayload(
-			input.CharacterID.String(),
-			input.Change.Resource,
-			input.Change.Action,
-			input.Change.ResourceID,
-			input.Change.SourceEvent,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		event, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
-			RoomID:    roomID,
-			ActorID:   input.ActorID,
-			EventType: string(roomEvents.EventCharacterChanged),
-			Payload:   payload,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		if _, err := queries.TouchRoomActivity(ctx, roomID); err != nil {
-			return nil, err
-		}
-
-		events = append(events, model.ToRoomEventModel(event))
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
-
-	return events, nil
 }
 
 func (s *RoomService) TouchRoomActivity(ctx context.Context, input model.TouchRoomActivityInput) error {

@@ -76,41 +76,7 @@ type ListRoomEventsInput struct {
 	Limit  int32
 }
 
-type ListSelectedCharactersInput struct {
-	RoomID pgtype.UUID
-	UserID string
-}
-
-type CreateChatMessageInput struct {
-	RoomID  pgtype.UUID
-	ActorID string
-	Text    string
-}
-
 type TouchRoomActivityInput struct {
 	RoomID pgtype.UUID
 	UserID string
-}
-
-type CreateDiceRollRoomEventInput struct {
-	RoomID      pgtype.UUID
-	ActorID     string
-	RollID      string
-	CharacterID string
-	Expression  string
-	Result      int32
-	Details     []byte
-}
-
-type CharacterChangedRoomEventChange struct {
-	Resource    string
-	Action      string
-	ResourceID  *string
-	SourceEvent *string
-}
-
-type CreateCharacterChangedRoomEventsInput struct {
-	CharacterID pgtype.UUID
-	ActorID     string
-	Change      CharacterChangedRoomEventChange
 }

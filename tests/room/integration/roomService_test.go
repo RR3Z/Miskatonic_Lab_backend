@@ -14,7 +14,6 @@ import (
 	characterService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -507,54 +506,6 @@ func TestRoomOwnerCannotEditAnotherUsersCharacterThroughCharacterService(t *test
 		CurrentHp:   &currentHP,
 	})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
-}
-
-func requireRoomCharacterChangedEvent(
-	t *testing.T,
-	subject *roomIntegrationSubject,
-	roomID pgtype.UUID,
-	userID string,
-	characterID string,
-	resource string,
-	action string,
-	resourceID *string,
-	sourceEvent *string,
-) {
-	t.Helper()
-
-	events, err := subject.queries.ListRoomEvents(context.Background(), db.ListRoomEventsParams{
-		RoomID:     roomID,
-		UserID:     userID,
-		LimitCount: 10,
-	})
-	require.NoError(t, err)
-	require.Len(t, events, 1)
-	require.Equal(t, string(roomEvents.EventCharacterChanged), events[0].EventType)
-
-	var payload roomEvents.CharacterChangedPayload
-	require.NoError(t, json.Unmarshal(events[0].Payload, &payload))
-	require.Equal(t, characterID, payload.CharacterID)
-	require.Equal(t, resource, payload.Resource)
-	require.Equal(t, action, payload.Action)
-	require.Equal(t, resourceID, payload.ResourceID)
-	require.Equal(t, sourceEvent, payload.SourceEvent)
-}
-
-func requireSelectedCharacterUsers(t *testing.T, characters []model.SelectedCharacterModel, expectedUsers ...string) {
-	t.Helper()
-
-	users := selectedCharacterUsers(characters)
-	for _, userID := range expectedUsers {
-		require.Contains(t, users, userID)
-	}
-}
-
-func selectedCharacterUsers(characters []model.SelectedCharacterModel) []string {
-	users := make([]string, 0, len(characters))
-	for _, character := range characters {
-		users = append(users, character.UserID)
-	}
-	return users
 }
 
 func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
