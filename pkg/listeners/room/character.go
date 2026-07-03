@@ -1,25 +1,24 @@
-package listeners
+package roomlisteners
 
 import (
 	"context"
 	"log/slog"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
-	listenerHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners/helpers"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
+	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	wsHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/helpers"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type CharacterRoomListener struct {
-	roomService room.IRoom
+	roomService roomService.IRoom
 	hub         *ws.RoomHub
 	logger      *slog.Logger
 }
 
-func NewCharacterRoomListener(roomService room.IRoom, hub *ws.RoomHub) *CharacterRoomListener {
+func NewCharacterRoomListener(roomService roomService.IRoom, hub *ws.RoomHub) *CharacterRoomListener {
 	return &CharacterRoomListener{
 		roomService: roomService,
 		hub:         hub,
@@ -28,7 +27,7 @@ func NewCharacterRoomListener(roomService room.IRoom, hub *ws.RoomHub) *Characte
 }
 
 func (l *CharacterRoomListener) Handle(ctx context.Context, event events.Event) {
-	actorID, characterID, change, ok := listenerHelpers.CharacterChangedRoomEventInput(event)
+	actorID, characterID, change, ok := CharacterChangedRoomEventInput(event)
 	if !ok {
 		return
 	}

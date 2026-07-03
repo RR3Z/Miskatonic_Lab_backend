@@ -1,4 +1,4 @@
-package helpers
+package roomlisteners
 
 import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"

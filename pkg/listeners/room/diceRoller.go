@@ -1,4 +1,4 @@
-package listeners
+package roomlisteners
 
 import (
 	"context"
@@ -7,19 +7,19 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	diceEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/dice"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
+	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	wsHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/helpers"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type DiceRollerRoomListener struct {
-	roomService room.IRoom
+	roomService roomService.IRoom
 	hub         *ws.RoomHub
 	logger      *slog.Logger
 }
 
-func NewDiceRollerRoomListener(roomService room.IRoom, hub *ws.RoomHub) *DiceRollerRoomListener {
+func NewDiceRollerRoomListener(roomService roomService.IRoom, hub *ws.RoomHub) *DiceRollerRoomListener {
 	return &DiceRollerRoomListener{
 		roomService: roomService,
 		hub:         hub,
