@@ -29,13 +29,14 @@ func NewService(repos *repository.Repository, publisher events.EventPublisher) *
 	characterService := character.NewCharacterService(repos, publisher)
 	diceRollerService := diceRoller.NewDiceRollerService(repos)
 	roomService := room.NewRoomService(repos)
+	eventPublishingRoomService := room.NewEventPublishingRoomService(roomService, roomService, publisher)
 
 	return &Service{
 		User:            user.NewUserService(repos),
 		Character:       character.NewEventPublishingCharacterService(characterService, publisher),
 		DiceRoller:      diceRoller.NewEventPublishingDiceRollerService(diceRollerService, publisher),
-		Room:            roomService,
-		roomMaintenance: roomService,
+		Room:            eventPublishingRoomService,
+		roomMaintenance: eventPublishingRoomService,
 	}
 }
 
