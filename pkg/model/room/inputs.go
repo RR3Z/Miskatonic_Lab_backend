@@ -101,3 +101,16 @@ type CreateDiceRollRoomEventInput struct {
 	Result      int32
 	Details     []byte
 }
+
+type CharacterChangedRoomEventChange struct {
+	Resource    string
+	Action      string
+	ResourceID  *string
+	SourceEvent *string
+}
+
+type CreateCharacterChangedRoomEventsInput struct {
+	CharacterID pgtype.UUID
+	ActorID     string
+	Change      CharacterChangedRoomEventChange
+}
