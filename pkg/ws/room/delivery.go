@@ -1,6 +1,6 @@
 package room
 
-import roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
+import roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 
 type targetedEvent struct {
 	roomID  string

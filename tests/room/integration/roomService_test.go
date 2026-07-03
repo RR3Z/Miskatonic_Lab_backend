@@ -3,11 +3,6 @@ package tests
 import (
 	"context"
 	"encoding/json"
-	"strings"
-	"testing"
-	"time"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
@@ -17,6 +12,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
+	"strings"
+	"testing"
+	"time"
 )
 
 func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
@@ -298,10 +296,10 @@ func TestRoomServiceOwnerLeaveTransfersOwnershipAndCreatesEvent(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, events, 1)
-	require.Equal(t, string(roomEvents.EventOwnerTransferred), events[0].EventType)
+	require.Equal(t, string(model.EventOwnerTransferred), events[0].EventType)
 	require.Equal(t, owner.ID, events[0].ActorID)
 
-	var payload roomEvents.OwnerTransferredPayload
+	var payload model.OwnerTransferredPayload
 	require.NoError(t, json.Unmarshal(events[0].Payload, &payload))
 	require.Equal(t, owner.ID, payload.PreviousOwnerID)
 	require.Equal(t, firstMember.ID, payload.NewOwnerID)
@@ -348,9 +346,9 @@ func TestRoomServiceCreatesChatMessagesAndListsEventsOldToNew(t *testing.T) {
 		Text:    " first message ",
 	})
 	require.NoError(t, err)
-	require.Equal(t, string(roomEvents.EventChatMessage), firstEvent.Type)
+	require.Equal(t, string(model.EventChatMessage), firstEvent.Type)
 	require.Equal(t, owner.ID, firstEvent.ActorID)
-	var firstPayload roomEvents.ChatMessagePayload
+	var firstPayload model.ChatMessagePayload
 	require.NoError(t, json.Unmarshal(firstEvent.Payload, &firstPayload))
 	require.Equal(t, "first message", firstPayload.Text)
 	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
@@ -409,7 +407,7 @@ func TestRoomServiceChatMessageLengthBoundaries(t *testing.T) {
 		Text:    exactLimit,
 	})
 	require.NoError(t, err)
-	var payload roomEvents.ChatMessagePayload
+	var payload model.ChatMessagePayload
 	require.NoError(t, json.Unmarshal(event.Payload, &payload))
 	require.Len(t, payload.Text, roomService.MAX_CHAT_MESSAGE_LENGTH)
 
@@ -428,13 +426,13 @@ func TestRoomServiceListRoomEventsNormalizesLimits(t *testing.T) {
 	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
-	payload, err := json.Marshal(roomEvents.ChatMessagePayload{Text: "history"})
+	payload, err := json.Marshal(model.ChatMessagePayload{Text: "history"})
 	require.NoError(t, err)
 	for i := 0; i < int(roomService.MAX_ROOM_EVENTS_LIMIT)+5; i++ {
 		_, err = subject.queries.CreateRoomEvent(context.Background(), db.CreateRoomEventParams{
 			RoomID:    room.ID,
 			ActorID:   owner.ID,
-			EventType: string(roomEvents.EventChatMessage),
+			EventType: string(model.EventChatMessage),
 			Payload:   payload,
 		})
 		require.NoError(t, err)
@@ -497,11 +495,11 @@ func TestRoomServiceCreateDiceRollRoomEventMembershipPayloadAndActivity(t *testi
 		Details:     []byte(`[{"type":"dice","sides":6,"rolls":[4,4]},{"type":"modifier","value":1}]`),
 	})
 	require.NoError(t, err)
-	require.Equal(t, string(roomEvents.EventDiceRoll), event.Type)
+	require.Equal(t, string(model.EventDiceRoll), event.Type)
 	require.Equal(t, memberUser.ID, event.ActorID)
 	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
 
-	var payloadModel roomEvents.DiceRollPayload
+	var payloadModel model.DiceRollPayload
 	require.NoError(t, json.Unmarshal(event.Payload, &payloadModel))
 	require.Equal(t, "roll-member", payloadModel.RollID)
 	require.Equal(t, "character-member", payloadModel.CharacterID)
@@ -668,7 +666,7 @@ func TestRoomServiceCreateCharacterChangedRoomEventsPersistsForSelectedRooms(t *
 	require.Len(t, createdEvents, 2)
 	for _, event := range createdEvents {
 		require.Equal(t, owner.ID, event.ActorID)
-		require.Equal(t, string(roomEvents.EventCharacterChanged), event.Type)
+		require.Equal(t, string(model.EventCharacterChanged), event.Type)
 	}
 
 	requireRoomCharacterChangedEvent(t, subject, firstRoom.ID, owner.ID, character.ID.String(), "health", "upsert", nil, &sourceEvent)

@@ -1,6 +1,6 @@
 package room
 
-import roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
+import roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 
 func NewTestClient(hub *RoomHub, roomID string) (*Client, <-chan roomEvents.Event) {
 	return NewTestClientWithUser(hub, roomID, "")

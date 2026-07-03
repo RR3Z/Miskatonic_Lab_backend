@@ -3,7 +3,7 @@ package room
 import (
 	"context"
 
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
+	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 )
 
 type RoomHub struct {

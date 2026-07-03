@@ -7,7 +7,6 @@ import (
 	"time"
 
 	diceEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/dice"
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
@@ -36,7 +35,7 @@ func TestDiceRollerRoomListener_Success_CreatesRoomEventAndBroadcasts(t *testing
 		diceEvent: roomModel.RoomEventModel{
 			RoomID:  roomUUID,
 			ActorID: "user_1",
-			Type:    string(roomEvents.EventDiceRoll),
+			Type:    string(roomModel.EventDiceRoll),
 		},
 	}
 
@@ -70,7 +69,7 @@ func TestDiceRollerRoomListener_Success_CreatesRoomEventAndBroadcasts(t *testing
 
 	select {
 	case event := <-events:
-		require.Equal(t, string(roomEvents.EventDiceRoll), event.Type)
+		require.Equal(t, string(roomModel.EventDiceRoll), event.Type)
 	case <-time.After(time.Second):
 		t.Fatal("timeout waiting for broadcast")
 	}

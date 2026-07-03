@@ -2,8 +2,6 @@ package room
 
 import (
 	"context"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room/helpers"
@@ -38,7 +36,7 @@ func (s *RoomService) CreateCharacterChangedRoomEvents(ctx context.Context, inpu
 		event, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
 			RoomID:    roomID,
 			ActorID:   input.ActorID,
-			EventType: string(roomEvents.EventCharacterChanged),
+			EventType: string(model.EventCharacterChanged),
 			Payload:   payload,
 		})
 		if err != nil {

@@ -1,4 +1,4 @@
-package roomEvents
+package roomDTO
 
 import "encoding/json"
 

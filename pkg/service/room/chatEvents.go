@@ -3,13 +3,11 @@ package room
 import (
 	"context"
 	"errors"
-	"strings"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room/helpers"
 	"github.com/jackc/pgx/v5"
+	"strings"
 )
 
 func (s *RoomService) CreateChatMessage(ctx context.Context, input model.CreateChatMessageInput) (model.RoomEventModel, error) {
@@ -42,7 +40,7 @@ func (s *RoomService) CreateChatMessage(ctx context.Context, input model.CreateC
 	event, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
 		RoomID:    input.RoomID,
 		ActorID:   input.ActorID,
-		EventType: string(roomEvents.EventChatMessage),
+		EventType: string(model.EventChatMessage),
 		Payload:   payload,
 	})
 	if err != nil {

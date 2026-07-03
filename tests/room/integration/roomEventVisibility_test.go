@@ -2,13 +2,11 @@ package tests
 
 import (
 	"context"
-	"testing"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestRoomServiceListRoomEventsFiltersCharacterChangedByRole(t *testing.T) {
@@ -96,7 +94,7 @@ func TestRoomServiceListRoomEventsFiltersCharacterChangedByRole(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, firstPlayerEvents, 3)
-	requireRoomEventTypes(t, firstPlayerEvents, string(roomEvents.EventChatMessage), string(roomEvents.EventDiceRoll))
+	requireRoomEventTypes(t, firstPlayerEvents, string(model.EventChatMessage), string(model.EventDiceRoll))
 	require.Equal(t, []string{firstCharacter.ID.String()}, characterChangedCharacterIDs(t, firstPlayerEvents))
 
 	secondPlayerEvents, err := service.ListRoomEvents(context.Background(), model.ListRoomEventsInput{
@@ -106,6 +104,6 @@ func TestRoomServiceListRoomEventsFiltersCharacterChangedByRole(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, secondPlayerEvents, 3)
-	requireRoomEventTypes(t, secondPlayerEvents, string(roomEvents.EventChatMessage), string(roomEvents.EventDiceRoll))
+	requireRoomEventTypes(t, secondPlayerEvents, string(model.EventChatMessage), string(model.EventDiceRoll))
 	require.Equal(t, []string{secondCharacter.ID.String()}, characterChangedCharacterIDs(t, secondPlayerEvents))
 }

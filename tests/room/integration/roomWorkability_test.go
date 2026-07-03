@@ -3,14 +3,12 @@ package tests
 import (
 	"context"
 	"encoding/json"
-	"testing"
-	"time"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	"github.com/stretchr/testify/require"
+	"testing"
+	"time"
 )
 
 func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
@@ -123,10 +121,10 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, gmEvents, 4)
 	require.Equal(t, []string{
-		string(roomEvents.EventChatMessage),
-		string(roomEvents.EventDiceRoll),
-		string(roomEvents.EventCharacterChanged),
-		string(roomEvents.EventCharacterChanged),
+		string(model.EventChatMessage),
+		string(model.EventDiceRoll),
+		string(model.EventCharacterChanged),
+		string(model.EventCharacterChanged),
 	}, roomEventTypes(gmEvents))
 	require.ElementsMatch(t, []string{firstCharacter.ID.String(), secondCharacter.ID.String()}, characterChangedCharacterIDs(t, gmEvents))
 
@@ -138,9 +136,9 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, firstPlayerEvents, 3)
 	require.Equal(t, []string{
-		string(roomEvents.EventChatMessage),
-		string(roomEvents.EventDiceRoll),
-		string(roomEvents.EventCharacterChanged),
+		string(model.EventChatMessage),
+		string(model.EventDiceRoll),
+		string(model.EventCharacterChanged),
 	}, roomEventTypes(firstPlayerEvents))
 	require.Equal(t, []string{firstCharacter.ID.String()}, characterChangedCharacterIDs(t, firstPlayerEvents))
 	requireDiceRollPayload(t, firstPlayerEvents[1], "workability-roll-1", firstCharacter.ID.String(), "1d20", int32(13))
@@ -173,9 +171,9 @@ func requireDiceRollPayload(
 ) {
 	t.Helper()
 
-	require.Equal(t, string(roomEvents.EventDiceRoll), event.Type)
+	require.Equal(t, string(model.EventDiceRoll), event.Type)
 
-	var payload roomEvents.DiceRollPayload
+	var payload model.DiceRollPayload
 	require.NoError(t, json.Unmarshal(event.Payload, &payload))
 	require.Equal(t, rollID, payload.RollID)
 	require.Equal(t, characterID, payload.CharacterID)

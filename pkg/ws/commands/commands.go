@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	wsHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/helpers"
@@ -27,8 +25,8 @@ type Context struct {
 }
 
 type DispatchResult struct {
-	Broadcast *roomEvents.Event
-	Reply     *roomEvents.Event
+	Broadcast *roomModel.Event
+	Reply     *roomModel.Event
 }
 
 type commandHandler func(ctx context.Context, command Envelope, backend Context) (DispatchResult, error)
@@ -42,7 +40,7 @@ func NewCommandDispatcher(service RoomEventService) *CommandDispatcher {
 		handlers: make(map[string]commandHandler),
 	}
 
-	dispatcher.handlers[string(roomEvents.EventChatMessage)] = chatMessageHandler(service)
+	dispatcher.handlers[string(roomModel.EventChatMessage)] = chatMessageHandler(service)
 
 	return dispatcher
 }
@@ -59,7 +57,7 @@ func (d *CommandDispatcher) Dispatch(ctx context.Context, command Envelope, back
 
 func chatMessageHandler(service RoomEventService) commandHandler {
 	return func(ctx context.Context, command Envelope, backend Context) (DispatchResult, error) {
-		var payload roomEvents.ChatMessagePayload
+		var payload roomModel.ChatMessagePayload
 		if err := json.Unmarshal(command.Payload, &payload); err != nil {
 			reply := wsHelpers.InvalidCommandPayloadEvent(backend.RoomID.String(), backend.ActorID)
 			return DispatchResult{Reply: &reply}, nil

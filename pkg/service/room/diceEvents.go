@@ -2,8 +2,6 @@ package room
 
 import (
 	"context"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room/helpers"
@@ -30,7 +28,7 @@ func (s *RoomService) CreateDiceRollRoomEvent(ctx context.Context, input model.C
 	event, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
 		RoomID:    input.RoomID,
 		ActorID:   input.ActorID,
-		EventType: string(roomEvents.EventDiceRoll),
+		EventType: string(model.EventDiceRoll),
 		Payload:   payload,
 	})
 	if err != nil {

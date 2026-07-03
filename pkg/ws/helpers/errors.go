@@ -4,7 +4,7 @@ import (
 	stdErrors "errors"
 
 	appErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
+	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/coder/websocket"
 )
 

@@ -3,8 +3,6 @@ package room
 import (
 	"context"
 	"errors"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -322,7 +320,7 @@ func (s *RoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput)
 		if _, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
 			RoomID:    input.RoomID,
 			ActorID:   removedMember.UserID,
-			EventType: string(roomEvents.EventOwnerTransferred),
+			EventType: string(model.EventOwnerTransferred),
 			Payload:   payload,
 		}); err != nil {
 			return model.LeaveRoomResult{}, err

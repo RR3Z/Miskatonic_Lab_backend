@@ -3,10 +3,8 @@ package ws_test
 import (
 	"context"
 	"encoding/json"
-	"testing"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
+	"testing"
 )
 
 type fakeRoomEventService struct {
@@ -26,7 +24,7 @@ func (f *fakeRoomEventService) CreateChatMessage(_ context.Context, input roomMo
 		return roomModel.RoomEventModel{}, f.err
 	}
 
-	payload, err := json.Marshal(roomEvents.ChatMessagePayload{Text: input.Text})
+	payload, err := json.Marshal(roomModel.ChatMessagePayload{Text: input.Text})
 	if err != nil {
 		return roomModel.RoomEventModel{}, err
 	}
@@ -34,7 +32,7 @@ func (f *fakeRoomEventService) CreateChatMessage(_ context.Context, input roomMo
 	return roomModel.RoomEventModel{
 		RoomID:  input.RoomID,
 		ActorID: input.ActorID,
-		Type:    string(roomEvents.EventChatMessage),
+		Type:    string(roomModel.EventChatMessage),
 		Payload: payload,
 	}, nil
 }

@@ -3,13 +3,11 @@ package tests
 import (
 	"context"
 	"encoding/json"
-	"testing"
-
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func requireRoomCharacterChangedEvent(
@@ -32,9 +30,9 @@ func requireRoomCharacterChangedEvent(
 	})
 	require.NoError(t, err)
 	require.Len(t, events, 1)
-	require.Equal(t, string(roomEvents.EventCharacterChanged), events[0].EventType)
+	require.Equal(t, string(model.EventCharacterChanged), events[0].EventType)
 
-	var payload roomEvents.CharacterChangedPayload
+	var payload model.CharacterChangedPayload
 	require.NoError(t, json.Unmarshal(events[0].Payload, &payload))
 	require.Equal(t, characterID, payload.CharacterID)
 	require.Equal(t, resource, payload.Resource)
@@ -61,11 +59,11 @@ func characterChangedCharacterIDs(t *testing.T, events []model.RoomEventModel) [
 
 	characterIDs := make([]string, 0)
 	for _, event := range events {
-		if event.Type != string(roomEvents.EventCharacterChanged) {
+		if event.Type != string(model.EventCharacterChanged) {
 			continue
 		}
 
-		var payload roomEvents.CharacterChangedPayload
+		var payload model.CharacterChangedPayload
 		require.NoError(t, json.Unmarshal(event.Payload, &payload))
 		characterIDs = append(characterIDs, payload.CharacterID)
 	}

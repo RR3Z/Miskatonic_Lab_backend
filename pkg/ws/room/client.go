@@ -3,7 +3,7 @@ package room
 import (
 	"context"
 
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
+	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	wsCommands "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/commands"
 	wsHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/helpers"
 	"github.com/coder/websocket"

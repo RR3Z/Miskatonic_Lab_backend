@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	roomHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room"
+	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/clerk/clerk-sdk-go/v2"

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
-	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
@@ -91,7 +90,7 @@ func TestCharacterRoomListener_TargetsCharacterOwnerAndGMsOnly(t *testing.T) {
 		characterEvent: []roomModel.RoomEventModel{{
 			RoomID:        roomID,
 			ActorID:       "player_owner",
-			Type:          string(roomEvents.EventCharacterChanged),
+			Type:          string(roomModel.EventCharacterChanged),
 			Payload:       []byte(`{"character_id":"11111111-1111-1111-1111-111111111111","resource":"health","action":"upsert"}`),
 			TargetUserIDs: []string{"gm_user", "player_owner"},
 		}},
@@ -127,7 +126,7 @@ func TestCharacterRoomListener_NoRecipientsCreatesNoRealtimeDelivery(t *testing.
 		characterEvent: []roomModel.RoomEventModel{{
 			RoomID:        roomID,
 			ActorID:       "player_owner",
-			Type:          string(roomEvents.EventCharacterChanged),
+			Type:          string(roomModel.EventCharacterChanged),
 			Payload:       []byte(`{"character_id":"11111111-1111-1111-1111-111111111111","resource":"health","action":"upsert"}`),
 			TargetUserIDs: nil,
 		}},
