@@ -21,6 +21,7 @@ type IRoom interface {
 
 	SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMemberModel, error)
 	ChangeRole(ctx context.Context, input model.ChangeRoleInput) (model.RoomMemberModel, error)
+	ListSelectedCharacters(ctx context.Context, input model.ListSelectedCharactersInput) ([]model.SelectedCharacterModel, error)
 	ListRoomEvents(ctx context.Context, input model.ListRoomEventsInput) ([]model.RoomEventModel, error)
 	CreateChatMessage(ctx context.Context, input model.CreateChatMessageInput) (model.RoomEventModel, error)
 	CreateDiceRollRoomEvent(ctx context.Context, input model.CreateDiceRollRoomEventInput) (model.RoomEventModel, error)

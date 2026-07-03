@@ -41,6 +41,7 @@ func (h *RoomHandler) RegisterRoutes(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getRoom).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.updateRoom).ServeHTTP)
 		r.Delete("/", httpAdapter.AppHandler(h.deleteRoom).ServeHTTP)
+		r.Get("/characters", httpAdapter.AppHandler(h.listSelectedCharacters).ServeHTTP)
 		r.Get("/events", httpAdapter.AppHandler(h.listRoomEvents).ServeHTTP)
 		r.Get("/ws", h.serveRoomWS)
 		r.Put("/owner", httpAdapter.AppHandler(h.transferRoomOwnership).ServeHTTP)

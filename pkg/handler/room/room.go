@@ -121,6 +121,25 @@ func (h *RoomHandler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErro
 	return nil
 }
 
+func (h *RoomHandler) listSelectedCharacters(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+	roomID, err := roomHelpers.GetRoomIDFromRequest(r)
+	if err != nil {
+		return roomErrors.InvalidIDError(err)
+	}
+
+	result, err := h.service.ListSelectedCharacters(r.Context(), roomDTO.ListSelectedCharactersInput{
+		RoomID: roomID,
+		UserID: userID,
+	})
+	if err != nil {
+		return roomErrors.MapServiceError(err, "failed to list selected characters")
+	}
+
+	utils.WriteJSON(w, http.StatusOK, result)
+	return nil
+}
+
 func (h *RoomHandler) listRoomEvents(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 	roomID, err := roomHelpers.GetRoomIDFromRequest(r)
