@@ -51,6 +51,10 @@ func NewHandler(services *service.Service) *Handler {
 	}
 }
 
+func (h *Handler) RoomHub() *ws.RoomHub {
+	return h.auxiliaryHandlers.roomHandler.Hub()
+}
+
 func (h *Handler) InitRoutes() *chi.Mux {
 	return h.initRoutes(middleware.AuthMiddleware)
 }

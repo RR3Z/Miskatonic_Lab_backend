@@ -8,8 +8,10 @@ import (
 	MiskatonicLab "github.com/RR3Z/Miskatonic_Lab_backend"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
+	diceEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/dice"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/publishers"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners"
 	EventsLogging "github.com/RR3Z/Miskatonic_Lab_backend/pkg/observability/logging"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
@@ -67,9 +69,7 @@ func run() int {
 	syncPublisher := publishers.NewSyncPublisher()
 	asyncPublisher := publishers.NewAsyncPublisher(100, slog.Default())
 	asyncPublisher.Start(ctx, 4)
-
 	eventBus := events.NewEventBus(syncPublisher, asyncPublisher)
-	eventBus.SubscribeAllSync(EventsLogging.NewCharacterEventLogger(slog.Default()))
 
 	// Launch Server
 	repos := repository.NewRepository(dbConnection)
@@ -78,6 +78,10 @@ func run() int {
 	service.StartBackgroundWorkers(ctx)
 
 	handlers := handler.NewHandler(service)
+	// Character Events Listener
+	eventBus.SubscribeAllSync(EventsLogging.NewCharacterEventLogger(slog.Default()))
+	// Dice Roller Listener (for Room)
+	eventBus.SubscribeAsync(diceEvents.DiceRollMakeSucceeded{}, listeners.NewDiceRollerRoomListener(service.Room, handlers.RoomHub()))
 
 	serverPort := os.Getenv("PORT")
 	if serverPort == "" {

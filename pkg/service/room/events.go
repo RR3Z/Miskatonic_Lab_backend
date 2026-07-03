@@ -77,6 +77,45 @@ func (s *RoomService) CreateChatMessage(ctx context.Context, input model.CreateC
 	return model.ToRoomEventModel(event), nil
 }
 
+func (s *RoomService) CreateDiceRollRoomEvent(ctx context.Context, input model.CreateDiceRollRoomEventInput) (model.RoomEventModel, error) {
+	if err := s.EnsureMember(ctx, input.RoomID, input.ActorID); err != nil {
+		return model.RoomEventModel{}, err
+	}
+
+	tx, err := s.repos.DB.Begin(ctx)
+	if err != nil {
+		return model.RoomEventModel{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.repos.Queries.WithTx(tx)
+
+	payload, err := roomHelpers.DiceRollPayload(input.RollID, input.CharacterID, input.Expression, input.Result, input.Details)
+	if err != nil {
+		return model.RoomEventModel{}, err
+	}
+
+	event, err := queries.CreateRoomEvent(ctx, db.CreateRoomEventParams{
+		RoomID:    input.RoomID,
+		ActorID:   input.ActorID,
+		EventType: string(roomEvents.EventDiceRoll),
+		Payload:   payload,
+	})
+	if err != nil {
+		return model.RoomEventModel{}, err
+	}
+
+	if _, err := queries.TouchRoomActivity(ctx, input.RoomID); err != nil {
+		return model.RoomEventModel{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return model.RoomEventModel{}, err
+	}
+
+	return model.ToRoomEventModel(event), nil
+}
+
 func (s *RoomService) TouchRoomActivity(ctx context.Context, input model.TouchRoomActivityInput) error {
 	if err := s.EnsureMember(ctx, input.RoomID, input.UserID); err != nil {
 		return err

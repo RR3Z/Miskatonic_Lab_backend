@@ -86,3 +86,13 @@ type TouchRoomActivityInput struct {
 	RoomID pgtype.UUID
 	UserID string
 }
+
+type CreateDiceRollRoomEventInput struct {
+	RoomID      pgtype.UUID
+	ActorID     string
+	RollID      string
+	CharacterID string
+	Expression  string
+	Result      int32
+	Details     []byte
+}
