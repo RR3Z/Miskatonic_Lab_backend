@@ -31,8 +31,9 @@ type fakeRoomHandlerService struct {
 	joinCalls int
 	joinInput roomModels.JoinRoomInput
 
-	leaveCalls int
-	leaveInput roomModels.LeaveRoomInput
+	leaveCalls  int
+	leaveInput  roomModels.LeaveRoomInput
+	leaveResult roomModels.LeaveRoomResult
 
 	kickCalls int
 	kickInput roomModels.KickMemberInput
@@ -99,10 +100,10 @@ func (f *fakeRoomHandlerService) JoinRoom(_ context.Context, input roomModels.Jo
 	return f.member, f.err
 }
 
-func (f *fakeRoomHandlerService) LeaveRoom(_ context.Context, input roomModels.LeaveRoomInput) error {
+func (f *fakeRoomHandlerService) LeaveRoom(_ context.Context, input roomModels.LeaveRoomInput) (roomModels.LeaveRoomResult, error) {
 	f.leaveCalls++
 	f.leaveInput = input
-	return f.err
+	return f.leaveResult, f.err
 }
 
 func (f *fakeRoomHandlerService) KickMember(_ context.Context, input roomModels.KickMemberInput) error {

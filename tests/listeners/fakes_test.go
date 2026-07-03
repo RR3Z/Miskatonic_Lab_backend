@@ -38,8 +38,8 @@ func (f *fakeListenerRoomService) DeleteRoom(_ context.Context, _ roomModel.Dele
 func (f *fakeListenerRoomService) JoinRoom(_ context.Context, _ roomModel.JoinRoomInput) (roomModel.RoomMemberModel, error) {
 	return roomModel.RoomMemberModel{}, nil
 }
-func (f *fakeListenerRoomService) LeaveRoom(_ context.Context, _ roomModel.LeaveRoomInput) error {
-	return nil
+func (f *fakeListenerRoomService) LeaveRoom(_ context.Context, _ roomModel.LeaveRoomInput) (roomModel.LeaveRoomResult, error) {
+	return roomModel.LeaveRoomResult{}, nil
 }
 func (f *fakeListenerRoomService) KickMember(_ context.Context, _ roomModel.KickMemberInput) error {
 	return nil

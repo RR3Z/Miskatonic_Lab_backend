@@ -200,7 +200,7 @@ func TestRoomServiceOwnerLeaveTransfersOwnershipAndCreatesEvent(t *testing.T) {
 	addRoomTestMember(t, subject, room.ID, secondMember.ID, roomService.ROLE_PLAYER)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
-	err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{
+	_, err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{
 		RoomID: room.ID,
 		UserID: owner.ID,
 	})
@@ -239,11 +239,13 @@ func TestRoomServiceLastMemberLeaveDeletesRoom(t *testing.T) {
 	addRoomTestMember(t, subject, room.ID, owner.ID, roomService.ROLE_GM)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
-	err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{
+	result, err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{
 		RoomID: room.ID,
 		UserID: owner.ID,
 	})
 	require.NoError(t, err)
+	require.NotNil(t, result.DeletedRoomID)
+	require.Equal(t, room.ID, *result.DeletedRoomID)
 
 	_, err = subject.queries.GetRoomJoinMetaData(context.Background(), room.ID)
 	require.ErrorIs(t, err, pgx.ErrNoRows)
@@ -568,7 +570,7 @@ func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
 	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
 
 	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
-	err = service.LeaveRoom(context.Background(), model.LeaveRoomInput{
+	_, err = service.LeaveRoom(context.Background(), model.LeaveRoomInput{
 		RoomID: room.ID,
 		UserID: owner.ID,
 	})
@@ -601,6 +603,7 @@ func TestRoomServiceCleanupRoomsDeletesInactiveAndInvalidRooms(t *testing.T) {
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, result.InactiveDeleted, 1)
 	require.GreaterOrEqual(t, result.InvalidDeleted, 2)
+	requireCleanupDeletedRoomIDs(t, result, inactiveRoom.ID, noMembersRoom.ID, ownerNotMemberRoom.ID)
 
 	_, err = subject.queries.GetRoomByID(context.Background(), db.GetRoomByIDParams{ID: inactiveRoom.ID, UserID: owner.ID})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
@@ -683,7 +686,7 @@ func TestRoomServiceMapsNoRowsForMembershipOperations(t *testing.T) {
 	addRoomTestMember(t, subject, room.ID, owner.ID, "gm")
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
-	err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{RoomID: room.ID, UserID: memberUser.ID})
+	_, err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{RoomID: room.ID, UserID: memberUser.ID})
 	require.ErrorIs(t, err, roomService.ErrNotMember)
 
 	err = service.KickMember(
