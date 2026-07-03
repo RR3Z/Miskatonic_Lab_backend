@@ -442,6 +442,10 @@ func (f *fakeRoomHandlerService) EnsureCanPublishRoomEvent(_ context.Context, _ 
 	return f.err
 }
 
+func (f *fakeRoomHandlerService) CreateDiceRollRoomEvent(_ context.Context, _ roomModels.CreateDiceRollRoomEventInput) (roomModels.RoomEventModel, error) {
+	return roomModels.RoomEventModel{}, f.err
+}
+
 func testRoomUnitUUID(value string) pgtype.UUID {
 	var id pgtype.UUID
 	if err := id.Scan(value); err != nil {
