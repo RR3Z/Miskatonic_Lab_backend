@@ -6,10 +6,6 @@ import (
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 )
 
-func MutationCharacterEvents() []events.Event {
-	return characterEvents.RoomMutationEvents()
-}
-
 func CharacterChangedRoomEventInput(event events.Event) (string, string, model.CharacterChangedRoomEventChange, bool) {
 	sourceEvent := event.EventName()
 
