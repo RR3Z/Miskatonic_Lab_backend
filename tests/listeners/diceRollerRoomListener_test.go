@@ -54,6 +54,9 @@ func (f *fakeListenerRoomService) SelectCharacter(_ context.Context, _ roomModel
 func (f *fakeListenerRoomService) ChangeRole(_ context.Context, _ roomModel.ChangeRoleInput) (roomModel.RoomMemberModel, error) {
 	return roomModel.RoomMemberModel{}, nil
 }
+func (f *fakeListenerRoomService) ListSelectedCharacters(_ context.Context, _ roomModel.ListSelectedCharactersInput) ([]roomModel.SelectedCharacterModel, error) {
+	return nil, nil
+}
 func (f *fakeListenerRoomService) ListRoomEvents(_ context.Context, _ roomModel.ListRoomEventsInput) ([]roomModel.RoomEventModel, error) {
 	return nil, nil
 }

@@ -316,6 +316,104 @@ func TestRoomServiceCreatesChatMessagesAndListsEventsOldToNew(t *testing.T) {
 	require.ErrorIs(t, err, roomService.ErrInvalidInput)
 }
 
+func TestRoomServiceListSelectedCharactersAppliesRoleVisibility(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	gm := createRoomTestUser(t, subject)
+	firstPlayer := createRoomTestUser(t, subject)
+	secondPlayer := createRoomTestUser(t, subject)
+	noCharacterPlayer := createRoomTestUser(t, subject)
+	outsider := createRoomTestUser(t, subject)
+	room := createRoomTestRoom(t, subject, gm.ID)
+	addRoomTestMember(t, subject, room.ID, gm.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, room.ID, firstPlayer.ID, roomService.ROLE_PLAYER)
+	addRoomTestMember(t, subject, room.ID, secondPlayer.ID, roomService.ROLE_PLAYER)
+	addRoomTestMember(t, subject, room.ID, noCharacterPlayer.ID, roomService.ROLE_PLAYER)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	gmCharacter := createRoomTestCharacter(t, subject, gm.ID)
+	firstPlayerCharacter := createRoomTestCharacter(t, subject, firstPlayer.ID)
+	secondPlayerCharacter := createRoomTestCharacter(t, subject, secondPlayer.ID)
+
+	_, err := service.SelectCharacter(context.Background(), model.SelectCharacterInput{
+		RoomID:      room.ID,
+		UserID:      gm.ID,
+		CharacterID: gmCharacter.ID,
+	require.NoError(t, err)
+	_, err = service.SelectCharacter(context.Background(), model.SelectCharacterInput{
+		RoomID:      room.ID,
+		UserID:      firstPlayer.ID,
+		CharacterID: firstPlayerCharacter.ID,
+	})
+	require.NoError(t, err)
+	_, err = service.SelectCharacter(context.Background(), model.SelectCharacterInput{
+		RoomID:      room.ID,
+		UserID:      secondPlayer.ID,
+		CharacterID: secondPlayerCharacter.ID,
+	})
+	require.NoError(t, err)
+
+	updatedFirstPlayerCharacter, err := subject.queries.UpdateCharacter(context.Background(), db.UpdateCharacterParams{
+		UserID: firstPlayer.ID,
+		ID:     firstPlayerCharacter.ID,
+		Name:   "Current DB Investigator",
+	})
+	require.NoError(t, err)
+	currentHP := int16(7)
+	maxHP := int16(10)
+	_, err = subject.queries.UpsertHealthState(context.Background(), db.UpsertHealthStateParams{
+		UserID:      firstPlayer.ID,
+		CharacterID: firstPlayerCharacter.ID,
+		MaxHp:       &maxHP,
+		CurrentHp:   &currentHP,
+	})
+	require.NoError(t, err)
+
+	playerCharacters, err := service.ListSelectedCharacters(context.Background(), model.ListSelectedCharactersInput{
+		RoomID: room.ID,
+		UserID: firstPlayer.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, playerCharacters, 1)
+	require.Equal(t, firstPlayer.ID, playerCharacters[0].UserID)
+	require.Equal(t, roomService.ROLE_PLAYER, playerCharacters[0].Role)
+	require.Equal(t, updatedFirstPlayerCharacter.ID, playerCharacters[0].Character.ID)
+	require.Equal(t, "Current DB Investigator", playerCharacters[0].Character.Name)
+	require.Equal(t, int16(10), playerCharacters[0].Character.HP.MaxHp)
+	require.Equal(t, int16(7), playerCharacters[0].Character.HP.CurrentHp)
+
+	gmCharacters, err := service.ListSelectedCharacters(context.Background(), model.ListSelectedCharactersInput{
+		RoomID: room.ID,
+		UserID: gm.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, gmCharacters, 3)
+	requireSelectedCharacterUsers(t, gmCharacters, gm.ID, firstPlayer.ID, secondPlayer.ID)
+	require.NotContains(t, selectedCharacterUsers(gmCharacters), noCharacterPlayer.ID)
+
+	_, err = service.ListSelectedCharacters(context.Background(), model.ListSelectedCharactersInput{
+		RoomID: room.ID,
+		UserID: outsider.ID,
+	})
+	require.ErrorIs(t, err, roomService.ErrNotMember)
+}
+
+func requireSelectedCharacterUsers(t *testing.T, characters []model.SelectedCharacterModel, expectedUsers ...string) {
+	t.Helper()
+
+	users := selectedCharacterUsers(characters)
+	for _, userID := range expectedUsers {
+		require.Contains(t, users, userID)
+	}
+}
+
+func selectedCharacterUsers(characters []model.SelectedCharacterModel) []string {
+	users := make([]string, 0, len(characters))
+	for _, character := range characters {
+		users = append(users, character.UserID)
+	}
+	return users
+}
+
 func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
 	subject := newRoomIntegrationSubject(t)
 	owner := createRoomTestUser(t, subject)

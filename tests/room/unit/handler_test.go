@@ -3,12 +3,14 @@ package tests
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
+	characterModels "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	roomModels "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
@@ -88,6 +90,7 @@ func TestRoomRoutesRejectInvalidRoomID(t *testing.T) {
 		{name: "get", method: http.MethodGet, path: "/api/rooms/not-a-uuid/"},
 		{name: "update", method: http.MethodPut, path: "/api/rooms/not-a-uuid/", body: `{"max_players":5}`},
 		{name: "delete", method: http.MethodDelete, path: "/api/rooms/not-a-uuid/"},
+		{name: "characters", method: http.MethodGet, path: "/api/rooms/not-a-uuid/characters"},
 		{name: "events", method: http.MethodGet, path: "/api/rooms/not-a-uuid/events"},
 		{name: "websocket", method: http.MethodGet, path: "/api/rooms/not-a-uuid/ws"},
 		{name: "transfer owner", method: http.MethodPut, path: "/api/rooms/not-a-uuid/owner", body: `{"user_id":"user_2"}`},
@@ -109,6 +112,53 @@ func TestRoomRoutesRejectInvalidRoomID(t *testing.T) {
 			require.Zero(t, roomService.totalCalls())
 		})
 	}
+}
+
+func TestListSelectedCharactersPassesParams(t *testing.T) {
+	roomID := testRoomUnitUUID("11111111-1111-1111-1111-111111111111")
+	memberID := testRoomUnitUUID("22222222-2222-2222-2222-222222222222")
+	characterID := testRoomUnitUUID("33333333-3333-3333-3333-333333333333")
+	roomService := &fakeRoomHandlerService{
+		selectedCharacters: []roomModels.SelectedCharacterModel{{
+			MemberID: memberID,
+			UserID:   "user_1",
+			Role:     room.ROLE_PLAYER,
+			Character: characterModels.CharacterModel{
+				CharacterShortModel: characterModels.CharacterShortModel{
+					ID:     characterID,
+					UserID: "user_1",
+					Name:   "Investigator",
+				},
+			},
+		}},
+	}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodGet, "/api/rooms/11111111-1111-1111-1111-111111111111/characters", "")
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, 1, roomService.listSelectedCharactersCalls)
+	require.Equal(t, roomID, roomService.listSelectedCharactersInput.RoomID)
+	require.Equal(t, "user_1", roomService.listSelectedCharactersInput.UserID)
+
+	var response []struct {
+		MemberID  pgtype.UUID `json:"member_id"`
+		UserID    string      `json:"user_id"`
+		Role      string      `json:"role"`
+		Character struct {
+			ID     pgtype.UUID `json:"id"`
+			UserID string      `json:"user_id"`
+			Name   string      `json:"name"`
+		} `json:"character"`
+	}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 1)
+	require.Equal(t, memberID, response[0].MemberID)
+	require.Equal(t, "user_1", response[0].UserID)
+	require.Equal(t, room.ROLE_PLAYER, response[0].Role)
+	require.Equal(t, characterID, response[0].Character.ID)
+	require.Equal(t, "user_1", response[0].Character.UserID)
+	require.Equal(t, "Investigator", response[0].Character.Name)
 }
 
 func TestListRoomEventsPassesParams(t *testing.T) {
@@ -336,6 +386,10 @@ type fakeRoomHandlerService struct {
 	changeRoleCalls int
 	changeRoleInput roomModels.ChangeRoleInput
 
+	selectedCharacters          []roomModels.SelectedCharacterModel
+	listSelectedCharactersCalls int
+	listSelectedCharactersInput roomModels.ListSelectedCharactersInput
+
 	events          []roomModels.RoomEventModel
 	listEventsCalls int
 	listEventsInput roomModels.ListRoomEventsInput
@@ -349,7 +403,7 @@ type fakeRoomHandlerService struct {
 }
 
 func (f *fakeRoomHandlerService) totalCalls() int {
-	return f.createCalls + f.getCalls + f.updateCalls + f.transferCalls + f.deleteCalls + f.joinCalls + f.leaveCalls + f.kickCalls + f.selectCharacterCalls + f.changeRoleCalls + f.listEventsCalls + f.createChatCalls
+	return f.createCalls + f.getCalls + f.updateCalls + f.transferCalls + f.deleteCalls + f.joinCalls + f.leaveCalls + f.kickCalls + f.selectCharacterCalls + f.changeRoleCalls + f.listSelectedCharactersCalls + f.listEventsCalls + f.createChatCalls
 }
 
 func (f *fakeRoomHandlerService) CreateRoom(_ context.Context, input roomModels.CreateRoomInput) (roomModels.RoomModel, error) {
@@ -410,6 +464,12 @@ func (f *fakeRoomHandlerService) ChangeRole(_ context.Context, input roomModels.
 	f.changeRoleCalls++
 	f.changeRoleInput = input
 	return f.member, f.err
+}
+
+func (f *fakeRoomHandlerService) ListSelectedCharacters(_ context.Context, input roomModels.ListSelectedCharactersInput) ([]roomModels.SelectedCharacterModel, error) {
+	f.listSelectedCharactersCalls++
+	f.listSelectedCharactersInput = input
+	return f.selectedCharacters, f.err
 }
 
 func (f *fakeRoomHandlerService) ListRoomEvents(_ context.Context, input roomModels.ListRoomEventsInput) ([]roomModels.RoomEventModel, error) {
