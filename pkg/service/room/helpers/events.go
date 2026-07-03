@@ -28,3 +28,13 @@ func DiceRollPayload(rollID, characterID, expression string, result int32, detai
 		Details:     details,
 	})
 }
+
+func CharacterChangedPayload(characterID, resource, action string, resourceID *string, sourceEvent *string) ([]byte, error) {
+	return json.Marshal(roomEvents.CharacterChangedPayload{
+		CharacterID: characterID,
+		Resource:    resource,
+		Action:      action,
+		ResourceID:  resourceID,
+		SourceEvent: sourceEvent,
+	})
+}

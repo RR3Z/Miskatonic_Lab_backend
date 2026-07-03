@@ -6,6 +6,7 @@ type EventType string
 
 const (
 	EventChatMessage      EventType = "chat.message"
+	EventCharacterChanged EventType = "character.changed"
 	EventCommandError     EventType = "command.error"
 	EventDiceRoll         EventType = "dice.roll"
 	EventMemberJoined     EventType = "member.joined"
@@ -35,4 +36,12 @@ type DiceRollPayload struct {
 type OwnerTransferredPayload struct {
 	PreviousOwnerID string `json:"previous_owner_id"`
 	NewOwnerID      string `json:"new_owner_id"`
+}
+
+type CharacterChangedPayload struct {
+	CharacterID string  `json:"character_id"`
+	Resource    string  `json:"resource"`
+	Action      string  `json:"action"`
+	ResourceID  *string `json:"resource_id,omitempty"`
+	SourceEvent *string `json:"source_event,omitempty"`
 }
