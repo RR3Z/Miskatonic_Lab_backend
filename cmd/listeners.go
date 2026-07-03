@@ -13,15 +13,15 @@ import (
 )
 
 func registerEventListeners(eventBus *events.EventBus, services *appService.Service, appHandlers *handler.Handler) {
-	eventBus.SubscribeAllSync(EventsLogging.NewCharacterEventLogger(slog.Default()))
+	eventBus.SubscribeAllSync(EventsLogging.NewDefaultEventLogger(slog.Default()))
 
 	characterRoomListener := listeners.NewCharacterRoomListener(services.Room, appHandlers.RoomHub())
 	for _, event := range listenerHelpers.MutationCharacterEvents() {
 		eventBus.SubscribeAsync(event, characterRoomListener)
 	}
 
-	eventBus.SubscribeAsync(
-		diceEvents.DiceRollMakeSucceeded{},
-		listeners.NewDiceRollerRoomListener(services.Room, appHandlers.RoomHub()),
-	)
+	diceRoomListener := listeners.NewDiceRollerRoomListener(services.Room, appHandlers.RoomHub())
+	for _, event := range diceEvents.RoomPublishingEvents() {
+		eventBus.SubscribeAsync(event, diceRoomListener)
+	}
 }
