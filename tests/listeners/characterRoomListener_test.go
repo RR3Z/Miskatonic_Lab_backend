@@ -5,13 +5,16 @@ import (
 	"testing"
 
 	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
+	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners"
+	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCharacterRoomListener_HealthUpsert_CreatesCharacterChangedRoomEvent(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewCharacterRoomListener(svc)
+	listener := listeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), characterEvents.CharacterHealthUpsertSucceeded{
 		UserID:      "user_1",
@@ -30,7 +33,7 @@ func TestCharacterRoomListener_HealthUpsert_CreatesCharacterChangedRoomEvent(t *
 
 func TestCharacterRoomListener_SkillUpdate_CreatesCharacterChangedRoomEvent(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewCharacterRoomListener(svc)
+	listener := listeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), characterEvents.CharacterSkillUpdateSucceeded{
 		UserID:      "user_1",
@@ -50,7 +53,7 @@ func TestCharacterRoomListener_SkillUpdate_CreatesCharacterChangedRoomEvent(t *t
 
 func TestCharacterRoomListener_ReadAndListEventsIgnored(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewCharacterRoomListener(svc)
+	listener := listeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), characterEvents.CharacterGetSucceeded{
 		UserID:      "user_1",
@@ -72,7 +75,7 @@ func TestCharacterRoomListener_ReadAndListEventsIgnored(t *testing.T) {
 
 func TestCharacterRoomListener_CharacterDeleteIgnored(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewCharacterRoomListener(svc)
+	listener := listeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), characterEvents.CharacterDeleteSucceeded{
 		UserID:      "user_1",
@@ -80,4 +83,40 @@ func TestCharacterRoomListener_CharacterDeleteIgnored(t *testing.T) {
 	})
 
 	require.Zero(t, svc.characterCalls)
+}
+
+func TestCharacterRoomListener_TargetsCharacterOwnerAndGMsOnly(t *testing.T) {
+	roomID := listenerTestUUID("22222222-2222-2222-2222-222222222222")
+	svc := &fakeListenerRoomService{
+		characterEvent: []roomModel.RoomEventModel{{
+			RoomID:        roomID,
+			ActorID:       "player_owner",
+			Type:          string(roomEvents.EventCharacterChanged),
+			Payload:       []byte(`{"character_id":"11111111-1111-1111-1111-111111111111","resource":"health","action":"upsert"}`),
+			TargetUserIDs: []string{"gm_user", "player_owner"},
+		}},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	hub := ws.NewRoomHub()
+	go hub.Run(ctx)
+
+	ownerClient, ownerEvents := ws.NewTestClientWithUser(hub, roomID.String(), "player_owner")
+	gmClient, gmEvents := ws.NewTestClientWithUser(hub, roomID.String(), "gm_user")
+	otherClient, otherEvents := ws.NewTestClientWithUser(hub, roomID.String(), "other_player")
+	hub.Register <- ownerClient
+	hub.Register <- gmClient
+	hub.Register <- otherClient
+
+	listener := listeners.NewCharacterRoomListener(svc, hub)
+	listener.Handle(ctx, characterEvents.CharacterHealthUpsertSucceeded{
+		UserID:      "player_owner",
+		CharacterID: "11111111-1111-1111-1111-111111111111",
+	})
+
+	requireCharacterChangedRealtimeEvent(t, ownerEvents)
+	requireCharacterChangedRealtimeEvent(t, gmEvents)
+	requireNoRealtimeEvent(t, otherEvents)
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
+	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -40,4 +41,34 @@ func requireRoomCharacterChangedEvent(
 	require.Equal(t, action, payload.Action)
 	require.Equal(t, resourceID, payload.ResourceID)
 	require.Equal(t, sourceEvent, payload.SourceEvent)
+}
+
+func requireRoomEventTypes(t *testing.T, events []model.RoomEventModel, expectedTypes ...string) {
+	t.Helper()
+
+	actualTypes := make([]string, 0, len(events))
+	for _, event := range events {
+		actualTypes = append(actualTypes, event.Type)
+	}
+
+	for _, expectedType := range expectedTypes {
+		require.Contains(t, actualTypes, expectedType)
+	}
+}
+
+func characterChangedCharacterIDs(t *testing.T, events []model.RoomEventModel) []string {
+	t.Helper()
+
+	characterIDs := make([]string, 0)
+	for _, event := range events {
+		if event.Type != string(roomEvents.EventCharacterChanged) {
+			continue
+		}
+
+		var payload roomEvents.CharacterChangedPayload
+		require.NoError(t, json.Unmarshal(event.Payload, &payload))
+		characterIDs = append(characterIDs, payload.CharacterID)
+	}
+
+	return characterIDs
 }

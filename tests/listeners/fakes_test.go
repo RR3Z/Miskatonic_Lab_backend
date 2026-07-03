@@ -12,6 +12,7 @@ type fakeListenerRoomService struct {
 	diceErr        error
 	diceCalls      int
 	diceInput      roomModel.CreateDiceRollRoomEventInput
+	characterEvent []roomModel.RoomEventModel
 	characterErr   error
 	characterCalls int
 	characterInput roomModel.CreateCharacterChangedRoomEventsInput
@@ -78,7 +79,7 @@ func (f *fakeListenerRoomService) CreateDiceRollRoomEvent(_ context.Context, inp
 func (f *fakeListenerRoomService) CreateCharacterChangedRoomEvents(_ context.Context, input roomModel.CreateCharacterChangedRoomEventsInput) ([]roomModel.RoomEventModel, error) {
 	f.characterCalls++
 	f.characterInput = input
-	return nil, f.characterErr
+	return f.characterEvent, f.characterErr
 }
 
 func listenerTestUUID(value string) pgtype.UUID {
