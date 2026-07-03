@@ -43,6 +43,10 @@ Character table integration tests live in `tests/character/integration`. They us
 
 Health, sanity, magic, and luck table integration tests also live in `tests/character/integration`. They verify state upsert/get/delete behavior, database defaults, partial updates, owner scoping, negative-value CHECK constraints, and cascade deletion from `characters` to the related state row.
 
+Room realtime integration and workability tests live in `tests/room/integration`. They cover password room creation, invite/password joins, selected-character visibility by role, room event persistence and old-to-new history order, room-wide dice/chat events, `character.changed` privacy filtering, owner leave transfer, last-member deletion, cleanup result IDs, and room cleanup deletion behavior.
+
+Room WebSocket unit tests live in `tests/ws/unit`. They cover persisted chat broadcast, command errors, room-wide delivery, targeted delivery support through listener tests, slow-client isolation, and closing active clients when rooms are deleted.
+
 ## End-To-End Tests
 
 - Use real HTTP calls against a configured test server and real PostgreSQL test database.
