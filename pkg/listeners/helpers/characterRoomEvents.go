@@ -7,34 +7,7 @@ import (
 )
 
 func MutationCharacterEvents() []events.Event {
-	return []events.Event{
-		characterEvents.CharacterUpdateSucceeded{},
-		characterEvents.CharacterHealthUpsertSucceeded{},
-		characterEvents.CharacterHealthDeleteSucceeded{},
-		characterEvents.CharacterSanityUpsertSucceeded{},
-		characterEvents.CharacterSanityDeleteSucceeded{},
-		characterEvents.CharacterMagicUpsertSucceeded{},
-		characterEvents.CharacterMagicDeleteSucceeded{},
-		characterEvents.CharacterLuckUpsertSucceeded{},
-		characterEvents.CharacterLuckDeleteSucceeded{},
-		characterEvents.CharacterCharacteristicsUpsertSucceeded{},
-		characterEvents.CharacterCharacteristicsDeleteSucceeded{},
-		characterEvents.CharacterDerivedStatsUpsertSucceeded{},
-		characterEvents.CharacterDerivedStatsDeleteSucceeded{},
-		characterEvents.CharacterFinancesUpsertSucceeded{},
-		characterEvents.CharacterFinancesDeleteSucceeded{},
-		characterEvents.CharacterBackstoryUpsertSucceeded{},
-		characterEvents.CharacterBackstoryDeleteSucceeded{},
-		characterEvents.CharacterSkillCreateSucceeded{},
-		characterEvents.CharacterSkillUpdateSucceeded{},
-		characterEvents.CharacterSkillDeleteSucceeded{},
-		characterEvents.CharacterNoteCreateSucceeded{},
-		characterEvents.CharacterNoteUpdateSucceeded{},
-		characterEvents.CharacterNoteDeleteSucceeded{},
-		characterEvents.CharacterBackstoryItemCreateSucceeded{},
-		characterEvents.CharacterBackstoryItemUpdateSucceeded{},
-		characterEvents.CharacterBackstoryItemDeleteSucceeded{},
-	}
+	return characterEvents.RoomMutationEvents()
 }
 
 func CharacterChangedRoomEventInput(event events.Event) (string, string, model.CharacterChangedRoomEventChange, bool) {
