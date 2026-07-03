@@ -18,11 +18,20 @@ type RoomHandler struct {
 func New(service roomService.IRoom) *RoomHandler {
 	hub := ws.NewRoomHub()
 	go hub.Run(context.Background())
+
+	return NewWithHub(service, hub)
+}
+
+func NewWithHub(service roomService.IRoom, hub *ws.RoomHub) *RoomHandler {
 	return &RoomHandler{
 		service:    service,
 		hub:        hub,
 		dispatcher: ws.NewCommandDispatcher(service),
 	}
+}
+
+func (h *RoomHandler) Hub() *ws.RoomHub {
+	return h.hub
 }
 
 func (h *RoomHandler) RegisterRoutes(r chi.Router) {
