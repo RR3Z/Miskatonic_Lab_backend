@@ -8,6 +8,7 @@ import (
 	MiskatonicLab "github.com/RR3Z/Miskatonic_Lab_backend"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
+	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
 	diceEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/dice"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/publishers"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
@@ -80,6 +81,37 @@ func run() int {
 	handlers := handler.NewHandler(service)
 	// Character Events Listener
 	eventBus.SubscribeAllSync(EventsLogging.NewCharacterEventLogger(slog.Default()))
+	characterRoomListener := listeners.NewCharacterRoomListener(service.Room)
+	for _, event := range []events.Event{
+		characterEvents.CharacterUpdateSucceeded{},
+		characterEvents.CharacterHealthUpsertSucceeded{},
+		characterEvents.CharacterHealthDeleteSucceeded{},
+		characterEvents.CharacterSanityUpsertSucceeded{},
+		characterEvents.CharacterSanityDeleteSucceeded{},
+		characterEvents.CharacterMagicUpsertSucceeded{},
+		characterEvents.CharacterMagicDeleteSucceeded{},
+		characterEvents.CharacterLuckUpsertSucceeded{},
+		characterEvents.CharacterLuckDeleteSucceeded{},
+		characterEvents.CharacterCharacteristicsUpsertSucceeded{},
+		characterEvents.CharacterCharacteristicsDeleteSucceeded{},
+		characterEvents.CharacterDerivedStatsUpsertSucceeded{},
+		characterEvents.CharacterDerivedStatsDeleteSucceeded{},
+		characterEvents.CharacterFinancesUpsertSucceeded{},
+		characterEvents.CharacterFinancesDeleteSucceeded{},
+		characterEvents.CharacterBackstoryUpsertSucceeded{},
+		characterEvents.CharacterBackstoryDeleteSucceeded{},
+		characterEvents.CharacterSkillCreateSucceeded{},
+		characterEvents.CharacterSkillUpdateSucceeded{},
+		characterEvents.CharacterSkillDeleteSucceeded{},
+		characterEvents.CharacterNoteCreateSucceeded{},
+		characterEvents.CharacterNoteUpdateSucceeded{},
+		characterEvents.CharacterNoteDeleteSucceeded{},
+		characterEvents.CharacterBackstoryItemCreateSucceeded{},
+		characterEvents.CharacterBackstoryItemUpdateSucceeded{},
+		characterEvents.CharacterBackstoryItemDeleteSucceeded{},
+	} {
+		eventBus.SubscribeAsync(event, characterRoomListener)
+	}
 	// Dice Roller Listener (for Room)
 	eventBus.SubscribeAsync(diceEvents.DiceRollMakeSucceeded{}, listeners.NewDiceRollerRoomListener(service.Room, handlers.RoomHub()))
 
