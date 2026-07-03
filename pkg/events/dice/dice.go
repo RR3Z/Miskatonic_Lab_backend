@@ -7,12 +7,14 @@ type DiceRollMakeSucceeded struct {
 	Expression  string
 	Result      int32
 	Details     []byte
+	RoomID      *string
 }
 
 type DiceRollMakeFailed struct {
 	UserID      string
 	CharacterID string
 	Err         error
+	RoomID      *string
 }
 
 func (DiceRollMakeSucceeded) EventName() string {

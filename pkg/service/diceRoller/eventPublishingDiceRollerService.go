@@ -6,6 +6,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	diceEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/dice"
 	diceRollerDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/diceRoller"
+	diceRollerHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller/helpers"
 )
 
 type EventPublishingDiceRollerService struct {
@@ -21,12 +22,14 @@ func NewEventPublishingDiceRollerService(next IDiceRoller, publisher events.Even
 }
 
 func (s *EventPublishingDiceRollerService) MakeRoll(ctx context.Context, input diceRollerDTO.MakeRollInput) (diceRollerDTO.DiceRollModel, error) {
+	roomID := diceRollerHelpers.EventRoomID(input.RoomID)
 	roll, err := s.next.MakeRoll(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, diceEvents.DiceRollMakeFailed{
 			UserID:      input.UserID,
 			CharacterID: input.CharacterID.String(),
 			Err:         err,
+			RoomID:      roomID,
 		})
 		return diceRollerDTO.DiceRollModel{}, err
 	}
@@ -38,6 +41,7 @@ func (s *EventPublishingDiceRollerService) MakeRoll(ctx context.Context, input d
 		Expression:  roll.Expression,
 		Result:      roll.Result,
 		Details:     roll.Details,
+		RoomID:      roomID,
 	})
 
 	return roll, nil
