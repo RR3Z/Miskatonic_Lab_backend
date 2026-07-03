@@ -7,7 +7,7 @@ import (
 	"time"
 
 	diceEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/dice"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners"
+	roomListeners "github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners/room"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/stretchr/testify/require"
@@ -15,7 +15,7 @@ import (
 
 func TestDiceRollerRoomListener_NoRoomID_NoOp(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
+	listener := roomListeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), diceEvents.DiceRollMakeSucceeded{
 		UserID:      "user_1",
@@ -48,7 +48,7 @@ func TestDiceRollerRoomListener_Success_CreatesRoomEventAndBroadcasts(t *testing
 	hub.Register <- client
 	_ = client
 
-	listener := listeners.NewDiceRollerRoomListener(svc, hub)
+	listener := roomListeners.NewDiceRollerRoomListener(svc, hub)
 
 	roomIDStr := "22222222-2222-2222-2222-222222222222"
 	listener.Handle(ctx, diceEvents.DiceRollMakeSucceeded{
@@ -79,7 +79,7 @@ func TestDiceRollerRoomListener_MembershipError_LogsAndNoBroadcast(t *testing.T)
 	svc := &fakeListenerRoomService{
 		diceErr: errors.New("not a member"),
 	}
-	listener := listeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
+	listener := roomListeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
 
 	roomIDStr := "22222222-2222-2222-2222-222222222222"
 	listener.Handle(context.Background(), diceEvents.DiceRollMakeSucceeded{
@@ -96,7 +96,7 @@ func TestDiceRollerRoomListener_MembershipError_LogsAndNoBroadcast(t *testing.T)
 
 func TestDiceRollerRoomListener_InvalidRoomID_LogsAndNoOp(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
+	listener := roomListeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
 
 	badRoomID := "not-a-uuid"
 	listener.Handle(context.Background(), diceEvents.DiceRollMakeSucceeded{
@@ -113,7 +113,7 @@ func TestDiceRollerRoomListener_InvalidRoomID_LogsAndNoOp(t *testing.T) {
 
 func TestDiceRollerRoomListener_WrongEventType_NoOp(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
+	listener := roomListeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), diceEvents.DiceRollMakeFailed{
 		UserID:      "user_1",

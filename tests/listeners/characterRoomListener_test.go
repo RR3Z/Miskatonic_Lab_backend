@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners"
+	roomListeners "github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners/room"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/stretchr/testify/require"
@@ -13,7 +13,7 @@ import (
 
 func TestCharacterRoomListener_HealthUpsert_CreatesCharacterChangedRoomEvent(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
+	listener := roomListeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), characterEvents.CharacterHealthUpsertSucceeded{
 		UserID:      "user_1",
@@ -32,7 +32,7 @@ func TestCharacterRoomListener_HealthUpsert_CreatesCharacterChangedRoomEvent(t *
 
 func TestCharacterRoomListener_SkillUpdate_CreatesCharacterChangedRoomEvent(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
+	listener := roomListeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), characterEvents.CharacterSkillUpdateSucceeded{
 		UserID:      "user_1",
@@ -52,7 +52,7 @@ func TestCharacterRoomListener_SkillUpdate_CreatesCharacterChangedRoomEvent(t *t
 
 func TestCharacterRoomListener_ReadAndListEventsIgnored(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
+	listener := roomListeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), characterEvents.CharacterGetSucceeded{
 		UserID:      "user_1",
@@ -74,7 +74,7 @@ func TestCharacterRoomListener_ReadAndListEventsIgnored(t *testing.T) {
 
 func TestCharacterRoomListener_CharacterDeleteIgnored(t *testing.T) {
 	svc := &fakeListenerRoomService{}
-	listener := listeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
+	listener := roomListeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
 
 	listener.Handle(context.Background(), characterEvents.CharacterDeleteSucceeded{
 		UserID:      "user_1",
@@ -109,7 +109,7 @@ func TestCharacterRoomListener_TargetsCharacterOwnerAndGMsOnly(t *testing.T) {
 	hub.Register <- gmClient
 	hub.Register <- otherClient
 
-	listener := listeners.NewCharacterRoomListener(svc, hub)
+	listener := roomListeners.NewCharacterRoomListener(svc, hub)
 	listener.Handle(ctx, characterEvents.CharacterHealthUpsertSucceeded{
 		UserID:      "player_owner",
 		CharacterID: "11111111-1111-1111-1111-111111111111",
@@ -141,7 +141,7 @@ func TestCharacterRoomListener_NoRecipientsCreatesNoRealtimeDelivery(t *testing.
 	client, events := ws.NewTestClientWithUser(hub, roomID.String(), "player_owner")
 	hub.Register <- client
 
-	listener := listeners.NewCharacterRoomListener(svc, hub)
+	listener := roomListeners.NewCharacterRoomListener(svc, hub)
 	listener.Handle(ctx, characterEvents.CharacterHealthUpsertSucceeded{
 		UserID:      "player_owner",
 		CharacterID: "11111111-1111-1111-1111-111111111111",
