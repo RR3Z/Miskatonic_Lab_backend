@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/coder/websocket v1.8.14 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.5 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
