@@ -14,25 +14,30 @@ import (
 const listRoomEvents = `-- name: ListRoomEvents :many
 SELECT re.id, re.room_id, re.actor_id, re.event_type, re.payload, re.created_at
 FROM room_events re
-WHERE re.room_id = $1
-  AND EXISTS (
-      SELECT 1
-      FROM room_members rm
-      WHERE rm.room_id = re.room_id
-        AND rm.user_id = $2
+JOIN room_members requester
+  ON requester.room_id = re.room_id
+ AND requester.user_id = $1
+WHERE re.room_id = $2
+  AND (
+      requester.role = 'gm'
+      OR re.event_type <> 'character.changed'
+      OR (
+          requester.character_id IS NOT NULL
+          AND re.payload->>'character_id' = requester.character_id::text
+      )
   )
 ORDER BY re.created_at ASC, re.id ASC
 LIMIT $3
 `
 
 type ListRoomEventsParams struct {
-	RoomID     pgtype.UUID `json:"room_id"`
 	UserID     string      `json:"user_id"`
+	RoomID     pgtype.UUID `json:"room_id"`
 	LimitCount int32       `json:"limit_count"`
 }
 
 func (q *Queries) ListRoomEvents(ctx context.Context, arg ListRoomEventsParams) ([]RoomEvent, error) {
-	rows, err := q.db.Query(ctx, listRoomEvents, arg.RoomID, arg.UserID, arg.LimitCount)
+	rows, err := q.db.Query(ctx, listRoomEvents, arg.UserID, arg.RoomID, arg.LimitCount)
 	if err != nil {
 		return nil, err
 	}
