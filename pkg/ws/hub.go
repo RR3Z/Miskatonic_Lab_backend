@@ -22,10 +22,6 @@ func NewRoomHub() *RoomHub {
 	}
 }
 
-func (rh *RoomHub) Broadcast(event roomEvents.Event) {
-	rh.broadcast <- event
-}
-
 func (rh *RoomHub) Run(ctx context.Context) {
 	for {
 		select {
@@ -41,13 +37,8 @@ func (rh *RoomHub) Run(ctx context.Context) {
 			rh.removeClient(client)
 
 		case event := <-rh.broadcast:
-			for client := range rh.rooms[event.RoomID] {
-				select {
-				case client.send <- event:
-				default:
-					rh.removeClient(client)
-				}
-			}
+			rh.broadcastToRoom(event)
+
 		}
 	}
 }
@@ -63,14 +54,4 @@ func (rh *RoomHub) removeClient(client *Client) {
 			delete(rh.rooms, client.roomID)
 		}
 	}
-}
-
-// FOR TESTS
-func NewTestClient(hub *RoomHub, roomID string) (*Client, <-chan roomEvents.Event) {
-	ch := make(chan roomEvents.Event, 256)
-	return &Client{
-		roomID: roomID,
-		send:   ch,
-		hub:    hub,
-	}, ch
 }
