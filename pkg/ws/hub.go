@@ -64,3 +64,13 @@ func (rh *RoomHub) removeClient(client *Client) {
 		}
 	}
 }
+
+// FOR TESTS
+func NewTestClient(hub *RoomHub, roomID string) (*Client, <-chan roomEvents.Event) {
+	ch := make(chan roomEvents.Event, 256)
+	return &Client{
+		roomID: roomID,
+		send:   ch,
+		hub:    hub,
+	}, ch
+}
