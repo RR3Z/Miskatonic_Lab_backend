@@ -13,6 +13,7 @@ import (
 const (
 	diceTestUserID      = "user_dice_test"
 	diceTestCharacterID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	diceTestRoomID      = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 )
 
 func newEventPublishingTestSubject() (*FakeDiceRollerService, *FakeEventPublisher, *diceRollerServices.EventPublishingDiceRollerService) {
@@ -52,6 +53,13 @@ func diceTestMakeRollInput() diceRollerDTO.MakeRollInput {
 		CharacterID: diceTestUUID(diceTestCharacterID),
 		Formula:     "2d6+3",
 	}
+}
+
+func diceTestMakeRollInputWithRoomID() diceRollerDTO.MakeRollInput {
+	roomID := diceTestUUID(diceTestRoomID)
+	input := diceTestMakeRollInput()
+	input.RoomID = &roomID
+	return input
 }
 
 func diceTestGetLastDiceRollsInput() diceRollerDTO.GetLastDiceRollsInput {

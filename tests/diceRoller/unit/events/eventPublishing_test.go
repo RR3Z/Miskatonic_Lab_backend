@@ -27,6 +27,24 @@ func TestEventPublishingDiceRoller_MakeRoll_Success(t *testing.T) {
 	})
 }
 
+func TestEventPublishingDiceRoller_MakeRoll_SuccessWithRoomID(t *testing.T) {
+	next, publisher, svc := newEventPublishingTestSubject()
+	roomID := diceTestRoomID
+
+	roll, err := svc.MakeRoll(context.Background(), diceTestMakeRollInputWithRoomID())
+	require.NoError(t, err)
+	require.Equal(t, next.Roll, roll)
+	requirePublishedEvent(t, publisher, diceEvents.DiceRollMakeSucceeded{
+		UserID:      diceTestUserID,
+		CharacterID: diceTestCharacterID,
+		RollID:      diceTestCharacterID,
+		Expression:  "2d6+3",
+		Result:      10,
+		Details:     []byte(`[{"type":"dice","sides":6,"rolls":[3,4]},{"type":"modifier","value":3}]`),
+		RoomID:      &roomID,
+	})
+}
+
 func TestEventPublishingDiceRoller_MakeRoll_Failure(t *testing.T) {
 	next, publisher, svc := newEventPublishingTestSubject()
 	next.Err = errDiceTest
@@ -37,6 +55,21 @@ func TestEventPublishingDiceRoller_MakeRoll_Failure(t *testing.T) {
 		UserID:      diceTestUserID,
 		CharacterID: diceTestCharacterID,
 		Err:         errDiceTest,
+	})
+}
+
+func TestEventPublishingDiceRoller_MakeRoll_FailureWithRoomID(t *testing.T) {
+	next, publisher, svc := newEventPublishingTestSubject()
+	next.Err = errDiceTest
+	roomID := diceTestRoomID
+
+	_, err := svc.MakeRoll(context.Background(), diceTestMakeRollInputWithRoomID())
+	require.ErrorIs(t, err, errDiceTest)
+	requirePublishedEvent(t, publisher, diceEvents.DiceRollMakeFailed{
+		UserID:      diceTestUserID,
+		CharacterID: diceTestCharacterID,
+		Err:         errDiceTest,
+		RoomID:      &roomID,
 	})
 }
 

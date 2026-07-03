@@ -1,72 +1,13 @@
 package tests
 
 import (
-	"context"
 	"errors"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
-	diceRollerDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/diceRoller"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	diceRollerServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
-	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/stretchr/testify/require"
 )
-
-type fakeDiceRollerHandlerService struct {
-	roll      diceRollerDTO.DiceRollModel
-	rolls     []diceRollerDTO.DiceRollModel
-	err       error
-	makeCalls int
-	makeInput diceRollerDTO.MakeRollInput
-	listCalls int
-	listInput diceRollerDTO.GetLastDiceRollsInput
-}
-
-func (f *fakeDiceRollerHandlerService) MakeRoll(_ context.Context, input diceRollerDTO.MakeRollInput) (diceRollerDTO.DiceRollModel, error) {
-	f.makeCalls++
-	f.makeInput = input
-	return f.roll, f.err
-}
-
-func (f *fakeDiceRollerHandlerService) GetLastDiceRolls(_ context.Context, input diceRollerDTO.GetLastDiceRollsInput) ([]diceRollerDTO.DiceRollModel, error) {
-	f.listCalls++
-	f.listInput = input
-	return f.rolls, f.err
-}
-
-func newDiceRollerTestRouter(svc *fakeDiceRollerHandlerService) http.Handler {
-	services := &service.Service{
-		DiceRoller: svc,
-	}
-	h := handler.NewHandler(services)
-	return h.InitRoutesWithAuth(diceRollerAuthMiddleware)
-}
-
-func diceRollerAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := clerk.ContextWithSessionClaims(r.Context(), &clerk.SessionClaims{
-			RegisteredClaims: clerk.RegisteredClaims{Subject: "user_test_01"},
-		})
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func performDiceRollerRequest(router http.Handler, method, path, body string) *httptest.ResponseRecorder {
-	var req *http.Request
-	if body != "" {
-		req = httptest.NewRequest(method, path, strings.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-	} else {
-		req = httptest.NewRequest(method, path, nil)
-	}
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-	return rec
-}
 
 func TestDiceRollerRoutesAreMounted(t *testing.T) {
 	svc := &fakeDiceRollerHandlerService{}
@@ -99,7 +40,7 @@ func TestDiceRollerRejectsInvalidBody(t *testing.T) {
 		"/api/dice-roll/11111111-1111-1111-1111-111111111111/",
 		`{"expression":`)
 	require.Equal(t, http.StatusBadRequest, rec.Code)
-	require.Contains(t, rec.Body.String(), "common.invalid_request")
+	require.Contains(t, rec.Body.String(), "dice.invalid_input")
 	require.Zero(t, svc.makeCalls)
 }
 
@@ -115,6 +56,21 @@ func TestDiceRollerPassesDTOToService(t *testing.T) {
 	require.Equal(t, "user_test_01", svc.makeInput.UserID)
 	require.Equal(t, "2d6+1d4", svc.makeInput.Formula)
 	require.True(t, svc.makeInput.CharacterID.Valid)
+	require.Nil(t, svc.makeInput.RoomID)
+}
+
+func TestDiceRollerPassesRoomIDToService(t *testing.T) {
+	svc := &fakeDiceRollerHandlerService{}
+	checker := &fakeRoomAccessChecker{}
+	router := newDiceRollerTestRouterWithRoom(svc, checker)
+
+	rec := performDiceRollerRequest(router, http.MethodPost,
+		"/api/dice-roll/11111111-1111-1111-1111-111111111111/",
+		`{"expression":"2d6","room_id":"22222222-2222-2222-2222-222222222222"}`)
+	require.Equal(t, http.StatusCreated, rec.Code)
+	require.Equal(t, 1, svc.makeCalls)
+	require.NotNil(t, svc.makeInput.RoomID)
+	require.Equal(t, "22222222-2222-2222-2222-222222222222", svc.makeInput.RoomID.String())
 }
 
 func TestDiceRollerMapsInvalidExpressionError(t *testing.T) {
@@ -175,4 +131,29 @@ func TestDiceRollerGetLastsRejectsInvalidCharacterID(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, rec.Code)
 	require.Zero(t, svc.listCalls)
 	require.Contains(t, rec.Body.String(), "dice.invalid_character_id")
+}
+
+func TestDiceRollerNoRoomCheckerWithRoomIDReturnsRoomNotAvailable(t *testing.T) {
+	svc := &fakeDiceRollerHandlerService{}
+	router := newDiceRollerTestRouter(svc)
+
+	rec := performDiceRollerRequest(router, http.MethodPost,
+		"/api/dice-roll/11111111-1111-1111-1111-111111111111/",
+		`{"expression":"1d20","room_id":"22222222-2222-2222-2222-222222222222"}`)
+	require.Equal(t, http.StatusForbidden, rec.Code)
+	require.Zero(t, svc.makeCalls)
+	require.Contains(t, rec.Body.String(), "dice.room_not_available")
+}
+
+func TestDiceRollerRoomPreflightFailureReturnsRoomNotAvailable(t *testing.T) {
+	svc := &fakeDiceRollerHandlerService{}
+	checker := &fakeRoomAccessChecker{err: errors.New("not a member")}
+	router := newDiceRollerTestRouterWithRoom(svc, checker)
+
+	rec := performDiceRollerRequest(router, http.MethodPost,
+		"/api/dice-roll/11111111-1111-1111-1111-111111111111/",
+		`{"expression":"1d20","room_id":"22222222-2222-2222-2222-222222222222"}`)
+	require.Equal(t, http.StatusForbidden, rec.Code)
+	require.Zero(t, svc.makeCalls)
+	require.Contains(t, rec.Body.String(), "dice.room_not_available")
 }

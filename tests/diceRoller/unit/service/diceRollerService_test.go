@@ -74,6 +74,37 @@ func TestMakeRoll_CallsCreateDiceRollAndReturnsModel(t *testing.T) {
 	require.Equal(t, roll.Result, result.Result)
 }
 
+func TestMakeRoll_RoomIDDoesNotChangeCorePersistence(t *testing.T) {
+	charID := diceRollServiceTestUUID("11111111-1111-1111-1111-111111111111")
+	roomID := diceRollServiceTestUUID("22222222-2222-2222-2222-222222222222")
+	roll := dbDiceRoll("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "11111111-1111-1111-1111-111111111111")
+
+	fake := &FakeDiceRollerDBTX{
+		QueryRowData: []any{
+			roll.ID,
+			roll.CharacterID,
+			roll.UserID,
+			roll.Expression,
+			roll.Result,
+			roll.Details,
+			roll.CreatedAt,
+		},
+	}
+	service := newServiceWithFakeDBTX(fake)
+
+	result, err := service.MakeRoll(context.Background(), diceRollerDTO.MakeRollInput{
+		UserID:      "user_1",
+		CharacterID: charID,
+		Formula:     "1d20",
+		RoomID:      &roomID,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, fake.QueryRowCalls)
+	require.Equal(t, 1, fake.ExecCalls)
+	require.Equal(t, roll.ID.String(), result.ID.String())
+}
+
 func TestMakeRoll_CreateDiceRollErrNoRowsMapsToErrCharacterNotFound(t *testing.T) {
 	charID := diceRollServiceTestUUID("11111111-1111-1111-1111-111111111111")
 
