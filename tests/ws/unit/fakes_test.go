@@ -11,6 +11,7 @@ import (
 
 type fakeRoomEventService struct {
 	inputs chan roomModel.CreateChatMessageInput
+	err    error
 }
 
 func newFakeRoomEventService() *fakeRoomEventService {
@@ -21,6 +22,9 @@ func newFakeRoomEventService() *fakeRoomEventService {
 
 func (f *fakeRoomEventService) CreateChatMessage(_ context.Context, input roomModel.CreateChatMessageInput) (roomModel.RoomEventModel, error) {
 	f.inputs <- input
+	if f.err != nil {
+		return roomModel.RoomEventModel{}, f.err
+	}
 
 	payload, err := json.Marshal(roomEvents.ChatMessagePayload{Text: input.Text})
 	if err != nil {

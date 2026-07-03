@@ -19,6 +19,17 @@ func requireWebSocketClosed(t *testing.T, ctx context.Context, conn *websocket.C
 	require.Error(t, err)
 }
 
+func requireNoWebSocketEvent(t *testing.T, conn *websocket.Conn) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	var event any
+	err := wsjson.Read(ctx, conn, &event)
+	require.Error(t, err)
+}
+
 func requireEventChannelClosed(t *testing.T, events <-chan roomEvents.Event) {
 	t.Helper()
 
@@ -39,5 +50,15 @@ func requireEventChannelOpen(t *testing.T, events <-chan roomEvents.Event) {
 	case _, ok := <-events:
 		require.True(t, ok)
 	default:
+	}
+}
+
+func requireNoRoomHubEvent(t *testing.T, events <-chan roomEvents.Event) {
+	t.Helper()
+
+	select {
+	case event := <-events:
+		t.Fatalf("unexpected room hub event: %#v", event)
+	case <-time.After(100 * time.Millisecond):
 	}
 }

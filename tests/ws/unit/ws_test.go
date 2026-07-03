@@ -3,10 +3,12 @@ package ws_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
 	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
+	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -124,6 +126,33 @@ func TestRoomWebsocketReturnsCommandErrorForUnknownCommandType(t *testing.T) {
 	require.Equal(t, map[string]any{"text": "still connected"}, event.Payload)
 }
 
+func TestRoomWebsocketCommandErrorIsSenderOnly(t *testing.T) {
+	roomID := testWSUUID("11111111-1111-1111-1111-111111111111")
+	service := newFakeRoomEventService()
+	hub := ws.NewRoomHub()
+	registered, serverURL := startRoomWSServer(t, hub, service, roomID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	senderConn := dialRoomClient(t, ctx, serverURL, "sender")
+	defer senderConn.Close(websocket.StatusNormalClosure, "test done")
+	otherConn := dialRoomClient(t, ctx, serverURL, "other")
+	defer otherConn.Close(websocket.StatusNormalClosure, "test done")
+	waitForRegisteredUsers(t, ctx, registered, "sender", "other")
+
+	err := wsjson.Write(ctx, senderConn, roomCommand{
+		Type:    "unknown.command",
+		Payload: json.RawMessage(`{}`),
+	})
+	require.NoError(t, err)
+
+	var event roomEvents.Event
+	require.NoError(t, wsjson.Read(ctx, senderConn, &event))
+	require.Equal(t, string(roomEvents.EventCommandError), event.Type)
+	requireNoWebSocketEvent(t, otherConn)
+}
+
 func TestRoomWebsocketReturnsCommandErrorForMalformedChatPayload(t *testing.T) {
 	roomID := testWSUUID("11111111-1111-1111-1111-111111111111")
 	service := newFakeRoomEventService()
@@ -168,6 +197,68 @@ func TestRoomWebsocketReturnsCommandErrorForMalformedChatPayload(t *testing.T) {
 
 	input := service.waitForCreateChatInput(t, ctx)
 	require.Equal(t, "valid after error", input.Text)
+}
+
+func TestRoomWebsocketReturnsCommandErrorForInvalidChatText(t *testing.T) {
+	roomID := testWSUUID("11111111-1111-1111-1111-111111111111")
+	service := newFakeRoomEventService()
+	service.err = roomService.ErrInvalidInput
+	hub := ws.NewRoomHub()
+	_, serverURL := startRoomWSServer(t, hub, service, roomID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	conn := dialRoomClient(t, ctx, serverURL, "user_1")
+	defer conn.Close(websocket.StatusNormalClosure, "test done")
+
+	err := wsjson.Write(ctx, conn, roomCommand{
+		Type:    string(roomEvents.EventChatMessage),
+		Payload: json.RawMessage(`{"text":"   "}`),
+	})
+	require.NoError(t, err)
+
+	input := service.waitForCreateChatInput(t, ctx)
+	require.Equal(t, "   ", input.Text)
+
+	var event roomEvents.Event
+	require.NoError(t, wsjson.Read(ctx, conn, &event))
+	require.Equal(t, string(roomEvents.EventCommandError), event.Type)
+	require.Equal(t, map[string]any{
+		"code":    "common.invalid_request",
+		"message": "invalid room command payload",
+		"details": []any{
+			map[string]any{
+				"type":   "parse",
+				"target": "command.payload",
+				"reason": "invalid_format",
+			},
+		},
+	}, event.Payload)
+}
+
+func TestRoomWebsocketUnexpectedServiceErrorClosesSocket(t *testing.T) {
+	roomID := testWSUUID("11111111-1111-1111-1111-111111111111")
+	service := newFakeRoomEventService()
+	service.err = errors.New("database unavailable")
+	hub := ws.NewRoomHub()
+	_, serverURL := startRoomWSServer(t, hub, service, roomID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	conn := dialRoomClient(t, ctx, serverURL, "user_1")
+	defer conn.Close(websocket.StatusNormalClosure, "test done")
+
+	err := wsjson.Write(ctx, conn, roomCommand{
+		Type:    string(roomEvents.EventChatMessage),
+		Payload: json.RawMessage(`{"text":"hello"}`),
+	})
+	require.NoError(t, err)
+
+	input := service.waitForCreateChatInput(t, ctx)
+	require.Equal(t, "hello", input.Text)
+	requireWebSocketClosed(t, ctx, conn)
 }
 
 type roomCommand struct {

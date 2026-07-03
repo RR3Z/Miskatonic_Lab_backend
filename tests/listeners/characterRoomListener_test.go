@@ -120,3 +120,34 @@ func TestCharacterRoomListener_TargetsCharacterOwnerAndGMsOnly(t *testing.T) {
 	requireCharacterChangedRealtimeEvent(t, gmEvents)
 	requireNoRealtimeEvent(t, otherEvents)
 }
+
+func TestCharacterRoomListener_NoRecipientsCreatesNoRealtimeDelivery(t *testing.T) {
+	roomID := listenerTestUUID("22222222-2222-2222-2222-222222222222")
+	svc := &fakeListenerRoomService{
+		characterEvent: []roomModel.RoomEventModel{{
+			RoomID:        roomID,
+			ActorID:       "player_owner",
+			Type:          string(roomEvents.EventCharacterChanged),
+			Payload:       []byte(`{"character_id":"11111111-1111-1111-1111-111111111111","resource":"health","action":"upsert"}`),
+			TargetUserIDs: nil,
+		}},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	hub := ws.NewRoomHub()
+	go hub.Run(ctx)
+
+	client, events := ws.NewTestClientWithUser(hub, roomID.String(), "player_owner")
+	hub.Register <- client
+
+	listener := listeners.NewCharacterRoomListener(svc, hub)
+	listener.Handle(ctx, characterEvents.CharacterHealthUpsertSucceeded{
+		UserID:      "player_owner",
+		CharacterID: "11111111-1111-1111-1111-111111111111",
+	})
+
+	require.Equal(t, 1, svc.characterCalls)
+	requireNoRealtimeEvent(t, events)
+}

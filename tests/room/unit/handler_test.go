@@ -189,6 +189,69 @@ func TestListRoomEventsRejectsInvalidLimitBeforeService(t *testing.T) {
 	require.Zero(t, roomService.listEventsCalls)
 }
 
+func TestListRoomEventsPassesOptionalLimitValues(t *testing.T) {
+	tests := []struct {
+		name      string
+		target    string
+		wantLimit int32
+	}{
+		{name: "missing", target: "/api/rooms/11111111-1111-1111-1111-111111111111/events", wantLimit: 0},
+		{name: "negative", target: "/api/rooms/11111111-1111-1111-1111-111111111111/events?limit=-5", wantLimit: -5},
+		{name: "large", target: "/api/rooms/11111111-1111-1111-1111-111111111111/events?limit=500", wantLimit: 500},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			roomService := &fakeRoomHandlerService{}
+			router := newRoomHandlerTestRouter(roomService)
+
+			recorder := performRoomRequest(router, http.MethodGet, tt.target, "")
+
+			require.Equal(t, http.StatusOK, recorder.Code)
+			require.Equal(t, 1, roomService.listEventsCalls)
+			require.Equal(t, tt.wantLimit, roomService.listEventsInput.Limit)
+		})
+	}
+}
+
+func TestRoomRoutesRejectInvalidJSONBeforeService(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{name: "update", method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/"},
+		{name: "join", method: http.MethodPost, path: "/api/rooms/11111111-1111-1111-1111-111111111111/join"},
+		{name: "transfer owner", method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/owner"},
+		{name: "select character", method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/character"},
+		{name: "change role", method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/members/user_2/role"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			roomService := &fakeRoomHandlerService{}
+			router := newRoomHandlerTestRouter(roomService)
+
+			recorder := performRoomRequest(router, tt.method, tt.path, `{"broken":`)
+
+			require.Equal(t, http.StatusBadRequest, recorder.Code)
+			require.Zero(t, roomService.totalCalls())
+		})
+	}
+}
+
+func TestRoomWebsocketMembershipFailureDoesNotUpgrade(t *testing.T) {
+	roomService := &fakeRoomHandlerService{err: room.ErrNotMember}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodGet, "/api/rooms/11111111-1111-1111-1111-111111111111/ws", "")
+
+	require.Equal(t, http.StatusForbidden, recorder.Code)
+	require.Equal(t, 1, roomService.touchActivityCalls)
+	require.Equal(t, "user_1", roomService.touchActivityInput.UserID)
+	require.Zero(t, roomService.totalCalls())
+}
+
 func TestJoinRoomAcceptsInviteTokenAndPassesParams(t *testing.T) {
 	roomID := testRoomUnitUUID("11111111-1111-1111-1111-111111111111")
 	roomService := &fakeRoomHandlerService{member: roomModels.RoomMemberModel{RoomID: roomID, UserID: "user_1"}}

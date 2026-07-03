@@ -5,8 +5,10 @@ import (
 	"testing"
 	"time"
 
+	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/coder/websocket"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRoomHubCloseRoomClosesActiveWebSocketConnection(t *testing.T) {
@@ -46,4 +48,54 @@ func TestRoomHubCloseRoomOnlyClosesTargetRoomAndIsRepeatSafe(t *testing.T) {
 
 	requireEventChannelClosed(t, roomAEvents)
 	requireEventChannelOpen(t, roomBEvents)
+}
+
+func TestRoomHubSendToUsersTargetsOnlyNamedUsers(t *testing.T) {
+	roomID := "11111111-1111-1111-1111-111111111111"
+	hub := ws.NewRoomHub()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go hub.Run(ctx)
+
+	targetClient, targetEvents := ws.NewTestClientWithUser(hub, roomID, "target")
+	otherClient, otherEvents := ws.NewTestClientWithUser(hub, roomID, "other")
+	hub.Register <- targetClient
+	hub.Register <- otherClient
+
+	hub.SendToUsers(roomID, []string{"target"}, roomEvents.Event{
+		Type:    string(roomEvents.EventCharacterChanged),
+		RoomID:  roomID,
+		ActorID: "system",
+		Payload: roomEvents.CharacterChangedPayload{CharacterID: "character_1", Resource: "health", Action: "upsert"},
+	})
+
+	select {
+	case event := <-targetEvents:
+		require.Equal(t, string(roomEvents.EventCharacterChanged), event.Type)
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for targeted event")
+	}
+	requireNoRoomHubEvent(t, otherEvents)
+}
+
+func TestRoomHubSendToUsersWithEmptyTargetsNoOps(t *testing.T) {
+	roomID := "11111111-1111-1111-1111-111111111111"
+	hub := ws.NewRoomHub()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go hub.Run(ctx)
+
+	client, events := ws.NewTestClientWithUser(hub, roomID, "user_1")
+	hub.Register <- client
+
+	hub.SendToUsers(roomID, nil, roomEvents.Event{
+		Type:    string(roomEvents.EventCharacterChanged),
+		RoomID:  roomID,
+		ActorID: "system",
+		Payload: roomEvents.CharacterChangedPayload{CharacterID: "character_1", Resource: "health", Action: "upsert"},
+	})
+
+	requireNoRoomHubEvent(t, events)
 }
