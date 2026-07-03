@@ -2,6 +2,8 @@
 
 Room realtime uses the shared `room_events` feed for persistence and the room WebSocket hub for delivery.
 
+Public room feed DTOs and payloads live under `pkg/model/room`. Internal domain events live under `pkg/events`; do not use `pkg/events/room` for WebSocket/feed payloads.
+
 ## HTTP Surface
 
 - `GET /api/rooms/{roomID}/events` returns persisted room events old-to-new for room members.
@@ -68,7 +70,19 @@ Selected character reads use `room_members.character_id`; character sheets are l
 }
 ```
 
-Successful canonical character mutations publish character domain events. `CharacterRoomListener` maps mutation success events to `character.changed`, finds rooms where the character is currently selected, persists one room event per affected room, and touches room activity. Read/list events and full character delete are ignored in the first version.
+Successful canonical character mutations publish character domain events. `pkg/listeners/room.CharacterRoomListener` maps mutation success events to `character.changed`, finds rooms where the character is currently selected, persists one room event per affected room, and touches room activity. Read/list events and full character delete are ignored in the first version.
+
+The listener is registered from descriptor-owned event prototypes (`character.RoomMutationEvents()`), not from a local ad-hoc event list.
+
+## Internal Events And Logging
+
+Internal event flow is separate from the public room feed:
+
+- Character, DiceRoller, and Room domain events are described under `pkg/events`.
+- `EventPublishingCharacterService`, `EventPublishingDiceRollerService`, and `EventPublishingRoomService` publish domain events around service calls.
+- `pkg/observability/logging.EventLogger` subscribes once to all sync events and logs normalized metadata (`event`, `domain`, `resource`, `action`, `outcome`) plus selected IDs/counts/errors.
+- Room side effects are async listeners under `pkg/listeners/room`: character mutations create `character.changed`, and room-context dice roll successes create `dice.roll`.
+- Dice roll raw `Details` are intentionally omitted from app logs.
 
 ## Delivery
 

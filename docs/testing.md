@@ -47,6 +47,13 @@ Room realtime integration and workability tests live in `tests/room/integration`
 
 Room WebSocket unit tests live in `tests/ws/unit`. They cover persisted chat broadcast, command errors, room-wide delivery, targeted delivery support through listener tests, slow-client isolation, and closing active clients when rooms are deleted.
 
+Event infrastructure tests are split by responsibility:
+
+- `tests/events` covers publisher behavior plus event descriptor lookup and exported prototype groups.
+- `tests/observability/logging` covers descriptor-driven app logging for Character, DiceRoller, and Room events.
+- `tests/room/unit/events` covers `EventPublishingRoomService`.
+- `tests/listeners` covers async room side-effect listeners under `pkg/listeners/room`.
+
 ## End-To-End Tests
 
 - Use real HTTP calls against a configured test server and real PostgreSQL test database.
