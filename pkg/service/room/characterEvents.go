@@ -49,7 +49,11 @@ func (s *RoomService) CreateCharacterChangedRoomEvents(ctx context.Context, inpu
 			return nil, err
 		}
 
-		events = append(events, model.ToRoomEventModel(event))
+		eventModel, err := s.characterChangedRoomEventModel(ctx, queries, event, input.CharacterID)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, eventModel)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

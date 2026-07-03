@@ -81,7 +81,7 @@ func run() int {
 	handlers := handler.NewHandler(service)
 	// Character Events Listener
 	eventBus.SubscribeAllSync(EventsLogging.NewCharacterEventLogger(slog.Default()))
-	characterRoomListener := listeners.NewCharacterRoomListener(service.Room)
+	characterRoomListener := listeners.NewCharacterRoomListener(service.Room, handlers.RoomHub())
 	for _, event := range listenerHelpers.MutationCharacterEvents() {
 		eventBus.SubscribeAsync(event, characterRoomListener)
 	}

@@ -8,12 +8,13 @@ import (
 )
 
 type RoomEventModel struct {
-	ID        pgtype.UUID        `json:"id"`
-	RoomID    pgtype.UUID        `json:"room_id"`
-	ActorID   string             `json:"actor_id"`
-	Type      string             `json:"type"`
-	Payload   json.RawMessage    `json:"payload"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	ID            pgtype.UUID        `json:"id"`
+	RoomID        pgtype.UUID        `json:"room_id"`
+	ActorID       string             `json:"actor_id"`
+	Type          string             `json:"type"`
+	Payload       json.RawMessage    `json:"payload"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	TargetUserIDs []string           `json:"-"`
 }
 
 func ToRoomEventModel(event db.RoomEvent) RoomEventModel {

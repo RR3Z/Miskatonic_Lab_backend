@@ -8,17 +8,21 @@ import (
 	listenerHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners/helpers"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
+	wsHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/helpers"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type CharacterRoomListener struct {
 	roomService room.IRoom
+	hub         *ws.RoomHub
 	logger      *slog.Logger
 }
 
-func NewCharacterRoomListener(roomService room.IRoom) *CharacterRoomListener {
+func NewCharacterRoomListener(roomService room.IRoom, hub *ws.RoomHub) *CharacterRoomListener {
 	return &CharacterRoomListener{
 		roomService: roomService,
+		hub:         hub,
 		logger:      slog.Default(),
 	}
 }
@@ -39,16 +43,26 @@ func (l *CharacterRoomListener) Handle(ctx context.Context, event events.Event) 
 		return
 	}
 
-	if _, err := l.roomService.CreateCharacterChangedRoomEvents(ctx, model.CreateCharacterChangedRoomEventsInput{
+	roomEvents, err := l.roomService.CreateCharacterChangedRoomEvents(ctx, model.CreateCharacterChangedRoomEventsInput{
 		CharacterID: characterUUID,
 		ActorID:     actorID,
 		Change:      change,
-	}); err != nil {
+	})
+	if err != nil {
 		l.logger.ErrorContext(ctx, "character room listener: failed to create room events",
 			"character_id", characterID,
 			"user_id", actorID,
 			"event", event.EventName(),
 			"error", err,
+		)
+		return
+	}
+
+	for _, roomEvent := range roomEvents {
+		l.hub.SendToUsers(
+			roomEvent.RoomID.String(),
+			roomEvent.TargetUserIDs,
+			wsHelpers.EventFromRoomEventModel(roomEvent),
 		)
 	}
 }

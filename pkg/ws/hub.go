@@ -11,6 +11,7 @@ type RoomHub struct {
 	Register   chan *Client
 	Unregister chan *Client
 	broadcast  chan roomEvents.Event
+	targeted   chan targetedEvent
 }
 
 func NewRoomHub() *RoomHub {
@@ -19,6 +20,7 @@ func NewRoomHub() *RoomHub {
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		broadcast:  make(chan roomEvents.Event),
+		targeted:   make(chan targetedEvent),
 	}
 }
 
@@ -39,6 +41,8 @@ func (rh *RoomHub) Run(ctx context.Context) {
 		case event := <-rh.broadcast:
 			rh.broadcastToRoom(event)
 
+		case target := <-rh.targeted:
+			rh.sendTargeted(target)
 		}
 	}
 }
