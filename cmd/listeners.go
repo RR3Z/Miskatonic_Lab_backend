@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
+	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
 	diceEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/dice"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	roomListeners "github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners/room"
@@ -12,15 +13,24 @@ import (
 )
 
 func registerEventListeners(eventBus *events.EventBus, services *appService.Service, appHandlers *handler.Handler) {
-	eventBus.SubscribeAllSync(EventsLogging.NewDefaultEventLogger(slog.Default()))
+	registerEventLogging(eventBus)
+	registerRoomEventListeners(eventBus, services, appHandlers)
+}
 
+func registerEventLogging(eventBus *events.EventBus) {
+	eventBus.SubscribeAllSync(EventsLogging.NewDefaultEventLogger(slog.Default()))
+}
+
+func registerRoomEventListeners(eventBus *events.EventBus, services *appService.Service, appHandlers *handler.Handler) {
 	characterRoomListener := roomListeners.NewCharacterRoomListener(services.Room, appHandlers.RoomHub())
-	for _, event := range roomListeners.MutationCharacterEvents() {
-		eventBus.SubscribeAsync(event, characterRoomListener)
-	}
+	subscribeAsyncEvents(eventBus, characterEvents.RoomMutationEvents(), characterRoomListener)
 
 	diceRoomListener := roomListeners.NewDiceRollerRoomListener(services.Room, appHandlers.RoomHub())
-	for _, event := range diceEvents.RoomPublishingEvents() {
-		eventBus.SubscribeAsync(event, diceRoomListener)
+	subscribeAsyncEvents(eventBus, diceEvents.RoomPublishingEvents(), diceRoomListener)
+}
+
+func subscribeAsyncEvents(eventBus *events.EventBus, eventPrototypes []events.Event, handler events.EventHandler) {
+	for _, event := range eventPrototypes {
+		eventBus.SubscribeAsync(event, handler)
 	}
 }
