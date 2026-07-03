@@ -1,5 +1,7 @@
 package roomEvents
 
+import "encoding/json"
+
 type EventType string
 
 const (
@@ -23,9 +25,11 @@ type ChatMessagePayload struct {
 }
 
 type DiceRollPayload struct {
-	CharacterID string `json:"character_id"`
-	Expression  string `json:"expression"`
-	Result      int32  `json:"result"`
+	RollID      string          `json:"roll_id"`
+	CharacterID string          `json:"character_id"`
+	Expression  string          `json:"expression"`
+	Result      int32           `json:"result"`
+	Details     json.RawMessage `json:"details"`
 }
 
 type OwnerTransferredPayload struct {
