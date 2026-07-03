@@ -10,16 +10,18 @@ import (
 )
 
 type RoomHandler struct {
-	service roomService.IRoom
-	hub     *ws.RoomHub
+	service    roomService.IRoom
+	hub        *ws.RoomHub
+	dispatcher *ws.CommandDispatcher
 }
 
 func New(service roomService.IRoom) *RoomHandler {
 	hub := ws.NewRoomHub()
 	go hub.Run(context.Background())
 	return &RoomHandler{
-		service: service,
-		hub:     hub,
+		service:    service,
+		hub:        hub,
+		dispatcher: ws.NewCommandDispatcher(service),
 	}
 }
 

@@ -2,59 +2,71 @@ package ws
 
 import (
 	"context"
-	"encoding/json"
 
 	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
-	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
+	wsHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/helpers"
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type RoomEventService interface {
-	CreateChatMessage(ctx context.Context, input roomModel.CreateChatMessageInput) (roomModel.RoomEventModel, error)
-}
-
 type Client struct {
-	roomID   string
-	roomUUID pgtype.UUID
-	userID   string
-	conn     *websocket.Conn
-	send     chan roomEvents.Event
-	hub      *RoomHub
-	service  RoomEventService
+	roomID     string
+	roomUUID   pgtype.UUID
+	userID     string
+	conn       *websocket.Conn
+	send       chan roomEvents.Event
+	hub        *RoomHub
+	dispatcher *CommandDispatcher
 }
 
-func NewClient(hub *RoomHub, service RoomEventService, roomID pgtype.UUID, userID string, conn *websocket.Conn) *Client {
+func NewClient(hub *RoomHub, dispatcher *CommandDispatcher, roomID pgtype.UUID, userID string, conn *websocket.Conn) *Client {
 	return &Client{
-		roomID:   roomID.String(),
-		roomUUID: roomID,
-		userID:   userID,
-		conn:     conn,
-		send:     make(chan roomEvents.Event, 32),
-		hub:      hub,
-		service:  service,
+		roomID:     roomID.String(),
+		roomUUID:   roomID,
+		userID:     userID,
+		conn:       conn,
+		send:       make(chan roomEvents.Event, 32),
+		hub:        hub,
+		dispatcher: dispatcher,
 	}
 }
 
 func (c *Client) ReadLoop(ctx context.Context) {
+	closeCode := websocket.StatusNormalClosure
+	closeReason := "client disconnected"
+
 	defer func() {
 		c.hub.Unregister <- c
-		c.conn.Close(websocket.StatusNormalClosure, "client disconnected")
+		c.conn.Close(closeCode, closeReason)
 	}()
 
 	for {
-		var command incomingEvent
+		var command commandEnvelope
 
 		if err := wsjson.Read(ctx, c.conn, &command); err != nil {
 			return
 		}
 
-		event, err := c.handleCommand(ctx, command)
+		result, err := c.dispatcher.Dispatch(ctx, command, commandContext{
+			roomID:  c.roomUUID,
+			actorID: c.userID,
+		})
 		if err != nil {
+			closeCode, closeReason = wsHelpers.CloseStatusForCommandError(err)
 			return
 		}
-		c.hub.Broadcast(event)
+
+		if result.Reply != nil {
+			if ok := c.sendDirect(ctx, *result.Reply); !ok {
+				return
+			}
+			continue
+		}
+
+		if result.Broadcast != nil {
+			c.hub.Broadcast(*result.Broadcast)
+		}
 	}
 }
 
@@ -78,42 +90,17 @@ func (c *Client) WriteLoop(ctx context.Context) {
 	}
 }
 
-type incomingEvent struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload"`
-}
-
-func (c *Client) handleCommand(ctx context.Context, command incomingEvent) (roomEvents.Event, error) {
-	switch command.Type {
-	case string(roomEvents.EventChatMessage):
-		var payload roomEvents.ChatMessagePayload
-		if err := json.Unmarshal(command.Payload, &payload); err != nil {
-			return roomEvents.Event{}, err
+func (c *Client) sendDirect(ctx context.Context, event roomEvents.Event) (ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = false
 		}
+	}()
 
-		event, err := c.service.CreateChatMessage(ctx, roomModel.CreateChatMessageInput{
-			RoomID:  c.roomUUID,
-			ActorID: c.userID,
-			Text:    payload.Text,
-		})
-		if err != nil {
-			return roomEvents.Event{}, err
-		}
-
-		return eventFromModel(event), nil
-	default:
-		return roomEvents.Event{}, websocket.CloseError{
-			Code:   websocket.StatusUnsupportedData,
-			Reason: "unsupported room event type",
-		}
-	}
-}
-
-func eventFromModel(event roomModel.RoomEventModel) roomEvents.Event {
-	return roomEvents.Event{
-		Type:    event.Type,
-		RoomID:  event.RoomID.String(),
-		ActorID: event.ActorID,
-		Payload: event.Payload,
+	select {
+	case <-ctx.Done():
+		return false
+	case c.send <- event:
+		return true
 	}
 }

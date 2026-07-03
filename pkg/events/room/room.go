@@ -4,6 +4,7 @@ type EventType string
 
 const (
 	EventChatMessage      EventType = "chat.message"
+	EventCommandError     EventType = "command.error"
 	EventDiceRoll         EventType = "dice.roll"
 	EventMemberJoined     EventType = "member.joined"
 	EventMemberLeft       EventType = "member.left"

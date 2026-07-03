@@ -31,7 +31,7 @@ func (h *RoomHandler) serveRoomWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := ws.NewClient(h.hub, h.service, roomID, userID, conn)
+	client := ws.NewClient(h.hub, h.dispatcher, roomID, userID, conn)
 	h.hub.Register <- client
 
 	go client.WriteLoop(r.Context())
