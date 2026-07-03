@@ -14,7 +14,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
+	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/go-chi/chi/v5"
 )
 

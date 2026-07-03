@@ -1,4 +1,4 @@
-package ws
+package room
 
 import roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 

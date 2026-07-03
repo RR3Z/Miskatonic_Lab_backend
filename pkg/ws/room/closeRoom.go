@@ -1,4 +1,4 @@
-package ws
+package room
 
 import "github.com/coder/websocket"
 

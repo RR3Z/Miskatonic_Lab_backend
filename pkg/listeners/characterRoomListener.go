@@ -8,8 +8,8 @@ import (
 	listenerHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/listeners/helpers"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
 	wsHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/helpers"
+	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 

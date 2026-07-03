@@ -8,19 +8,20 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
+	wsCommands "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/commands"
+	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/coder/websocket"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
 
-func startRoomWSServer(t *testing.T, hub *ws.RoomHub, service ws.RoomEventService, roomID pgtype.UUID) (<-chan string, string) {
+func startRoomWSServer(t *testing.T, hub *ws.RoomHub, service wsCommands.RoomEventService, roomID pgtype.UUID) (<-chan string, string) {
 	t.Helper()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	go hub.Run(ctx)
-	dispatcher := ws.NewCommandDispatcher(service)
+	dispatcher := wsCommands.NewCommandDispatcher(service)
 
 	registered := make(chan string, 8)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

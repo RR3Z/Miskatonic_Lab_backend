@@ -1,4 +1,4 @@
-package ws
+package commands
 
 import (
 	"context"
@@ -16,14 +16,14 @@ type RoomEventService interface {
 	CreateChatMessage(ctx context.Context, input roomModel.CreateChatMessageInput) (roomModel.RoomEventModel, error)
 }
 
-type commandEnvelope struct {
+type Envelope struct {
 	Type    string          `json:"type"`
 	Payload json.RawMessage `json:"payload"`
 }
 
-type commandContext struct {
-	roomID  pgtype.UUID
-	actorID string
+type Context struct {
+	RoomID  pgtype.UUID
+	ActorID string
 }
 
 type DispatchResult struct {
@@ -31,7 +31,7 @@ type DispatchResult struct {
 	Reply     *roomEvents.Event
 }
 
-type commandHandler func(ctx context.Context, command commandEnvelope, backend commandContext) (DispatchResult, error)
+type commandHandler func(ctx context.Context, command Envelope, backend Context) (DispatchResult, error)
 
 type CommandDispatcher struct {
 	handlers map[string]commandHandler
@@ -47,10 +47,10 @@ func NewCommandDispatcher(service RoomEventService) *CommandDispatcher {
 	return dispatcher
 }
 
-func (d *CommandDispatcher) Dispatch(ctx context.Context, command commandEnvelope, backend commandContext) (DispatchResult, error) {
+func (d *CommandDispatcher) Dispatch(ctx context.Context, command Envelope, backend Context) (DispatchResult, error) {
 	handler, ok := d.handlers[command.Type]
 	if !ok {
-		reply := wsHelpers.UnsupportedCommandTypeEvent(backend.roomID.String(), backend.actorID)
+		reply := wsHelpers.UnsupportedCommandTypeEvent(backend.RoomID.String(), backend.ActorID)
 		return DispatchResult{Reply: &reply}, nil
 	}
 
@@ -58,21 +58,21 @@ func (d *CommandDispatcher) Dispatch(ctx context.Context, command commandEnvelop
 }
 
 func chatMessageHandler(service RoomEventService) commandHandler {
-	return func(ctx context.Context, command commandEnvelope, backend commandContext) (DispatchResult, error) {
+	return func(ctx context.Context, command Envelope, backend Context) (DispatchResult, error) {
 		var payload roomEvents.ChatMessagePayload
 		if err := json.Unmarshal(command.Payload, &payload); err != nil {
-			reply := wsHelpers.InvalidCommandPayloadEvent(backend.roomID.String(), backend.actorID)
+			reply := wsHelpers.InvalidCommandPayloadEvent(backend.RoomID.String(), backend.ActorID)
 			return DispatchResult{Reply: &reply}, nil
 		}
 
 		event, err := service.CreateChatMessage(ctx, roomModel.CreateChatMessageInput{
-			RoomID:  backend.roomID,
-			ActorID: backend.actorID,
+			RoomID:  backend.RoomID,
+			ActorID: backend.ActorID,
 			Text:    payload.Text,
 		})
 		if err != nil {
 			if errors.Is(err, roomService.ErrInvalidInput) {
-				reply := wsHelpers.InvalidCommandPayloadEvent(backend.roomID.String(), backend.actorID)
+				reply := wsHelpers.InvalidCommandPayloadEvent(backend.RoomID.String(), backend.ActorID)
 				return DispatchResult{Reply: &reply}, nil
 			}
 			return DispatchResult{}, err

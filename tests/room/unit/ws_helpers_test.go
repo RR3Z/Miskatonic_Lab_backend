@@ -9,7 +9,7 @@ import (
 	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	roomHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
+	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"

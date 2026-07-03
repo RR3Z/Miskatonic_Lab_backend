@@ -6,7 +6,7 @@ import (
 	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room/helpers"
 	roomDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/utils"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
+	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/coder/websocket"
 )
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
+	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/coder/websocket"
 )
 

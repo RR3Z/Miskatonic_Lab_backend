@@ -5,14 +5,15 @@ import (
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpAdapter"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws"
+	wsCommands "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/commands"
+	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
 	"github.com/go-chi/chi/v5"
 )
 
 type RoomHandler struct {
 	service    roomService.IRoom
 	hub        *ws.RoomHub
-	dispatcher *ws.CommandDispatcher
+	dispatcher *wsCommands.CommandDispatcher
 }
 
 func New(service roomService.IRoom) *RoomHandler {
@@ -26,7 +27,7 @@ func NewWithHub(service roomService.IRoom, hub *ws.RoomHub) *RoomHandler {
 	return &RoomHandler{
 		service:    service,
 		hub:        hub,
-		dispatcher: ws.NewCommandDispatcher(service),
+		dispatcher: wsCommands.NewCommandDispatcher(service),
 	}
 }
 
