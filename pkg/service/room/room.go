@@ -22,14 +22,16 @@ type IRoom interface {
 	SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMemberModel, error)
 	ChangeRole(ctx context.Context, input model.ChangeRoleInput) (model.RoomMemberModel, error)
 	ListSelectedCharacters(ctx context.Context, input model.ListSelectedCharactersInput) ([]model.SelectedCharacterModel, error)
-	ListRoomEvents(ctx context.Context, input model.ListRoomEventsInput) ([]model.RoomEventModel, error)
-	CreateChatMessage(ctx context.Context, input model.CreateChatMessageInput) (model.RoomEventModel, error)
-	CreateDiceRollRoomEvent(ctx context.Context, input model.CreateDiceRollRoomEventInput) (model.RoomEventModel, error)
 	TouchRoomActivity(ctx context.Context, input model.TouchRoomActivityInput) error
 
 	EnsureMember(ctx context.Context, roomID pgtype.UUID, userID string) error
 	EnsureOwner(ctx context.Context, roomID pgtype.UUID, userID string) error
 	EnsureCanPublishRoomEvent(ctx context.Context, roomID pgtype.UUID, userID string) error
+
+	ListRoomEvents(ctx context.Context, input model.ListRoomEventsInput) ([]model.RoomEventModel, error)
+	CreateChatMessage(ctx context.Context, input model.CreateChatMessageInput) (model.RoomEventModel, error)
+	CreateDiceRollRoomEvent(ctx context.Context, input model.CreateDiceRollRoomEventInput) (model.RoomEventModel, error)
+	CreateCharacterChangedRoomEvents(ctx context.Context, input model.CreateCharacterChangedRoomEventsInput) ([]model.RoomEventModel, error)
 }
 
 type IRoomMaintenance interface {
