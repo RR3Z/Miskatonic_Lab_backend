@@ -7,6 +7,8 @@
     "sqlc:generate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 generate",
     "sqlc:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 version",
     "test:pretty": "gotestsum --format testname -- ./tests/...",
+    "test:e2e": "powershell -NoProfile -Command \"$env:E2E_TESTS='1'; go test ./tests/e2e -v\"",
+    "test:all": "powershell -NoProfile -Command \"go test ./...; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; $env:CLERK_INTEGRATION_TESTS='1'; go test ./tests/user/integration -v; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; $env:E2E_TESTS='1'; go test ./tests/e2e -v\"",
     "test:clerk": "powershell -NoProfile -Command \"$env:CLERK_INTEGRATION_TESTS='1'; go test ./tests/user/integration -v\"",
     "user:create": "go run ./cmd/create-user"
   }
