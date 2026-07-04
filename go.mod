@@ -3,18 +3,19 @@ module github.com/RR3Z/Miskatonic_Lab_backend
 go 1.26.3
 
 require (
-	github.com/clerk/clerk-sdk-go/v2 v2.6.0
+	github.com/clerk/clerk-sdk-go/v2 v2.7.0
+	github.com/coder/websocket v1.8.15
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-chi/cors v1.2.2
-	github.com/jackc/pgx/v5 v5.9.2
+	github.com/jackc/pgx/v5 v5.10.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lmittmann/tint v1.1.3
 	github.com/stretchr/testify v1.11.1
-	github.com/svix/svix-webhooks v1.95.1
+	github.com/svix/svix-webhooks v1.96.1
+	golang.org/x/crypto v0.53.0
 )
 
 require (
-	github.com/coder/websocket v1.8.14 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.5 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
@@ -25,8 +26,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.15.0 // indirect
-	golang.org/x/crypto v0.52.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
