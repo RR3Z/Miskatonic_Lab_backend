@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -30,6 +32,11 @@ func newCharacterHandlerTestRouter(characterService *fakeCharacterHandlerService
 	})
 }
 
+func newCharacterHandlerTestSubject(err error) (*fakeCharacterHandlerService, http.Handler) {
+	service := &fakeCharacterHandlerService{err: err}
+	return service, newCharacterHandlerTestRouter(service)
+}
+
 func performCharacterRequest(router http.Handler, method string, target string, body string) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(method, target, bytes.NewBufferString(body))
 	if body != "" {
@@ -38,6 +45,24 @@ func performCharacterRequest(router http.Handler, method string, target string, 
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
 	return recorder
+}
+
+func requireCharacterError(t *testing.T, recorder *httptest.ResponseRecorder, status int, code string) {
+	t.Helper()
+
+	require.Equal(t, status, recorder.Code)
+	require.Contains(t, recorder.Body.String(), code)
+}
+
+func requireRejectedBeforeService(t *testing.T, method string, path string, body string, code string) {
+	t.Helper()
+
+	service, router := newCharacterHandlerTestSubject(nil)
+
+	recorder := performCharacterRequest(router, method, path, body)
+
+	requireCharacterError(t, recorder, http.StatusBadRequest, code)
+	require.Zero(t, service.totalCalls())
 }
 
 func testCharacterUnitUUID(value string) pgtype.UUID {
