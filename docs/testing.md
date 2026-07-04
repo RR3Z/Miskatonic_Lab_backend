@@ -14,6 +14,17 @@ Run domain tests with per-test pretty output:
 npm run test:pretty
 ```
 
+Run every configured suite, including real Clerk integration, live E2E, and migration rollback smoke:
+
+```powershell
+$env:E2E_AUTH_TOKEN="<real Clerk session token>"
+$env:E2E_SECOND_AUTH_TOKEN="<second real Clerk session token>"
+$env:MIGRATION_SMOKE_DATABASE_URL="<dedicated disposable database url>"
+npm run test:all
+```
+
+`test:all` runs `go test ./...`, then enables real Clerk integration tests, live E2E tests, and migration rollback smoke. Configure Clerk secrets, webhook tunnel, PostgreSQL env, E2E tokens, and a dedicated migration smoke database before using it.
+
 ## Unit Tests
 
 - Use `testing` for test structure.
@@ -32,6 +43,10 @@ Service unit tests should focus on business rules and service flow. Avoid changi
 - Verify status codes, JSON bodies, route params, malformed request bodies, auth context, and `AppError` mapping.
 
 Character CRUD handler tests live in `tests/character`. They build the public handler router with `NewHandler`, inject Clerk claims into the request context, and keep fake services/helpers split from happy-path, validation, error, binding, and method tests.
+
+Focused Character HTTP contract tests live in `tests/character/unit/handler`. They cover route mounting, malformed JSON, invalid UUIDs, representative DTO handoff, delete status, and service-error JSON mapping without touching production service logic.
+
+Config and middleware unit tests live in `tests/config` and `tests/middleware`. They cover CORS origin parsing/headers, database URL formatting, request logging levels, and request error-code logging.
 
 ## Repository Tests
 
@@ -59,6 +74,26 @@ Event infrastructure tests are split by responsibility:
 - Use real HTTP calls against a configured test server and real PostgreSQL test database.
 - Keep this suite small and scenario-based: user provisioning, `/api/me`, character creation, subresource updates, full character read, deletion, and access denial for another user's character.
 
+Live backend E2E tests live in `tests/e2e`. They are opt-in so the normal suite stays local and deterministic:
+
+```powershell
+$env:E2E_AUTH_TOKEN="<real Clerk session token>"
+npm run test:e2e
+```
+
+Optional settings:
+
+- `E2E_TESTS=1` enables the package; `npm run test:e2e` sets it for the current PowerShell command.
+- `E2E_BASE_URL` points at the running backend, defaulting to `http://localhost:${PORT}` or `http://localhost:8000`.
+- `E2E_AUTH_TOKEN` may be a raw JWT or `Bearer <jwt>`. The tests decode only the JWT `sub` to prepare local database rows; the backend still verifies the token through Clerk middleware.
+
+Current E2E scenarios cover missing-token rejection, `/api/me`, Character create/list/get/health/delete over HTTP, ownership denial for another user's character seeded in PostgreSQL, and room-context dice rolling that produces a `dice.roll` room event.
+
+Additional live E2E gap coverage:
+
+- `E2E_SECOND_AUTH_TOKEN` is optional. When it is present and belongs to a different Clerk subject, the multi-user E2E creates a room with the primary token, joins it with the second token, selects characters for both users, verifies GM/owner visibility, and verifies player-only selected-character visibility. When it is absent, that specific test skips with an explicit reason.
+- Live WebSocket E2E creates a room over HTTP, opens `/api/rooms/{roomID}/ws` with the real auth token, sends `chat.message`, verifies the received `chat.message` socket event, then polls room history and verifies the persisted event payload.
+
 ## Clerk Integration Tests
 
 User Clerk integration tests live in `tests/user/integration`. They call the real Clerk API through `clerk-sdk-go`, then wait until Clerk sends a real webhook to the running backend and the local PostgreSQL row changes.
@@ -80,3 +115,18 @@ Before running them:
 - The tests wait up to 2 minutes for each webhook by default. If Clerk delivery or port forwarding is slow, set `CLERK_WEBHOOK_WAIT_TIMEOUT`, for example `180s`.
 
 The tests create Clerk users with `+clerk_test` email subaddresses, poll the local DB for webhook results, delete the Clerk user, and clean up their local DB row. Because they depend on real Clerk webhook delivery and a public forwarding service, occasional timing instability usually points to delayed webhook delivery, a refreshed forwarded URL, or the backend/test process using different PostgreSQL settings.
+
+`npm run test:all` runs this suite by setting `CLERK_INTEGRATION_TESTS=1` and executing `go test ./tests/user/integration -v`. The suite still skips outside that opt-in path.
+
+## Migration Smoke Tests
+
+Migration rollback smoke tests live in `tests/migrations`. They are opt-in because they intentionally run `migrate up`, `migrate down 1`, `migrate up 1`, and `migrate version`.
+
+```powershell
+$env:MIGRATION_SMOKE_DATABASE_URL="<dedicated disposable database url>"
+npm run test:migrations
+```
+
+- `MIGRATION_SMOKE_TESTS=1` enables the package; `npm run test:migrations` sets it for the current PowerShell command.
+- `MIGRATION_SMOKE_DATABASE_URL` is required and must point to a dedicated disposable database, not the normal development database.
+- The `migrate` CLI must be available in `PATH`.
