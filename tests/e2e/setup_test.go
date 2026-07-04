@@ -22,10 +22,25 @@ import (
 
 func newE2ESubject(t *testing.T) *e2eSubject {
 	t.Helper()
+	return newE2ESubjectFromEnv(t, "E2E_AUTH_TOKEN")
+}
+
+func newSecondE2ESubject(t *testing.T) *e2eSubject {
+	t.Helper()
+	requireE2EEnabled(t)
+	loadE2EEnv(t)
+	if strings.TrimSpace(os.Getenv("E2E_SECOND_AUTH_TOKEN")) == "" {
+		t.Skip("set E2E_SECOND_AUTH_TOKEN to run real multi-user E2E tests")
+	}
+	return newE2ESubjectFromEnv(t, "E2E_SECOND_AUTH_TOKEN")
+}
+
+func newE2ESubjectFromEnv(t *testing.T, tokenEnv string) *e2eSubject {
+	t.Helper()
 	requireE2EEnabled(t)
 	loadE2EEnv(t)
 
-	token := normalizedE2EToken(t)
+	token := normalizedE2EToken(t, tokenEnv)
 	userID := subjectFromJWT(t, token)
 
 	pool, err := repository.NewPostgresDB(context.Background(), e2ePostgresConfig())
@@ -81,20 +96,20 @@ func e2eBaseURL() string {
 	return strings.TrimRight(value, "/")
 }
 
-func normalizedE2EToken(t *testing.T) string {
+func normalizedE2EToken(t *testing.T, tokenEnv string) string {
 	t.Helper()
-	token := strings.TrimSpace(os.Getenv("E2E_AUTH_TOKEN"))
-	require.NotEmpty(t, token, "E2E_AUTH_TOKEN must be set when E2E_TESTS=1")
+	token := strings.TrimSpace(os.Getenv(tokenEnv))
+	require.NotEmpty(t, token, "%s must be set when E2E_TESTS=1", tokenEnv)
 	token = strings.TrimPrefix(token, "Bearer ")
 	token = strings.TrimPrefix(token, "bearer ")
-	require.NotEmpty(t, token, "E2E_AUTH_TOKEN must contain a token")
+	require.NotEmpty(t, token, "%s must contain a token", tokenEnv)
 	return token
 }
 
 func subjectFromJWT(t *testing.T, token string) string {
 	t.Helper()
 	parts := strings.Split(token, ".")
-	require.Len(t, parts, 3, "E2E_AUTH_TOKEN must be a JWT")
+	require.Len(t, parts, 3, "E2E auth token must be a JWT")
 
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	require.NoError(t, err)
@@ -103,7 +118,7 @@ func subjectFromJWT(t *testing.T, token string) string {
 		Subject string `json:"sub"`
 	}
 	require.NoError(t, json.Unmarshal(payload, &claims))
-	require.NotEmpty(t, strings.TrimSpace(claims.Subject), "E2E_AUTH_TOKEN JWT must contain sub")
+	require.NotEmpty(t, strings.TrimSpace(claims.Subject), "E2E auth token JWT must contain sub")
 	return claims.Subject
 }
 

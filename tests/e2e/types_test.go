@@ -51,3 +51,25 @@ type e2eRoomEventResponse struct {
 	Type    string          `json:"type"`
 	Payload json.RawMessage `json:"payload"`
 }
+
+type e2eSelectedCharacterResponse struct {
+	UserID    string               `json:"user_id"`
+	Role      string               `json:"role"`
+	Character e2eCharacterResponse `json:"character"`
+}
+
+type e2eRoomCommand struct {
+	Type    string `json:"type"`
+	Payload any    `json:"payload"`
+}
+
+type e2eRoomSocketEvent struct {
+	Type    string          `json:"type"`
+	RoomID  string          `json:"room_id"`
+	ActorID string          `json:"actor_id"`
+	Payload json.RawMessage `json:"payload"`
+}
+
+type e2eChatPayload struct {
+	Text string `json:"text"`
+}

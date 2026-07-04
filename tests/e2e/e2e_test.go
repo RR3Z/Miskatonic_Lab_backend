@@ -40,7 +40,7 @@ func TestE2ECharacterHTTPFlow(t *testing.T) {
 
 	characterID := subject.createCharacter(t, "E2E Investigator")
 	t.Cleanup(func() {
-		subject.doJSONAllow(t, http.MethodDelete, "/api/characters/"+characterID+"/", nil, []int{http.StatusNoContent, http.StatusNotFound}, nil)
+		subject.deleteCharacter(t, characterID)
 	})
 
 	var characters []e2eIDResponse
@@ -98,32 +98,16 @@ func TestE2ERoomDiceRollCreatesRoomEvent(t *testing.T) {
 
 	characterID := subject.createCharacter(t, "E2E Room Investigator")
 	t.Cleanup(func() {
-		subject.doJSONAllow(t, http.MethodDelete, "/api/characters/"+characterID+"/", nil, []int{http.StatusNoContent, http.StatusNotFound}, nil)
+		subject.deleteCharacter(t, characterID)
 	})
 
-	var room e2eRoomResponse
-	subject.doJSON(
-		t,
-		http.MethodPost,
-		"/api/rooms/",
-		map[string]any{"max_players": 4, "password": "e2e-room-password"},
-		http.StatusCreated,
-		&room,
-	)
-	require.NotEmpty(t, room.ID)
+	room := subject.createRoom(t, "e2e-room-password")
 	require.Equal(t, subject.userID, room.OwnerID)
 	t.Cleanup(func() {
-		subject.doJSONAllow(t, http.MethodDelete, "/api/rooms/"+room.ID+"/", nil, []int{http.StatusNoContent, http.StatusNotFound}, nil)
+		subject.deleteRoom(t, room.ID)
 	})
 
-	subject.doJSON(
-		t,
-		http.MethodPut,
-		"/api/rooms/"+room.ID+"/character",
-		map[string]any{"character_id": characterID},
-		http.StatusOK,
-		nil,
-	)
+	subject.selectCharacter(t, room.ID, characterID)
 
 	var roll e2eIDResponse
 	subject.doJSON(

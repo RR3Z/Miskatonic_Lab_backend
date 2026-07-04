@@ -28,6 +28,56 @@ func (s *e2eSubject) createCharacter(t *testing.T, name string) string {
 	return character.ID
 }
 
+func (s *e2eSubject) deleteCharacter(t *testing.T, characterID string) {
+	t.Helper()
+	s.doJSONAllow(t, http.MethodDelete, "/api/characters/"+url.PathEscape(characterID)+"/", nil, []int{http.StatusNoContent, http.StatusNotFound}, nil)
+}
+
+func (s *e2eSubject) createRoom(t *testing.T, password string) e2eRoomResponse {
+	t.Helper()
+
+	var room e2eRoomResponse
+	s.doJSON(
+		t,
+		http.MethodPost,
+		"/api/rooms/",
+		map[string]any{"max_players": 4, "password": password},
+		http.StatusCreated,
+		&room,
+	)
+	require.NotEmpty(t, room.ID)
+	return room
+}
+
+func (s *e2eSubject) deleteRoom(t *testing.T, roomID string) {
+	t.Helper()
+	s.doJSONAllow(t, http.MethodDelete, "/api/rooms/"+url.PathEscape(roomID)+"/", nil, []int{http.StatusNoContent, http.StatusNotFound}, nil)
+}
+
+func (s *e2eSubject) joinRoom(t *testing.T, roomID string, password string) {
+	t.Helper()
+	s.doJSON(
+		t,
+		http.MethodPost,
+		"/api/rooms/"+url.PathEscape(roomID)+"/join",
+		map[string]any{"password": password},
+		http.StatusOK,
+		nil,
+	)
+}
+
+func (s *e2eSubject) selectCharacter(t *testing.T, roomID string, characterID string) {
+	t.Helper()
+	s.doJSON(
+		t,
+		http.MethodPut,
+		"/api/rooms/"+url.PathEscape(roomID)+"/character",
+		map[string]any{"character_id": characterID},
+		http.StatusOK,
+		nil,
+	)
+}
+
 func (s *e2eSubject) doJSON(t *testing.T, method string, path string, body any, expectedStatus int, target any) {
 	t.Helper()
 	s.doJSONAllow(t, method, path, body, []int{expectedStatus}, target)
@@ -67,6 +117,22 @@ func (s *e2eSubject) newRequest(t *testing.T, method string, path string, body a
 		req.Header.Set("Content-Type", "application/json")
 	}
 	return req
+}
+
+func (s *e2eSubject) wsURL(t *testing.T, path string) string {
+	t.Helper()
+
+	value, err := url.Parse(s.baseURL + path)
+	require.NoError(t, err)
+	switch value.Scheme {
+	case "http":
+		value.Scheme = "ws"
+	case "https":
+		value.Scheme = "wss"
+	default:
+		t.Fatalf("unsupported E2E_BASE_URL scheme %q", value.Scheme)
+	}
+	return value.String()
 }
 
 func (s *e2eSubject) waitForRoomEvents(t *testing.T, roomID string, eventType string) []e2eRoomEventResponse {
