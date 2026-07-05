@@ -26,6 +26,51 @@ It provides a small HTTP API for users, characters, dice rolls, rooms, room even
 - Clerk user webhooks and protected API routes.
 - Focused Go tests for handlers, services, integrations, WebSocket flow, and migrations.
 
+## Testing
+
+### Стек тестирования
+
+| Инструмент | Назначение |
+|---|---|
+| `testing` (stdlib) | Каркас тестов |
+| `testify` (require/assert) | Утверждения |
+| `httptest` (stdlib) | API-тесты хендлеров |
+| `gotestsum` | Форматированный вывод тестов |
+| Hand-written fakes | Заглушки на границах пакетов (вместо mock-библиотек) |
+| PostgreSQL (Docker) | Реальная БД для интеграционных тестов |
+
+### Проведённое тестирование
+
+| Уровень | Что покрывает | Кол-во тестов |
+|---|---|---|
+| **Модульные** | Бизнес-логика сервисов, хендлеры, валидация, мапперы, парсеры, middleware, утилиты, WebSocket-хаб | ~450 |
+| **Интеграционные** | `sqlc`-запросы, constraints, foreign keys, upserts, каскады, owner-scoping, миграции — на реальной PostgreSQL | ~250 |
+| **End-to-End** | HTTP + WebSocket поверх реального сервера и БД (опционально, с реальным Clerk-токеном) | 7 |
+| **Clerk Integration** | Реальный Clerk API → webhook → локальная БД (опционально) | 1 |
+| **Migration Smoke** | `migrate up/down` против disposable-БД (опционально) | 1 |
+
+**Всего: 710 тестовых сценариев** — все `pass`. Детальная трасса по доменам:
+
+| Домен | Кол-во |
+|---|---|
+| Персонажи | 385 |
+| Комнаты | 102 |
+| Броски кубов | 73 |
+| Пользователи | 49 |
+| События | 21 |
+| Модели | 20 |
+| WebSocket | 11 |
+| Слушатели | 11 |
+| Утилиты | 9 |
+| Сквозные проверки | 7 |
+| Middleware | 7 |
+| Наблюдаемость | 7 |
+| HTTP-адаптер | 4 |
+| Конфигурация | 3 |
+| Миграции | 1 |
+
+Полная тестовая трасса — [docs/test-trace.md](docs/test-trace.md). Подробнее о стратегии — [docs/testing.md](docs/testing.md).
+
 ## Requirements
 
 - Go `1.26.3`
@@ -83,4 +128,4 @@ Protected under `/api`:
 - `/rooms`
 - `GET /rooms/{roomID}/ws`
 
-More detail lives in [docs/testing.md](docs/testing.md), [docs/room-realtime.md](docs/room-realtime.md), and [docs/errors/index.md](docs/errors/index.md).
+More detail lives in [docs/testing.md](docs/testing.md), [docs/test-trace.md](docs/test-trace.md), [docs/room-realtime.md](docs/room-realtime.md), and [docs/errors/index.md](docs/errors/index.md).
