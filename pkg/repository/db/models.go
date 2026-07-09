@@ -27,17 +27,18 @@ type BackstoryItem struct {
 }
 
 type Character struct {
-	ID         pgtype.UUID        `json:"id"`
-	UserID     string             `json:"user_id"`
-	Name       string             `json:"name"`
-	PlayerName *string            `json:"player_name"`
-	Occupation *string            `json:"occupation"`
-	Age        *int16             `json:"age"`
-	Sex        *string            `json:"sex"`
-	Residence  *string            `json:"residence"`
-	Birthplace *string            `json:"birthplace"`
-	CreatedAt  pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+	ID          pgtype.UUID        `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	PlayerName  *string            `json:"player_name"`
+	Occupation  *string            `json:"occupation"`
+	Age         *int16             `json:"age"`
+	Sex         *string            `json:"sex"`
+	Residence   *string            `json:"residence"`
+	Birthplace  *string            `json:"birthplace"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	PortraitUrl *string            `json:"portrait_url"`
 }
 
 type Characteristic struct {

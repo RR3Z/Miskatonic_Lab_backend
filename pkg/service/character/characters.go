@@ -27,15 +27,15 @@ func NewCharacterService(repos *repository.Repository, publisher ...events.Event
 }
 
 // Characters
-func (s *CharacterService) GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterShortModel, error) {
-	dbCharacters, err := s.repos.Queries.GetAllUserCharacters(ctx, userID)
+func (s *CharacterService) GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterSummaryModel, error) {
+	rows, err := s.repos.Queries.GetAllUserCharacterCards(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]characterDTO.CharacterShortModel, len(dbCharacters))
-	for i, c := range dbCharacters {
-		result[i] = characterDTO.ToCharacterShortModel(c)
+	result := make([]characterDTO.CharacterSummaryModel, len(rows))
+	for i, row := range rows {
+		result[i] = characterDTO.ToCharacterSummaryModel(row)
 	}
 
 	return result, nil
@@ -159,14 +159,15 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 	}
 
 	character, err := s.repos.Queries.CreateCharacter(ctx, db.CreateCharacterParams{
-		UserID:     input.UserID,
-		Name:       input.Name,
-		PlayerName: input.PlayerName,
-		Occupation: input.Occupation,
-		Age:        input.Age,
-		Sex:        input.Sex,
-		Residence:  input.Residence,
-		Birthplace: input.Birthplace,
+		UserID:      input.UserID,
+		Name:        input.Name,
+		PlayerName:  input.PlayerName,
+		Occupation:  input.Occupation,
+		Age:         input.Age,
+		Sex:         input.Sex,
+		Residence:   input.Residence,
+		Birthplace:  input.Birthplace,
+		PortraitUrl: input.PortraitUrl,
 	})
 	if err != nil {
 		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
@@ -184,15 +185,16 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterD
 	}
 
 	character, err := s.repos.Queries.UpdateCharacter(ctx, db.UpdateCharacterParams{
-		UserID:     input.UserID,
-		ID:         input.ID,
-		Name:       input.Name,
-		PlayerName: input.PlayerName,
-		Occupation: input.Occupation,
-		Age:        input.Age,
-		Sex:        input.Sex,
-		Residence:  input.Residence,
-		Birthplace: input.Birthplace,
+		UserID:      input.UserID,
+		ID:          input.ID,
+		Name:        input.Name,
+		PlayerName:  input.PlayerName,
+		Occupation:  input.Occupation,
+		Age:         input.Age,
+		Sex:         input.Sex,
+		Residence:   input.Residence,
+		Birthplace:  input.Birthplace,
+		PortraitUrl: input.PortraitUrl,
 	})
 	if err != nil {
 		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)

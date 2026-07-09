@@ -54,14 +54,15 @@ func (h *CharacterHandler) createCharacter(w http.ResponseWriter, r *http.Reques
 		return appErr
 	}
 	input := characterDTO.CreateCharacterInput{
-		UserID:     userID,
-		Name:       req.Name,
-		PlayerName: req.PlayerName,
-		Occupation: req.Occupation,
-		Age:        req.Age,
-		Sex:        req.Sex,
-		Residence:  req.Residence,
-		Birthplace: req.Birthplace,
+		UserID:      userID,
+		Name:        req.Name,
+		PlayerName:  req.PlayerName,
+		Occupation:  req.Occupation,
+		Age:         req.Age,
+		Sex:         req.Sex,
+		Residence:   req.Residence,
+		Birthplace:  req.Birthplace,
+		PortraitUrl: req.PortraitUrl,
 	}
 
 	character, err := h.service.CreateCharacter(r.Context(), input)
@@ -86,15 +87,16 @@ func (h *CharacterHandler) updateCharacter(w http.ResponseWriter, r *http.Reques
 		return appErr
 	}
 	input := characterDTO.UpdateCharacterInput{
-		UserID:     userID,
-		ID:         characterID,
-		Name:       req.Name,
-		PlayerName: req.PlayerName,
-		Occupation: req.Occupation,
-		Age:        req.Age,
-		Sex:        req.Sex,
-		Residence:  req.Residence,
-		Birthplace: req.Birthplace,
+		UserID:      userID,
+		ID:          characterID,
+		Name:        req.Name,
+		PlayerName:  req.PlayerName,
+		Occupation:  req.Occupation,
+		Age:         req.Age,
+		Sex:         req.Sex,
+		Residence:   req.Residence,
+		Birthplace:  req.Birthplace,
+		PortraitUrl: req.PortraitUrl,
 	}
 
 	character, err := h.service.UpdateCharacter(r.Context(), input)

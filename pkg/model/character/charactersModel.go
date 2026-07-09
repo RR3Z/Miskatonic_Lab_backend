@@ -34,16 +34,48 @@ type CharacterShortModel struct {
 	ID     pgtype.UUID `json:"id"`
 	UserID string      `json:"user_id"`
 
-	Name       string  `json:"name"`
-	PlayerName *string `json:"player_name"`
-	Occupation *string `json:"occupation"`
-	Age        *int16  `json:"age"`
-	Sex        *string `json:"sex"`
-	Residence  *string `json:"residence"`
-	Birthplace *string `json:"birthplace"`
+	Name        string  `json:"name"`
+	PlayerName  *string `json:"player_name"`
+	Occupation  *string `json:"occupation"`
+	Age         *int16  `json:"age"`
+	Sex         *string `json:"sex"`
+	Residence   *string `json:"residence"`
+	Birthplace  *string `json:"birthplace"`
+	PortraitUrl *string `json:"portrait_url"`
 
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CharacterSummaryModel struct {
+	ID pgtype.UUID `json:"id"`
+
+	Name        string  `json:"name"`
+	Occupation  *string `json:"occupation"`
+	Age         *int16  `json:"age"`
+	Sex         *string `json:"sex"`
+	Residence   *string `json:"residence"`
+	PortraitUrl *string `json:"portrait_url"`
+
+	HP struct {
+		Current int16 `json:"current_hp"`
+		Max     int16 `json:"max_hp"`
+	} `json:"hp"`
+
+	MP struct {
+		Current int16 `json:"current_mp"`
+		Max     int16 `json:"max_mp"`
+	} `json:"mp"`
+
+	Sanity struct {
+		Current int16 `json:"current_sanity"`
+		Max     int16 `json:"max_sanity"`
+	} `json:"sanity"`
+
+	Luck struct {
+		Current  int16 `json:"current_luck"`
+		Starting int16 `json:"starting_luck"`
+	} `json:"luck"`
 }
 
 type CharacterModel struct {
@@ -63,18 +95,40 @@ type CharacterModel struct {
 
 func ToCharacterShortModel(c db.Character) CharacterShortModel {
 	return CharacterShortModel{
-		ID:         c.ID,
-		UserID:     c.UserID,
-		Name:       c.Name,
-		PlayerName: c.PlayerName,
-		Occupation: c.Occupation,
-		Age:        c.Age,
-		Sex:        c.Sex,
-		Residence:  c.Residence,
-		Birthplace: c.Birthplace,
-		CreatedAt:  c.CreatedAt,
-		UpdatedAt:  c.UpdatedAt,
+		ID:          c.ID,
+		UserID:      c.UserID,
+		Name:        c.Name,
+		PlayerName:  c.PlayerName,
+		Occupation:  c.Occupation,
+		Age:         c.Age,
+		Sex:         c.Sex,
+		Residence:   c.Residence,
+		Birthplace:  c.Birthplace,
+		PortraitUrl: c.PortraitUrl,
+		CreatedAt:   c.CreatedAt,
+		UpdatedAt:   c.UpdatedAt,
 	}
+}
+
+func ToCharacterSummaryModel(row db.GetAllUserCharacterCardsRow) CharacterSummaryModel {
+	m := CharacterSummaryModel{
+		ID:          row.ID,
+		Name:        row.Name,
+		Occupation:  row.Occupation,
+		Age:         row.Age,
+		Sex:         row.Sex,
+		Residence:   row.Residence,
+		PortraitUrl: row.PortraitUrl,
+	}
+	m.HP.Current = row.CurrentHp
+	m.HP.Max = row.MaxHp
+	m.MP.Current = row.CurrentMp
+	m.MP.Max = row.MaxMp
+	m.Sanity.Current = row.CurrentSanity
+	m.Sanity.Max = row.MaxSanity
+	m.Luck.Current = row.CurrentLuck
+	m.Luck.Starting = row.StartingLuck
+	return m
 }
 
 func ToCharacterModel(d CharacterDBData) CharacterModel {

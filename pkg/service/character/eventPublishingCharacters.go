@@ -7,7 +7,7 @@ import (
 	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 )
 
-func (s *EventPublishingCharacterService) GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterShortModel, error) {
+func (s *EventPublishingCharacterService) GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterSummaryModel, error) {
 	characters, err := s.next.GetAllCharacters(ctx, userID)
 	if err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharactersListFailed{

@@ -21,22 +21,24 @@ SET
     sex = $7,
     residence = $8,
     birthplace = $9,
+    portrait_url = $10,
     updated_at = NOW()
 WHERE user_id = $1
   AND id = $2
-RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at
+RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_url
 `
 
 type UpdateCharacterParams struct {
-	UserID     string      `json:"user_id"`
-	ID         pgtype.UUID `json:"id"`
-	Name       string      `json:"name"`
-	PlayerName *string     `json:"player_name"`
-	Occupation *string     `json:"occupation"`
-	Age        *int16      `json:"age"`
-	Sex        *string     `json:"sex"`
-	Residence  *string     `json:"residence"`
-	Birthplace *string     `json:"birthplace"`
+	UserID      string      `json:"user_id"`
+	ID          pgtype.UUID `json:"id"`
+	Name        string      `json:"name"`
+	PlayerName  *string     `json:"player_name"`
+	Occupation  *string     `json:"occupation"`
+	Age         *int16      `json:"age"`
+	Sex         *string     `json:"sex"`
+	Residence   *string     `json:"residence"`
+	Birthplace  *string     `json:"birthplace"`
+	PortraitUrl *string     `json:"portrait_url"`
 }
 
 func (q *Queries) UpdateCharacter(ctx context.Context, arg UpdateCharacterParams) (Character, error) {
@@ -50,6 +52,7 @@ func (q *Queries) UpdateCharacter(ctx context.Context, arg UpdateCharacterParams
 		arg.Sex,
 		arg.Residence,
 		arg.Birthplace,
+		arg.PortraitUrl,
 	)
 	var i Character
 	err := row.Scan(
@@ -64,6 +67,7 @@ func (q *Queries) UpdateCharacter(ctx context.Context, arg UpdateCharacterParams
 		&i.Birthplace,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PortraitUrl,
 	)
 	return i, err
 }

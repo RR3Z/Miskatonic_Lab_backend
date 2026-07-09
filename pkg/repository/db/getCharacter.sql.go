@@ -12,7 +12,7 @@ import (
 )
 
 const getCharacter = `-- name: GetCharacter :one
-SELECT id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at
+SELECT id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_url
 FROM characters
 WHERE user_id = $1 AND id = $2
 `
@@ -37,6 +37,7 @@ func (q *Queries) GetCharacter(ctx context.Context, arg GetCharacterParams) (Cha
 		&i.Birthplace,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PortraitUrl,
 	)
 	return i, err
 }

@@ -7,7 +7,8 @@ INSERT INTO characters (
     age,
     sex,
     residence,
-    birthplace
+    birthplace,
+    portrait_url
 ) VALUES (
     $1,
     $2,
@@ -16,6 +17,7 @@ INSERT INTO characters (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9
 )
 RETURNING *;

@@ -3,9 +3,9 @@ package character
 import (
 	"context"
 
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
-	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
 	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
@@ -18,7 +18,7 @@ import (
 )
 
 type ICharacter interface {
-	GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterShortModel, error)
+	GetAllCharacters(ctx context.Context, userID string) ([]characterDTO.CharacterSummaryModel, error)
 	GetCharacter(ctx context.Context, input characterDTO.GetCharacterInput) (characterDTO.CharacterModel, error)
 	CreateCharacter(ctx context.Context, input characterDTO.CreateCharacterInput) (characterDTO.CharacterShortModel, error)
 	UpdateCharacter(ctx context.Context, input characterDTO.UpdateCharacterInput) (characterDTO.CharacterShortModel, error)
