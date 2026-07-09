@@ -31,6 +31,7 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 	character.Sex = nil
 	character.Residence = nil
 	character.Birthplace = nil
+	character.PortraitUrl = nil
 
 	result := characterDTO.ToCharacterShortModel(character)
 
@@ -40,6 +41,46 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 	require.Nil(t, result.Sex)
 	require.Nil(t, result.Residence)
 	require.Nil(t, result.Birthplace)
+	require.Nil(t, result.PortraitUrl)
+}
+
+func TestToCharacterSummaryModelMapsBaseFieldsAndStats(t *testing.T) {
+	portraitURL := "https://assets.example.test/portraits/armitage.webp"
+	row := db.GetAllUserCharacterCardsRow{
+		ID:            testUUID("11111111-1111-1111-1111-111111111111"),
+		Name:          "Dr. Armitage",
+		Occupation:    strPtr("Antiquarian"),
+		Age:           int16Ptr(42),
+		Sex:           strPtr(""),
+		Residence:     strPtr("Arkham"),
+		PortraitUrl:   &portraitURL,
+		CurrentHp:     7,
+		MaxHp:         12,
+		CurrentMp:     4,
+		MaxMp:         9,
+		CurrentSanity: 33,
+		MaxSanity:     60,
+		CurrentLuck:   20,
+		StartingLuck:  45,
+	}
+
+	result := characterDTO.ToCharacterSummaryModel(row)
+
+	require.Equal(t, row.ID, result.ID)
+	require.Equal(t, row.Name, result.Name)
+	require.Equal(t, row.Occupation, result.Occupation)
+	require.Equal(t, row.Age, result.Age)
+	require.Equal(t, row.Sex, result.Sex)
+	require.Equal(t, row.Residence, result.Residence)
+	require.Equal(t, row.PortraitUrl, result.PortraitUrl)
+	require.Equal(t, int16(7), result.HP.Current)
+	require.Equal(t, int16(12), result.HP.Max)
+	require.Equal(t, int16(4), result.MP.Current)
+	require.Equal(t, int16(9), result.MP.Max)
+	require.Equal(t, int16(33), result.Sanity.Current)
+	require.Equal(t, int16(60), result.Sanity.Max)
+	require.Equal(t, int16(20), result.Luck.Current)
+	require.Equal(t, int16(45), result.Luck.Starting)
 }
 
 func TestToFullCharacterModelLeavesOptionalSectionsEmptyWhenIDsAreInvalid(t *testing.T) {

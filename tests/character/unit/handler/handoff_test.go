@@ -1,9 +1,11 @@
 package tests
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +19,8 @@ func TestCreateCharacterPassesBodyAndUserID(t *testing.T) {
 		"age":42,
 		"sex":"m",
 		"residence":"Arkham",
-		"birthplace":"Boston"
+		"birthplace":"Boston",
+		"portrait_url":"https://assets.example.test/portraits/harvey.webp"
 	}`)
 
 	require.Equal(t, http.StatusCreated, recorder.Code)
@@ -26,6 +29,80 @@ func TestCreateCharacterPassesBodyAndUserID(t *testing.T) {
 	require.Equal(t, "Harvey Walters", service.createInput.Name)
 	require.Equal(t, "Professor", *service.createInput.Occupation)
 	require.Equal(t, int16(42), *service.createInput.Age)
+	require.Equal(t, "Boston", *service.createInput.Birthplace)
+	require.Equal(t, "https://assets.example.test/portraits/harvey.webp", *service.createInput.PortraitUrl)
+}
+
+func TestUpdateCharacterPassesPortraitURL(t *testing.T) {
+	service, router := newCharacterHandlerTestSubject(nil)
+
+	recorder := performCharacterRequest(router, http.MethodPut, "/api/characters/"+testCharacterID+"/", `{
+		"name":"Harvey Walters",
+		"portrait_url":"https://assets.example.test/portraits/updated.webp"
+	}`)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, 1, service.updateCalls)
+	require.Equal(t, "user_1", service.updateInput.UserID)
+	require.Equal(t, testCharacterUnitUUID(testCharacterID), service.updateInput.ID)
+	require.Equal(t, "Harvey Walters", service.updateInput.Name)
+	require.Equal(t, "https://assets.example.test/portraits/updated.webp", *service.updateInput.PortraitUrl)
+}
+
+func TestGetAllCharactersReturnsSummaryJSON(t *testing.T) {
+	portraitURL := "https://assets.example.test/portraits/summary.webp"
+	card := characterDTO.CharacterSummaryModel{
+		ID:          testCharacterUnitUUID(testCharacterID),
+		Name:        "Harvey Walters",
+		Occupation:  characterString("Professor"),
+		Age:         characterInt16(42),
+		Sex:         characterString(""),
+		Residence:   characterString("Arkham"),
+		PortraitUrl: &portraitURL,
+	}
+	card.HP.Current = 7
+	card.HP.Max = 12
+	card.MP.Current = 4
+	card.MP.Max = 9
+	card.Sanity.Current = 33
+	card.Sanity.Max = 60
+	card.Luck.Current = 20
+	card.Luck.Starting = 45
+
+	service := &fakeCharacterHandlerService{characters: []characterDTO.CharacterSummaryModel{card}}
+	router := newCharacterHandlerTestRouter(service)
+
+	recorder := performCharacterRequest(router, http.MethodGet, "/api/characters/", "")
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, 1, service.getAllCalls)
+	require.Equal(t, "user_1", service.getAllUserID)
+
+	var response []map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 1)
+	require.Equal(t, "Harvey Walters", response[0]["name"])
+	require.Equal(t, "Professor", response[0]["occupation"])
+	require.Equal(t, "", response[0]["sex"])
+	require.Equal(t, "Arkham", response[0]["residence"])
+	require.Equal(t, portraitURL, response[0]["portrait_url"])
+	require.NotContains(t, response[0], "birthplace")
+	require.NotContains(t, response[0], "user_id")
+	require.NotContains(t, response[0], "created_at")
+	require.NotContains(t, response[0], "updated_at")
+
+	hp := response[0]["hp"].(map[string]any)
+	require.Equal(t, float64(7), hp["current_hp"])
+	require.Equal(t, float64(12), hp["max_hp"])
+	mp := response[0]["mp"].(map[string]any)
+	require.Equal(t, float64(4), mp["current_mp"])
+	require.Equal(t, float64(9), mp["max_mp"])
+	sanity := response[0]["sanity"].(map[string]any)
+	require.Equal(t, float64(33), sanity["current_sanity"])
+	require.Equal(t, float64(60), sanity["max_sanity"])
+	luck := response[0]["luck"].(map[string]any)
+	require.Equal(t, float64(20), luck["current_luck"])
+	require.Equal(t, float64(45), luck["starting_luck"])
 }
 
 func TestUpsertHealthPassesPathAndBody(t *testing.T) {

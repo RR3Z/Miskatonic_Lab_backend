@@ -11,7 +11,7 @@ import (
 func TestCharacterRoutesAreMounted(t *testing.T) {
 	characterID := testCharacterUnitUUID(testCharacterID)
 	service := &fakeCharacterHandlerService{
-		characters: []characterDTO.CharacterShortModel{{ID: characterID, UserID: "user_1", Name: "Investigator"}},
+		characters: []characterDTO.CharacterSummaryModel{{ID: characterID, Name: "Investigator"}},
 		character:  characterDTO.CharacterModel{CharacterShortModel: characterDTO.CharacterShortModel{ID: characterID, UserID: "user_1", Name: "Investigator"}},
 	}
 	router := newCharacterHandlerTestRouter(service)

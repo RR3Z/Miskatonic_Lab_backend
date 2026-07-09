@@ -12,7 +12,7 @@ import (
 type fakeCharacterHandlerService struct {
 	err error
 
-	characters []characterDTO.CharacterShortModel
+	characters []characterDTO.CharacterSummaryModel
 	character  characterDTO.CharacterModel
 
 	getAllCalls  int

@@ -72,3 +72,11 @@ func testCharacterUnitUUID(value string) pgtype.UUID {
 	}
 	return id
 }
+
+func characterString(value string) *string {
+	return &value
+}
+
+func characterInt16(value int16) *int16 {
+	return &value
+}

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
-	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
 	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
@@ -29,7 +29,7 @@ func (f *FakeEventPublisher) Publish(_ context.Context, event events.Event) {
 type FakeCharacterService struct {
 	Err error
 
-	Characters      []characterDTO.CharacterShortModel
+	Characters      []characterDTO.CharacterSummaryModel
 	Character       characterDTO.CharacterModel
 	Health          db.HealthState
 	Sanity          db.SanityState
@@ -47,7 +47,7 @@ type FakeCharacterService struct {
 	Note            db.Note
 }
 
-func (f *FakeCharacterService) GetAllCharacters(context.Context, string) ([]characterDTO.CharacterShortModel, error) {
+func (f *FakeCharacterService) GetAllCharacters(context.Context, string) ([]characterDTO.CharacterSummaryModel, error) {
 	return f.Characters, f.Err
 }
 

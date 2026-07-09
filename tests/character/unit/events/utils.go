@@ -30,9 +30,9 @@ func newEventPublishingTestSubject() (*FakeCharacterService, *FakeEventPublisher
 
 func newFakeCharacterService() *FakeCharacterService {
 	return &FakeCharacterService{
-		Characters: []characterDTO.CharacterShortModel{
-			testCharacterShortModel(),
-			{ID: testUUID("55555555-5555-5555-5555-555555555555"), UserID: testUserID, Name: "Second Character"},
+		Characters: []characterDTO.CharacterSummaryModel{
+			testCharacterSummaryModel(),
+			{ID: testUUID("55555555-5555-5555-5555-555555555555"), Name: "Second Character"},
 		},
 		Character:       testCharacterModel(),
 		Backstory:       backstoriesDTO.BackstoryModel{ID: testUUID(testItemID), CharacterID: testUUID(testCharacterID)},
@@ -67,6 +67,13 @@ func testCharacterShortModel() characterDTO.CharacterShortModel {
 		ID:     testUUID(testCharacterID),
 		UserID: testUserID,
 		Name:   "Dr. Armitage",
+	}
+}
+
+func testCharacterSummaryModel() characterDTO.CharacterSummaryModel {
+	return characterDTO.CharacterSummaryModel{
+		ID:   testUUID(testCharacterID),
+		Name: "Dr. Armitage",
 	}
 }
 

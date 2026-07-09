@@ -6,7 +6,7 @@ import (
 	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 )
 
-func (f *fakeCharacterHandlerService) GetAllCharacters(_ context.Context, userID string) ([]characterDTO.CharacterShortModel, error) {
+func (f *fakeCharacterHandlerService) GetAllCharacters(_ context.Context, userID string) ([]characterDTO.CharacterSummaryModel, error) {
 	f.getAllCalls++
 	f.getAllUserID = userID
 	return f.characters, f.err
