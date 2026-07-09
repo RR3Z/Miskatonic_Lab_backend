@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpAdapter"
+	httpAdapter "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpadapter"
 	userService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/user"
 	"github.com/go-chi/chi/v5"
 )

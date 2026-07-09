@@ -3,7 +3,7 @@ package diceRoller
 import (
 	"context"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpAdapter"
+	httpAdapter "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpadapter"
 	diceRollerService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"

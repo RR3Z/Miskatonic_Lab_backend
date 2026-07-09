@@ -1,7 +1,7 @@
 package character
 
 import (
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpAdapter"
+	httpAdapter "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpadapter"
 	characterService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	"github.com/go-chi/chi/v5"
 )

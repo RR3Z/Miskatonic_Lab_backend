@@ -3,7 +3,7 @@ package room
 import (
 	"context"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpAdapter"
+	httpAdapter "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/httpadapter"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	wsCommands "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/commands"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
