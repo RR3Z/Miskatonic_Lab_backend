@@ -7,16 +7,14 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
+	"github.com/RR3Z/Miskatonic_Lab_backend/internal/testdb"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,9 +41,7 @@ func newE2ESubjectFromEnv(t *testing.T, tokenEnv string) *e2eSubject {
 	token := normalizedE2EToken(t, tokenEnv)
 	userID := subjectFromJWT(t, token)
 
-	pool, err := repository.NewPostgresDB(context.Background(), e2ePostgresConfig())
-	require.NoError(t, err)
-	t.Cleanup(pool.Close)
+	pool := testdb.Open(t)
 
 	queries := repository.NewRepository(pool).Queries
 	cleanupUser := ensureLocalE2EUser(t, queries, userID)
@@ -72,20 +68,7 @@ func requireE2EEnabled(t *testing.T) {
 func loadE2EEnv(t *testing.T) {
 	t.Helper()
 
-	dir, err := os.Getwd()
-	require.NoError(t, err)
-	for {
-		envPath := filepath.Join(dir, ".env")
-		if _, err := os.Stat(envPath); err == nil {
-			require.NoError(t, godotenv.Load(envPath))
-			return
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return
-		}
-		dir = parent
-	}
+	require.NoError(t, testdb.LoadEnv())
 }
 
 func e2eBaseURL() string {
@@ -141,17 +124,6 @@ func ensureLocalE2EUser(t *testing.T, queries *db.Queries, userID string) func()
 
 	return func() {
 		_ = queries.DeleteUserByClerkID(context.Background(), userID)
-	}
-}
-
-func e2ePostgresConfig() config.PostgresDBConfig {
-	return config.PostgresDBConfig{
-		Host:     e2eEnvOrDefault("POSTGRES_HOST", "localhost"),
-		Port:     e2eEnvOrDefault("POSTGRES_PORT", "5432"),
-		Username: e2eEnvOrDefault("POSTGRES_USER", "miskatonic_user"),
-		Password: e2eEnvOrDefault("POSTGRES_PASSWORD", "miskatonic_password"),
-		DBName:   e2eEnvOrDefault("POSTGRES_DB", "miskatonic_lab"),
-		SSLMode:  e2eEnvOrDefault("POSTGRES_SSLMODE", "disable"),
 	}
 }
 

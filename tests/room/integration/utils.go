@@ -4,21 +4,17 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
+	"github.com/RR3Z/Miskatonic_Lab_backend/internal/testdb"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,54 +33,10 @@ type roomTestUser struct {
 
 func newRoomIntegrationSubject(t *testing.T) *roomIntegrationSubject {
 	t.Helper()
-	loadRoomTestEnv(t)
-
-	pool, err := repository.NewPostgresDB(context.Background(), roomIntegrationPostgresConfig())
-	require.NoError(t, err)
-	t.Cleanup(pool.Close)
+	pool := testdb.Open(t)
 
 	repos := repository.NewRepository(pool)
 	return &roomIntegrationSubject{pool: pool, queries: repos.Queries}
-}
-
-func loadRoomTestEnv(t *testing.T) {
-	t.Helper()
-
-	dir, err := os.Getwd()
-	require.NoError(t, err)
-
-	for {
-		envPath := filepath.Join(dir, ".env")
-		if _, err := os.Stat(envPath); err == nil {
-			require.NoError(t, godotenv.Load(envPath))
-			return
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return
-		}
-		dir = parent
-	}
-}
-
-func roomIntegrationPostgresConfig() config.PostgresDBConfig {
-	return config.PostgresDBConfig{
-		Host:     roomEnvOrDefault("POSTGRES_HOST", "localhost"),
-		Port:     roomEnvOrDefault("POSTGRES_PORT", "5432"),
-		Username: roomEnvOrDefault("POSTGRES_USER", "miskatonic_user"),
-		Password: roomEnvOrDefault("POSTGRES_PASSWORD", "miskatonic_password"),
-		DBName:   roomEnvOrDefault("POSTGRES_DB", "miskatonic_lab"),
-		SSLMode:  roomEnvOrDefault("POSTGRES_SSLMODE", "disable"),
-	}
-}
-
-func roomEnvOrDefault(key string, defaultValue string) string {
-	value := strings.TrimSpace(os.Getenv(key))
-	if value == "" {
-		return defaultValue
-	}
-	return value
 }
 
 func createRoomTestUser(t *testing.T, subject *roomIntegrationSubject) roomTestUser {

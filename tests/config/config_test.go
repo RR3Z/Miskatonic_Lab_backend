@@ -32,3 +32,29 @@ func TestDatabaseURLFormatsPostgresConnectionString(t *testing.T) {
 
 	require.Equal(t, "postgres://postgres:secret@localhost:5432/miskatonic?sslmode=disable", url)
 }
+
+func TestDatabaseURLWithFallbackPrefersExplicitDatabaseURL(t *testing.T) {
+	url := config.DatabaseURLWithFallback(" postgres://supabase.example/postgres?sslmode=require ", config.PostgresDBConfig{
+		Host:     "localhost",
+		Port:     "5432",
+		Username: "postgres",
+		Password: "secret",
+		DBName:   "miskatonic",
+		SSLMode:  "disable",
+	})
+
+	require.Equal(t, "postgres://supabase.example/postgres?sslmode=require", url)
+}
+
+func TestDatabaseURLWithFallbackUsesConfigWhenExplicitDatabaseURLIsBlank(t *testing.T) {
+	url := config.DatabaseURLWithFallback(" ", config.PostgresDBConfig{
+		Host:     "localhost",
+		Port:     "5432",
+		Username: "postgres",
+		Password: "secret",
+		DBName:   "miskatonic",
+		SSLMode:  "disable",
+	})
+
+	require.Equal(t, "postgres://postgres:secret@localhost:5432/miskatonic?sslmode=disable", url)
+}

@@ -4,20 +4,16 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
+	"github.com/RR3Z/Miskatonic_Lab_backend/internal/testdb"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,60 +32,13 @@ type diceTestUser struct {
 
 func newDiceIntegrationSubject(t *testing.T) *diceIntegrationSubject {
 	t.Helper()
-	loadDiceTestEnv(t)
-
-	pool, err := repository.NewPostgresDB(context.Background(), diceIntegrationPostgresConfig())
-	require.NoError(t, err)
+	pool := testdb.Open(t)
 
 	repos := repository.NewRepository(pool)
-	t.Cleanup(func() {
-		pool.Close()
-	})
-
 	return &diceIntegrationSubject{
 		pool:    pool,
 		queries: repos.Queries,
 	}
-}
-
-func loadDiceTestEnv(t *testing.T) {
-	t.Helper()
-
-	dir, err := os.Getwd()
-	require.NoError(t, err)
-
-	for {
-		envPath := filepath.Join(dir, ".env")
-		if _, err := os.Stat(envPath); err == nil {
-			require.NoError(t, godotenv.Load(envPath))
-			return
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return
-		}
-		dir = parent
-	}
-}
-
-func diceIntegrationPostgresConfig() config.PostgresDBConfig {
-	return config.PostgresDBConfig{
-		Host:     diceEnvOrDefault("POSTGRES_HOST", "localhost"),
-		Port:     diceEnvOrDefault("POSTGRES_PORT", "5432"),
-		Username: diceEnvOrDefault("POSTGRES_USER", "miskatonic_user"),
-		Password: diceEnvOrDefault("POSTGRES_PASSWORD", "miskatonic_password"),
-		DBName:   diceEnvOrDefault("POSTGRES_DB", "miskatonic_lab"),
-		SSLMode:  diceEnvOrDefault("POSTGRES_SSLMODE", "disable"),
-	}
-}
-
-func diceEnvOrDefault(key string, defaultValue string) string {
-	value := strings.TrimSpace(os.Getenv(key))
-	if value == "" {
-		return defaultValue
-	}
-	return value
 }
 
 func createDiceTestUser(t *testing.T, subject *diceIntegrationSubject) diceTestUser {

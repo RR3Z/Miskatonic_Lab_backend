@@ -6,14 +6,13 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
+	"github.com/RR3Z/Miskatonic_Lab_backend/internal/testdb"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -21,7 +20,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,7 +41,7 @@ type clerkTestUserData struct {
 func newUserIntegrationSubject(t *testing.T) *userIntegrationSubject {
 	t.Helper()
 
-	loadTestEnv(t)
+	require.NoError(t, testdb.LoadEnv())
 	if !integrationTestsEnabled() {
 		t.Skip("set CLERK_INTEGRATION_TESTS=1 to run real Clerk + DB integration tests")
 	}
@@ -54,15 +52,9 @@ func newUserIntegrationSubject(t *testing.T) *userIntegrationSubject {
 	}
 	clerk.SetKey(clerkSecretKey)
 
-	ctx := context.Background()
-	pool, err := repository.NewPostgresDB(ctx, integrationPostgresConfig())
-	require.NoError(t, err)
+	pool := testdb.Open(t)
 
 	repos := repository.NewRepository(pool)
-	t.Cleanup(func() {
-		pool.Close()
-	})
-
 	return &userIntegrationSubject{
 		pool:    pool,
 		queries: repos.Queries,
@@ -70,41 +62,9 @@ func newUserIntegrationSubject(t *testing.T) *userIntegrationSubject {
 	}
 }
 
-func loadTestEnv(t *testing.T) {
-	t.Helper()
-
-	dir, err := os.Getwd()
-	require.NoError(t, err)
-
-	for {
-		envPath := filepath.Join(dir, ".env")
-		if _, err := os.Stat(envPath); err == nil {
-			require.NoError(t, godotenv.Load(envPath))
-			return
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return
-		}
-		dir = parent
-	}
-}
-
 func integrationTestsEnabled() bool {
 	value := strings.ToLower(strings.TrimSpace(os.Getenv("CLERK_INTEGRATION_TESTS")))
 	return value == "1" || value == "true" || value == "yes"
-}
-
-func integrationPostgresConfig() config.PostgresDBConfig {
-	return config.PostgresDBConfig{
-		Host:     envOrDefault("POSTGRES_HOST", "localhost"),
-		Port:     envOrDefault("POSTGRES_PORT", "5432"),
-		Username: envOrDefault("POSTGRES_USER", "miskatonic_user"),
-		Password: envOrDefault("POSTGRES_PASSWORD", "miskatonic_password"),
-		DBName:   envOrDefault("POSTGRES_DB", "miskatonic_lab"),
-		SSLMode:  envOrDefault("POSTGRES_SSLMODE", "disable"),
-	}
 }
 
 func envOrDefault(key string, defaultValue string) string {
