@@ -10,6 +10,10 @@ import (
 func NewPostgresDB(ctx context.Context, cfg config.PostgresDBConfig) (*pgxpool.Pool, error) {
 	databaseURL := config.DatabaseURL(cfg)
 
+	return NewPostgresDBFromURL(ctx, databaseURL)
+}
+
+func NewPostgresDBFromURL(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	dbConnection, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
 		return nil, err
