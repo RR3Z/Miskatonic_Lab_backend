@@ -17,7 +17,7 @@ import (
 )
 
 func connectPostgres(ctx context.Context) (*pgxpool.Pool, error) {
-	dbConnection, err := repository.NewPostgresDB(ctx, config.PostgresDBConfig{
+	databaseURL := config.DatabaseURLWithFallback(os.Getenv("DATABASE_URL"), config.PostgresDBConfig{
 		Host:     os.Getenv("POSTGRES_HOST"),
 		Port:     os.Getenv("POSTGRES_PORT"),
 		Username: os.Getenv("POSTGRES_USER"),
@@ -25,6 +25,8 @@ func connectPostgres(ctx context.Context) (*pgxpool.Pool, error) {
 		DBName:   os.Getenv("POSTGRES_DB"),
 		SSLMode:  os.Getenv("POSTGRES_SSLMODE"),
 	})
+
+	dbConnection, err := repository.NewPostgresDBFromURL(ctx, databaseURL)
 	if err != nil {
 		slog.Error(
 			"database connection failed",
