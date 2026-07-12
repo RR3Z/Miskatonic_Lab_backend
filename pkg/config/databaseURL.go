@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 )
 
 func DatabaseURL(cfg PostgresDBConfig) string {
@@ -14,4 +15,13 @@ func DatabaseURL(cfg PostgresDBConfig) string {
 		cfg.DBName,
 		cfg.SSLMode,
 	)
+}
+
+func DatabaseURLWithFallback(databaseURL string, cfg PostgresDBConfig) string {
+	trimmedDatabaseURL := strings.TrimSpace(databaseURL)
+	if trimmedDatabaseURL != "" {
+		return trimmedDatabaseURL
+	}
+
+	return DatabaseURL(cfg)
 }
