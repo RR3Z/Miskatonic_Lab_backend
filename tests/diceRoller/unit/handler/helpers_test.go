@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	diceRollerHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/diceRoller"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
+	diceRollerHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/diceRoller"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/go-chi/chi/v5"
@@ -17,7 +17,7 @@ func newDiceRollerTestRouter(svc *fakeDiceRollerHandlerService) http.Handler {
 		DiceRoller: svc,
 	}
 	h := handler.NewHandler(services)
-	return h.InitRoutesWithAuth(diceRollerAuthMiddleware)
+	return h.InitRoutes(diceRollerAuthMiddleware)
 }
 
 func newDiceRollerTestRouterWithRoom(svc *fakeDiceRollerHandlerService, checker diceRollerHandler.RoomAccessChecker) http.Handler {

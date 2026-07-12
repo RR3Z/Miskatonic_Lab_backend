@@ -40,7 +40,9 @@ func newClerkWebhookParsingTestSubject(t *testing.T) (*FakeUserService, http.Han
 	t.Setenv("CLERK_WEBHOOK_SIGNING_SECRET", clerkWebhookTestSecret)
 
 	userService := &FakeUserService{}
-	router := handler.NewHandler(&service.Service{User: userService}).InitRoutes()
+	router := handler.NewHandler(&service.Service{User: userService}).InitRoutes(func(next http.Handler) http.Handler {
+		return next
+	})
 
 	return userService, router
 }
