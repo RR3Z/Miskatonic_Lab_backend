@@ -1,9 +1,17 @@
 {
   "scripts": {
+    "dev": "npm run migrate:up:all && go run ./cmd",
+    "build": "go build -o ./bin/miskatonic-lab-backend.exe ./cmd",
+    "start": ".\\bin\\miskatonic-lab-backend.exe",
     "migrate:down": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 down",
     "migrate:up": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 up",
     "migrate:up:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 up-all",
     "migrate:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 version",
+    "testdb:start": "docker compose up -d --wait postgres-test",
+    "testdb:migrate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/testdb.ps1 migrate",
+    "testdb:seed": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/testdb.ps1 seed",
+    "testdb:prepare": "npm run testdb:start && powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/testdb.ps1 prepare",
+    "test:db": "npm run testdb:prepare && go test ./tests/character/integration ./tests/diceRoller/integration ./tests/room/integration",
     "sqlc:generate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 generate",
     "sqlc:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 version",
     "test:pretty": "gotestsum --format testname -- ./tests/...",
