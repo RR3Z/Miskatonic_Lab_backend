@@ -21,5 +21,24 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: DB_MiskatonicLab_Test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: miskatonic_lab_test
+      POSTGRES_USER: miskatonic_user
+      POSTGRES_PASSWORD: miskatonic_password
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U miskatonic_user -d miskatonic_lab_test']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
 volumes:
   postgres_data:
+  postgres_test_data:
