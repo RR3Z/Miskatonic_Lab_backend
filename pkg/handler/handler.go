@@ -60,11 +60,7 @@ func (h *Handler) CloseDeletedRoomSockets(result roomModel.CleanupRoomsResult, r
 	h.auxiliaryHandlers.roomHandler.CloseDeletedRooms(result.DeletedRoomIDs, reason)
 }
 
-func (h *Handler) InitRoutes() *chi.Mux {
-	return h.initRoutes(middleware.AuthMiddleware)
-}
-
-func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
+func (h *Handler) InitRoutes(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
 	router := chi.NewRouter()
 
 	allowedOrigins := config.ParseAllowedOrigins(os.Getenv("CORS_ALLOWED_ORIGINS"))
@@ -77,9 +73,7 @@ func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *ch
 	h.auxiliaryHandlers.userHandler.RegisterPublicRoutes(router)
 
 	router.Route("/api", func(r chi.Router) {
-		if authMiddleware != nil {
-			r.Use(authMiddleware)
-		}
+		r.Use(authMiddleware)
 
 		h.auxiliaryHandlers.userHandler.RegisterProtectedRoutes(r)
 
@@ -97,9 +91,4 @@ func (h *Handler) initRoutes(authMiddleware func(http.Handler) http.Handler) *ch
 	})
 
 	return router
-}
-
-// FOR TESTS
-func (h *Handler) InitRoutesWithAuth(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
-	return h.initRoutes(authMiddleware)
 }

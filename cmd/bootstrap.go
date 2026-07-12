@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/publishers"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	appService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
@@ -40,19 +44,56 @@ func connectPostgres(ctx context.Context) (*pgxpool.Pool, error) {
 	return dbConnection, nil
 }
 
-func configureClerk() bool {
-	clerkSecretKey := os.Getenv("CLERK_SECRET_KEY")
+func configureClerk(ctx context.Context) (func(http.Handler) http.Handler, bool) {
+	clerkSecretKey := strings.TrimSpace(os.Getenv("CLERK_SECRET_KEY"))
 	if clerkSecretKey == "" {
 		slog.Error(
 			"clerk secret key is not set",
 			"component", "main",
 			"env", "CLERK_SECRET_KEY",
 		)
-		return false
+		return nil, false
 	}
 
 	clerk.SetKey(clerkSecretKey)
-	return true
+	jwksClient, err := middleware.NewClerkJWKSClient(clerkSecretKey)
+	if err != nil {
+		slog.Error("clerk configuration is invalid", "component", "main", "error", err)
+		return nil, false
+	}
+
+	preflightCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	keys, err := middleware.PreflightClerkJWKS(preflightCtx, jwksClient)
+	if err != nil {
+		slog.Error("clerk JWKS preflight failed", "component", "main", "error", err)
+		return nil, false
+	}
+	keyIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		keyIDs = append(keyIDs, key.KeyID)
+	}
+	slog.Info("clerk JWKS preflight succeeded",
+		"component", "main",
+		"signing_keys", len(keys),
+		"kids", keyIDs,
+	)
+
+	authorizedParties := config.ParseAllowedOrigins(os.Getenv("CLERK_AUTHORIZED_PARTIES"))
+	if len(authorizedParties) == 0 {
+		slog.Error("clerk authorized parties are not set",
+			"component", "main",
+			"env", "CLERK_AUTHORIZED_PARTIES",
+		)
+		return nil, false
+	}
+
+	return middleware.NewClerkAuthMiddleware(middleware.ClerkAuthConfig{
+		JWKSClient:        jwksClient,
+		AuthorizedParties: authorizedParties,
+		Logger:            slog.Default(),
+		Leeway:            middleware.DefaultClerkAuthLeeway,
+	}), true
 }
 
 func newEventBus(ctx context.Context) *events.EventBus {

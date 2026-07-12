@@ -19,7 +19,8 @@ func run() int {
 	}
 	defer dbConnection.Close()
 
-	if !configureClerk() {
+	authMiddleware, clerkConfigured := configureClerk(ctx)
+	if !clerkConfigured {
 		return 1
 	}
 
@@ -28,11 +29,12 @@ func run() int {
 	repos := repository.NewRepository(dbConnection)
 	services := appService.NewService(repos, eventBus)
 	appHandlers := handler.NewHandler(services)
+	appRouter := appHandlers.InitRoutes(authMiddleware)
 
 	startBackgroundWorkers(ctx, services, appHandlers)
 	registerEventListeners(eventBus, services, appHandlers)
 
-	return runHTTPServer(appHandlers, serverPort())
+	return runHTTPServer(appRouter, serverPort())
 }
 
 func main() {
