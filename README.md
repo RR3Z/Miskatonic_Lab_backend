@@ -80,12 +80,33 @@ It provides a small HTTP API for users, characters, dice rolls, rooms, room even
 
 ## Setup
 
+### Supabase
+
+```powershell
+cp .env.example .env
+# Set DATABASE_URL in .env to your Supabase Direct connection or Session pooler URL.
+npm run migrate:up:all
+go run ./cmd
+```
+
+Use `sslmode=require` in the Supabase URL. Do not use the Transaction pooler URL for the backend runtime; transaction pooling does not support prepared statements, while the Go repository layer uses `pgx`/`sqlc`.
+
+### Local PostgreSQL fallback
+
 ```powershell
 cp .env.example .env
 docker compose up -d
 npm run migrate:up:all
 go run ./cmd
 ```
+
+### Local database tests
+
+```powershell
+npm run test:db
+```
+
+This starts isolated PostgreSQL on port `5433`, applies migrations, seeds deterministic data, then runs database tests. Tests use `TEST_DATABASE_URL` only; Supabase and database names without `_test` are rejected.
 
 The server listens on `http://localhost:8000` by default.
 
@@ -95,7 +116,7 @@ See [.env.example](.env.example) for the local template.
 
 Required for the app:
 
-- `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_SSLMODE`
+- `DATABASE_URL` for Supabase or `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_SSLMODE` for local PostgreSQL
 - `CLERK_SECRET_KEY`
 - `CLERK_WEBHOOK_SIGNING_SECRET`
 
@@ -108,7 +129,10 @@ Optional:
 
 ```powershell
 npm run migrate:up:all   # apply all migrations
+npm run migrate:version  # print current migration version
 npm run migrate:down -- 1 # roll back one migration
+npm run testdb:prepare   # start, migrate, and seed local test DB
+npm run test:db          # prepare local DB and run database tests
 npm run sqlc:generate    # regenerate sqlc repository code
 npm run test:pretty      # run tests under ./tests with readable output
 npm run test:all         # run local, Clerk, E2E, and migration smoke suites
