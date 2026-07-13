@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -89,6 +90,29 @@ func TestUpdateCharacterRejectsNegativeAgeBeforeRepository(t *testing.T) {
 	})
 
 	require.ErrorIs(t, err, characterErrors.ErrAgeNegative)
+}
+
+func TestReplacePortraitRejectsMissingFileBeforeRepository(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
+
+	_, err := service.ReplacePortrait(context.Background(), characterDTO.ReplacePortraitInput{
+		UserID:      "user_1",
+		CharacterID: testCoreUUID("11111111-1111-1111-1111-111111111111"),
+	})
+
+	require.ErrorIs(t, err, characterErrors.ErrPortraitRequired)
+}
+
+func TestReplacePortraitRejectsUnavailableStorageBeforeRepository(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
+
+	_, err := service.ReplacePortrait(context.Background(), characterDTO.ReplacePortraitInput{
+		UserID:      "user_1",
+		CharacterID: testCoreUUID("11111111-1111-1111-1111-111111111111"),
+		File:        bytes.NewReader([]byte("portrait")),
+	})
+
+	require.ErrorIs(t, err, characterErrors.ErrPortraitStorage)
 }
 
 func testCoreUUID(value string) pgtype.UUID {

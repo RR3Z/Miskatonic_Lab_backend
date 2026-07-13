@@ -80,6 +80,30 @@ func TestConcurrentCreateCharacterAtLimitAllowsExactlyOne(t *testing.T) {
 	require.Equal(t, characterServices.MaxCharactersPerUser, count)
 }
 
+func TestCreateCharacterAllowsNewCharacterAfterDeletingAtLimit(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	user := createCharacterTestUser(t, subject)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, nil)
+	seedCharacters(t, subject, user.ID, characterServices.MaxCharactersPerUser)
+
+	characters, err := subject.queries.GetAllUserCharacters(context.Background(), user.ID)
+	require.NoError(t, err)
+	require.Len(t, characters, int(characterServices.MaxCharactersPerUser))
+
+	require.NoError(t, service.DeleteCharacter(context.Background(), characterDTO.DeleteCharacterInput{
+		UserID: user.ID,
+		ID:     characters[0].ID,
+	}))
+
+	created, err := service.CreateCharacter(context.Background(), characterCreateInput(user.ID, "Replacement character"))
+	require.NoError(t, err)
+	require.Equal(t, "Replacement character", created.Name)
+
+	count, err := subject.queries.CountUserCharacters(context.Background(), user.ID)
+	require.NoError(t, err)
+	require.Equal(t, characterServices.MaxCharactersPerUser, count)
+}
+
 func seedCharacters(t *testing.T, subject *characterIntegrationSubject, userID string, count int64) {
 	t.Helper()
 

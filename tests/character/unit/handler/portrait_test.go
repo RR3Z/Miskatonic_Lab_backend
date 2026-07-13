@@ -89,12 +89,12 @@ func TestReplacePortraitRequiresMultipartFile(t *testing.T) {
 }
 
 func TestReplacePortraitRejectsFileLargerThanFiveMiB(t *testing.T) {
-	service, router := newCharacterHandlerTestSubject(characterServiceErrors.ErrPortraitTooLarge)
+	service, router := newCharacterHandlerTestSubject(nil)
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 	part, err := writer.CreateFormFile("portrait", "portrait.png")
 	require.NoError(t, err)
-	_, err = part.Write(make([]byte, characterHandler.MaxPortraitUploadBytes+1))
+	_, err = part.Write(make([]byte, characterHandler.MaxPortraitUploadBytes+(1<<20)))
 	require.NoError(t, err)
 	require.NoError(t, writer.Close())
 
@@ -105,6 +105,86 @@ func TestReplacePortraitRejectsFileLargerThanFiveMiB(t *testing.T) {
 
 	requireCharacterError(t, recorder, http.StatusRequestEntityTooLarge, "character.portrait_too_large")
 	require.Equal(t, 1, service.replacePortraitCalls)
+}
+
+func TestReplacePortraitRejectsInvalidCharacterIDBeforeService(t *testing.T) {
+	service, router := newCharacterHandlerTestSubject(nil)
+	body, contentType := portraitMultipartBody(t, "portrait", "portrait.png", []byte("portrait"))
+	request := httptest.NewRequest(http.MethodPatch, "/api/characters/not-a-uuid/", body)
+	request.Header.Set("Content-Type", contentType)
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, request)
+
+	requireCharacterError(t, recorder, http.StatusBadRequest, "character.invalid_id")
+	require.Zero(t, service.replacePortraitCalls)
+}
+
+func TestReplacePortraitRejectsMalformedMultipartBody(t *testing.T) {
+	service, router := newCharacterHandlerTestSubject(nil)
+	request := httptest.NewRequest(http.MethodPatch, "/api/characters/"+testCharacterID+"/", bytes.NewBufferString("--broken\r\ninvalid"))
+	request.Header.Set("Content-Type", "multipart/form-data; boundary=broken")
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, request)
+
+	requireCharacterError(t, recorder, http.StatusBadRequest, "character.invalid_input")
+	require.Zero(t, service.replacePortraitCalls)
+}
+
+func TestReplacePortraitIgnoresNonPortraitPartsAndRequiresNamedFile(t *testing.T) {
+	cases := []struct {
+		name     string
+		field    string
+		filename string
+	}{
+		{name: "wrong field", field: "avatar", filename: "portrait.png"},
+		{name: "empty filename", field: "portrait", filename: ""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			service, router := newCharacterHandlerTestSubject(nil)
+			body, contentType := portraitMultipartBody(t, tc.field, tc.filename, []byte("portrait"))
+			request := httptest.NewRequest(http.MethodPatch, "/api/characters/"+testCharacterID+"/", body)
+			request.Header.Set("Content-Type", contentType)
+			recorder := httptest.NewRecorder()
+
+			router.ServeHTTP(recorder, request)
+
+			requireCharacterError(t, recorder, http.StatusBadRequest, "character.portrait_required")
+			require.Zero(t, service.replacePortraitCalls)
+		})
+	}
+}
+
+func TestReplacePortraitMapsStorageErrorsToExactHTTPContracts(t *testing.T) {
+	cases := []struct {
+		name       string
+		err        error
+		wantStatus int
+		wantCode   string
+	}{
+		{name: "too large", err: characterServiceErrors.ErrPortraitTooLarge, wantStatus: http.StatusRequestEntityTooLarge, wantCode: "character.portrait_too_large"},
+		{name: "unsupported", err: characterServiceErrors.ErrPortraitUnsupported, wantStatus: http.StatusBadRequest, wantCode: "character.portrait_unsupported"},
+		{name: "invalid", err: characterServiceErrors.ErrPortraitInvalid, wantStatus: http.StatusBadRequest, wantCode: "character.portrait_invalid"},
+		{name: "storage unavailable", err: characterServiceErrors.ErrPortraitStorage, wantStatus: http.StatusServiceUnavailable, wantCode: "character.portrait_storage_unavailable"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			service, router := newCharacterHandlerTestSubject(tc.err)
+			body, contentType := portraitMultipartBody(t, "portrait", "portrait.png", []byte("portrait"))
+			request := httptest.NewRequest(http.MethodPatch, "/api/characters/"+testCharacterID+"/", body)
+			request.Header.Set("Content-Type", contentType)
+			recorder := httptest.NewRecorder()
+
+			router.ServeHTTP(recorder, request)
+
+			requireCharacterError(t, recorder, tc.wantStatus, tc.wantCode)
+			require.Equal(t, 1, service.replacePortraitCalls)
+		})
+	}
 }
 
 func TestPortraitFileServerIsMountedForGetAndHeadOnly(t *testing.T) {
@@ -129,4 +209,25 @@ func TestPortraitFileServerIsMountedForGetAndHeadOnly(t *testing.T) {
 	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/uploads/portraits/test.png", nil))
 	require.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
 	require.Equal(t, 2, fileServerCalls)
+}
+
+func portraitMultipartBody(t *testing.T, field string, filename string, content []byte) (*bytes.Buffer, string) {
+	t.Helper()
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	var partWriter interface {
+		Write([]byte) (int, error)
+	}
+	var err error
+	if filename == "" {
+		partWriter, err = writer.CreateFormField(field)
+	} else {
+		partWriter, err = writer.CreateFormFile(field, filename)
+	}
+	require.NoError(t, err)
+	_, err = partWriter.Write(content)
+	require.NoError(t, err)
+	require.NoError(t, writer.Close())
+	return body, writer.FormDataContentType()
 }

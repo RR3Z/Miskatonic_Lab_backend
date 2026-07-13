@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"testing"
@@ -98,6 +99,53 @@ func (s *e2eSubject) doJSONAllow(t *testing.T, method string, path string, body 
 	if target != nil && len(responseBody) > 0 {
 		require.NoError(t, json.Unmarshal(responseBody, target), "response body: %s", string(responseBody))
 	}
+}
+
+func (s *e2eSubject) doMultipartFile(t *testing.T, method string, path string, field string, filename string, content []byte, expectedStatus int, target any) {
+	t.Helper()
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	var part io.Writer
+	var err error
+	if filename == "" {
+		part, err = writer.CreateFormField(field)
+	} else {
+		part, err = writer.CreateFormFile(field, filename)
+	}
+	require.NoError(t, err)
+	_, err = part.Write(content)
+	require.NoError(t, err)
+	require.NoError(t, writer.Close())
+
+	req, err := http.NewRequest(method, s.baseURL+path, body)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+s.token)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	res, err := s.client.Do(req)
+	require.NoError(t, err)
+	defer res.Body.Close()
+
+	responseBody, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	require.Equalf(t, expectedStatus, res.StatusCode, "response body: %s", string(responseBody))
+	if target != nil && len(responseBody) > 0 {
+		require.NoError(t, json.Unmarshal(responseBody, target), "response body: %s", string(responseBody))
+	}
+}
+
+func (s *e2eSubject) doPublicPortraitRequest(t *testing.T, method string, portraitURL string, expectedStatus int) ([]byte, http.Header) {
+	t.Helper()
+
+	req, err := http.NewRequest(method, portraitURL, nil)
+	require.NoError(t, err)
+	res, err := s.client.Do(req)
+	require.NoError(t, err)
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	require.Equalf(t, expectedStatus, res.StatusCode, "response body: %s", string(body))
+	return body, res.Header
 }
 
 func (s *e2eSubject) newRequest(t *testing.T, method string, path string, body any) *http.Request {

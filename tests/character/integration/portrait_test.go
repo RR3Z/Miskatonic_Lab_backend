@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"context"
+	"errors"
 	"image"
 	"image/color"
 	"image/png"
@@ -10,9 +11,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"testing"
+	"time"
 
+	portraitMaintenance "github.com/RR3Z/Miskatonic_Lab_backend/pkg/maintenance/portrait"
 	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -201,10 +205,128 @@ func TestCharacterPortraitDeletesNewFileWhenCharacterDisappearsBeforeLock(t *tes
 	require.Empty(t, files)
 }
 
+func TestCharacterPortraitDeletesNewFileAfterContextCancellation(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	user := createCharacterTestUser(t, subject)
+	directory := t.TempDir()
+	baseStore, err := newPortraitStore(directory)
+	require.NoError(t, err)
+	store := &blockingPortraitStore{
+		LocalStore: baseStore,
+		saved:      make(chan string, 1),
+		release:    make(chan struct{}),
+	}
+	service := characterService.NewCharacterService(repository.NewRepository(subject.pool), store, nil)
+	character, err := service.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{
+		UserID: user.ID,
+		Name:   "Cancelled Portrait Investigator",
+	})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	portrait := testPortraitPNG(t, 4)
+	updateResult := make(chan error, 1)
+	go func() {
+		_, updateErr := service.ReplacePortrait(ctx, characterDTO.ReplacePortraitInput{
+			UserID:      user.ID,
+			CharacterID: character.ID,
+			File:        bytes.NewReader(portrait),
+		})
+		updateResult <- updateErr
+	}()
+
+	<-store.saved
+	cancel()
+	close(store.release)
+	require.ErrorIs(t, <-updateResult, context.Canceled)
+
+	files, err := os.ReadDir(directory)
+	require.NoError(t, err)
+	require.Empty(t, files)
+}
+
+func TestCharacterPortraitReplacementSucceedsWhenOldFileCleanupFails(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	user := createCharacterTestUser(t, subject)
+	directory := t.TempDir()
+	baseStore, err := newPortraitStore(directory)
+	require.NoError(t, err)
+	baseService := characterService.NewCharacterService(repository.NewRepository(subject.pool), baseStore, nil)
+	character, err := baseService.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{UserID: user.ID, Name: "Cleanup Failure Investigator"})
+	require.NoError(t, err)
+
+	first, err := baseService.ReplacePortrait(context.Background(), characterDTO.ReplacePortraitInput{
+		UserID: user.ID, CharacterID: character.ID, File: bytes.NewReader(testPortraitPNG(t, 5)),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, first.PortraitUrl)
+
+	store := &failingDeletePortraitStore{LocalStore: baseStore, err: errors.New("delete unavailable")}
+	service := characterService.NewCharacterService(repository.NewRepository(subject.pool), store, nil)
+	second, err := service.ReplacePortrait(context.Background(), characterDTO.ReplacePortraitInput{
+		UserID: user.ID, CharacterID: character.ID, File: bytes.NewReader(testPortraitPNG(t, 6)),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, second.PortraitUrl)
+	require.NotEqual(t, *first.PortraitUrl, *second.PortraitUrl)
+	require.Equal(t, []string{portraitKeyFromURL(*first.PortraitUrl)}, store.deletedKeys)
+	require.Equal(t, http.StatusOK, portraitStatus(baseStore, *first.PortraitUrl))
+	require.Equal(t, http.StatusOK, portraitStatus(baseStore, *second.PortraitUrl))
+
+	stored, err := subject.queries.GetCharacter(context.Background(), db.GetCharacterParams{UserID: user.ID, ID: character.ID})
+	require.NoError(t, err)
+	require.NotNil(t, stored.PortraitKey)
+	require.Equal(t, portraitKeyFromURL(*second.PortraitUrl), *stored.PortraitKey)
+}
+
+func TestCharacterPortraitReconciliationKeepsReferencedAndRemovesOrphanFiles(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	user := createCharacterTestUser(t, subject)
+	store, err := newPortraitStore(t.TempDir())
+	require.NoError(t, err)
+	repos := repository.NewRepository(subject.pool)
+	service := characterService.NewCharacterService(repos, store, nil)
+	character, err := service.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{
+		UserID: user.ID,
+		Name:   "Reconciled Portrait Investigator",
+	})
+	require.NoError(t, err)
+
+	referencedKey, err := store.Save(context.Background(), bytes.NewReader(testPortraitPNG(t, 1)))
+	require.NoError(t, err)
+	orphanKey, err := store.Save(context.Background(), bytes.NewReader(testPortraitPNG(t, 2)))
+	require.NoError(t, err)
+	_, err = subject.queries.SetCharacterPortraitKey(context.Background(), db.SetCharacterPortraitKeyParams{
+		UserID:      user.ID,
+		ID:          character.ID,
+		PortraitKey: &referencedKey,
+	})
+	require.NoError(t, err)
+
+	reconciler := portraitMaintenance.NewReconciler(repos.Queries, store, portraitMaintenance.DefaultGracePeriod)
+	result, err := reconciler.Reconcile(context.Background(), time.Now().UTC().Add(2*time.Hour))
+	require.NoError(t, err)
+	require.Zero(t, result.RemovedTemporaryFiles)
+	require.Equal(t, 1, result.RemovedOrphanFiles)
+	require.Equal(t, http.StatusOK, portraitStatus(store, store.PublicURL(referencedKey)))
+	require.Equal(t, http.StatusNotFound, portraitStatus(store, store.PublicURL(orphanKey)))
+}
+
 type blockingPortraitStore struct {
 	*portraitStorage.LocalStore
 	saved   chan string
 	release chan struct{}
+}
+
+type failingDeletePortraitStore struct {
+	*portraitStorage.LocalStore
+	err         error
+	deletedKeys []string
+}
+
+func (s *failingDeletePortraitStore) Delete(_ context.Context, key string) error {
+	s.deletedKeys = append(s.deletedKeys, key)
+	return s.err
 }
 
 func (s *blockingPortraitStore) Save(ctx context.Context, file io.Reader) (string, error) {
@@ -237,4 +359,8 @@ func portraitStatus(store *portraitStorage.LocalStore, portraitURL string) int {
 	recorder := httptest.NewRecorder()
 	portraitStorage.NewFileServer(store).ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, portraitURL, nil))
 	return recorder.Code
+}
+
+func portraitKeyFromURL(value string) string {
+	return strings.TrimPrefix(value, "http://api.test/uploads/")
 }
