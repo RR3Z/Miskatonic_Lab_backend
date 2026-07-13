@@ -30,3 +30,6 @@ go.work.sum
 # Local agent memory and development history
 .agent/*
 .gocache/*
+
+# Backend-owned uploaded files
+uploads/
