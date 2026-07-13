@@ -11,11 +11,8 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/publishers"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
-	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
-	appService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -102,12 +99,4 @@ func newEventBus(ctx context.Context) *events.EventBus {
 	asyncPublisher.Start(ctx, 4)
 
 	return events.NewEventBus(syncPublisher, asyncPublisher)
-}
-
-func startBackgroundWorkers(ctx context.Context, services *appService.Service, appHandlers *handler.Handler) {
-	services.StartBackgroundWorkers(ctx, appService.BackgroundWorkerHooks{
-		RoomCleanup: func(result roomModel.CleanupRoomsResult) {
-			appHandlers.CloseDeletedRoomSockets(result, "room deleted by cleanup")
-		},
-	})
 }
