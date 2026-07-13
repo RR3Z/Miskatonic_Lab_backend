@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const MaxCharactersPerUser int64 = 30
+
 type CharacterService struct {
 	repos     *repository.Repository
 	publisher events.EventPublisher
@@ -158,7 +160,26 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 		return characterDTO.CharacterShortModel{}, err
 	}
 
-	character, err := s.repos.Queries.CreateCharacter(ctx, db.CreateCharacterParams{
+	tx, err := s.repos.DB.Begin(ctx)
+	if err != nil {
+		return characterDTO.CharacterShortModel{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.repos.Queries.WithTx(tx)
+	if _, err := queries.LockUserForCharacterCreation(ctx, input.UserID); err != nil {
+		return characterDTO.CharacterShortModel{}, err
+	}
+
+	count, err := queries.CountUserCharacters(ctx, input.UserID)
+	if err != nil {
+		return characterDTO.CharacterShortModel{}, err
+	}
+	if count >= MaxCharactersPerUser {
+		return characterDTO.CharacterShortModel{}, characterErrors.ErrCharacterLimitReached
+	}
+
+	character, err := queries.CreateCharacter(ctx, db.CreateCharacterParams{
 		UserID:      input.UserID,
 		Name:        input.Name,
 		PlayerName:  input.PlayerName,
@@ -171,6 +192,9 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 	})
 	if err != nil {
 		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return characterDTO.CharacterShortModel{}, err
 	}
 
 	return characterDTO.ToCharacterShortModel(character), nil

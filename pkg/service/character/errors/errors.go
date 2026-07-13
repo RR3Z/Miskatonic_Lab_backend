@@ -3,9 +3,10 @@ package characterErrors
 import "errors"
 
 var (
-	ErrNameRequired = errors.New("character name is required")
-	ErrNameTooLong  = errors.New("character name exceeds max length")
-	ErrAgeNegative  = errors.New("character age must be >= 0")
+	ErrNameRequired          = errors.New("character name is required")
+	ErrNameTooLong           = errors.New("character name exceeds max length")
+	ErrAgeNegative           = errors.New("character age must be >= 0")
+	ErrCharacterLimitReached = errors.New("character limit reached")
 
 	ErrCharacteristicsNegative = errors.New("characteristics values must be >= 0")
 
@@ -13,8 +14,8 @@ var (
 	ErrInvalidDamageBonus   = errors.New("invalid derived stats damage bonus")
 	ErrInvalidDerivedStats  = errors.New("invalid derived stats")
 
-	ErrStateNegative           = errors.New("state values must be >= 0")
-	ErrStateCurrentExceedsMax  = errors.New("current value cannot exceed max value")
+	ErrStateNegative          = errors.New("state values must be >= 0")
+	ErrStateCurrentExceedsMax = errors.New("current value cannot exceed max value")
 
 	ErrInvalidBackstorySection = errors.New("invalid backstory item section")
 	ErrSectionTooLong          = errors.New("backstory item section exceeds max length")

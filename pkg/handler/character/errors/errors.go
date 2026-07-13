@@ -17,6 +17,16 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 		return badRequestError("character.name_too_long", "name exceeds maximum length", err)
 	case errors.Is(err, characterErrors.ErrAgeNegative):
 		return badRequestError("character.age_negative", "age must be >= 0", err)
+	case errors.Is(err, characterErrors.ErrCharacterLimitReached):
+		return &myErrors.AppError{
+			Status:  http.StatusConflict,
+			Code:    "character.limit_reached",
+			Message: "maximum number of characters reached",
+			Details: []myErrors.ErrorDetail{
+				myErrors.ConflictDetail("characters", "limit_reached"),
+			},
+			Err: err,
+		}
 	case errors.Is(err, characterErrors.ErrCharacteristicsNegative):
 		return badRequestError("character.characteristics_negative", "characteristic values must be >= 0", err)
 	case errors.Is(err, characterErrors.ErrDerivedStatsNegative):
