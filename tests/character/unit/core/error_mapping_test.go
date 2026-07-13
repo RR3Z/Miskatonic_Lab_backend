@@ -54,6 +54,15 @@ func TestCharacterHandlerMapsGenericDomainErrors(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 			wantCode:   "character.age_negative",
 		},
+		{
+			name: "character limit reached",
+			appErr: func() errorMappingResult {
+				err := characterHandlerErrors.MapServiceError(characterServiceErrors.ErrCharacterLimitReached, "failed")
+				return errorMappingResult{status: err.StatusCode(), code: err.Response().Code}
+			},
+			wantStatus: http.StatusConflict,
+			wantCode:   "character.limit_reached",
+		},
 	}
 
 	for _, tt := range tests {
@@ -64,6 +73,18 @@ func TestCharacterHandlerMapsGenericDomainErrors(t *testing.T) {
 			require.Equal(t, tt.wantCode, got.code)
 		})
 	}
+}
+
+func TestCharacterLimitErrorIncludesConflictDetail(t *testing.T) {
+	appErr := characterHandlerErrors.MapServiceError(characterServiceErrors.ErrCharacterLimitReached, "failed")
+	response := appErr.Response()
+
+	require.Equal(t, http.StatusConflict, appErr.StatusCode())
+	require.Equal(t, "character.limit_reached", response.Code)
+	require.Len(t, response.Details, 1)
+	require.Equal(t, "conflict", response.Details[0].Type)
+	require.Equal(t, "characters", response.Details[0].Target)
+	require.Equal(t, "limit_reached", response.Details[0].Reason)
 }
 
 type errorMappingResult struct {
