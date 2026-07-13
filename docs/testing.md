@@ -58,6 +58,15 @@ Config and middleware unit tests live in `tests/config` and `tests/middleware`. 
 
 Character table integration tests live in `tests/character/integration`. They use the real PostgreSQL database and generated `sqlc` queries to verify character create/get/list/update/delete behavior, user ownership scoping, foreign-key constraints, check constraints, nullable fields, and cascade deletion from `users` to `characters`.
 
+Prepare the local PostgreSQL test database and run database-backed suites:
+
+```powershell
+npm run testdb:prepare
+go test -count=1 ./tests/character/integration ./tests/diceRoller/integration ./tests/room/integration
+```
+
+Character-limit integration coverage verifies the 30-character boundary, slot reuse after deletion, per-user isolation, and concurrent creation at the boundary. Portrait integration coverage verifies DB/file lifecycle, ownership, concurrent replacement, compensation cleanup after DB or context failure, and reconciliation against referenced DB keys.
+
 Health, sanity, magic, and luck table integration tests also live in `tests/character/integration`. They verify state upsert/get/delete behavior, database defaults, partial updates, owner scoping, negative-value CHECK constraints, and cascade deletion from `characters` to the related state row.
 
 Room realtime integration and workability tests live in `tests/room/integration`. They cover password room creation, invite/password joins, selected-character visibility by role, room event persistence and old-to-new history order, room-wide dice/chat events, `character.changed` privacy filtering, owner leave transfer, last-member deletion, cleanup result IDs, and room cleanup deletion behavior.
@@ -89,7 +98,7 @@ Optional settings:
 - `E2E_BASE_URL` points at the running backend, defaulting to `http://localhost:${PORT}` or `http://localhost:8000`.
 - `E2E_AUTH_TOKEN` may be a raw JWT or `Bearer <jwt>`. The tests decode only the JWT `sub` to prepare local database rows; the backend still verifies the token through Clerk middleware.
 
-Current E2E scenarios cover missing-token rejection, `/api/me`, Character create/list/get/health/delete over HTTP, ownership denial for another user's character seeded in PostgreSQL, and room-context dice rolling that produces a `dice.roll` room event.
+Current E2E scenarios cover missing-token rejection, `/api/me`, Character create/list/get/health/delete over HTTP, ownership denial for another user's character seeded in PostgreSQL, character-limit conflict, backend-managed portrait upload/replacement/deletion with public GET/HEAD delivery, portrait validation errors, and room-context dice rolling that produces a `dice.roll` room event.
 
 Additional live E2E gap coverage:
 
@@ -122,7 +131,7 @@ The tests create Clerk users with `+clerk_test` email subaddresses, poll the loc
 
 ## Migration Smoke Tests
 
-Migration rollback smoke tests live in `tests/migrations`. They are opt-in because they intentionally run `migrate up`, `migrate down 1`, `migrate up 1`, and `migrate version`.
+Migration rollback smoke tests live in `tests/migrations`. They are opt-in because they intentionally run `migrate up`, `migrate down 1`, `migrate up 1`, and `migrate version`. The portrait migration scenario also verifies that migration `000014` renames `portrait_url` to `portrait_key`, clears legacy client-owned URLs, and restores the expected column name across down/up.
 
 ```powershell
 $env:MIGRATION_SMOKE_DATABASE_URL="<dedicated disposable database url>"
@@ -132,3 +141,13 @@ npm run test:migrations
 - `MIGRATION_SMOKE_TESTS=1` enables the package; `npm run test:migrations` sets it for the current PowerShell command.
 - `MIGRATION_SMOKE_DATABASE_URL` is required and must point to a dedicated disposable database, not the normal development database.
 - The `migrate` CLI must be available in `PATH`.
+
+## Test Trace
+
+The trace generator runs every package under `tests/` with `go test -json -count=1` and writes one row per concrete test or subtest to `docs/test-trace.md`:
+
+```powershell
+python .agent/scripts/generate_test_trace.py
+```
+
+Rows preserve the actual result. Local tests should show `pass`; opt-in Clerk, E2E, and migration scenarios show `skip` until their guards and required environment are enabled. To record a real live E2E run in the trace, start the test backend, configure `E2E_AUTH_TOKEN`, set `E2E_TESTS=1`, and rerun the generator.
