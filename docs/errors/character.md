@@ -8,6 +8,7 @@
 | `character.name_required` | 400 | Character creation or update did not include a non-empty `name`. |
 | `character.name_too_long` | 400 | Character name exceeds the maximum length. |
 | `character.age_negative` | 400 | Character age is negative. |
+| `character.limit_reached` | 409 | The authenticated user already has 30 or more characters. New character creation is blocked. |
 | `character.characteristics_negative` | 400 | One or more characteristic values are negative. |
 | `character.derived_stats_negative` | 400 | Derived stats such as speed or dodge are negative. |
 | `character.invalid_damage_bonus` | 400 | Derived stats damage bonus has an invalid format. |
@@ -33,7 +34,7 @@
 Sources:
 
 - Handler path/body parsing: `character.invalid_id`, `character.invalid_input`.
-- Service validation: required, length, negative-value, and state-bound errors.
+- Service validation: required, length, negative-value, state-bound, and per-user character-limit errors.
 - Repository/service constraint mapping: invalid finances, skills, backstory section, derived stats, and skill-in-use errors.
 
 Example:
