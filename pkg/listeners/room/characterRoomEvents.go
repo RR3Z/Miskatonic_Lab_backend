@@ -12,6 +12,8 @@ func CharacterChangedRoomEventInput(event events.Event) (string, string, model.C
 	switch e := event.(type) {
 	case characterEvents.CharacterUpdateSucceeded:
 		return e.UserID, e.CharacterID, change("character", "update", nil, &sourceEvent), true
+	case characterEvents.CharacterPortraitReplaceSucceeded:
+		return e.UserID, e.CharacterID, change("portrait", "replace", nil, &sourceEvent), true
 	case characterEvents.CharacterHealthUpsertSucceeded:
 		return e.UserID, e.CharacterID, change("health", "upsert", nil, &sourceEvent), true
 	case characterEvents.CharacterHealthDeleteSucceeded:
