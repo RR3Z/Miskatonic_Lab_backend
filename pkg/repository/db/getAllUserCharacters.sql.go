@@ -10,7 +10,7 @@ import (
 )
 
 const getAllUserCharacters = `-- name: GetAllUserCharacters :many
-SELECT id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_url
+SELECT id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
 FROM characters
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -37,7 +37,7 @@ func (q *Queries) GetAllUserCharacters(ctx context.Context, userID string) ([]Ch
 			&i.Birthplace,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.PortraitUrl,
+			&i.PortraitKey,
 		); err != nil {
 			return nil, err
 		}

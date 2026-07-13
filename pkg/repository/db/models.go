@@ -38,7 +38,7 @@ type Character struct {
 	Birthplace  *string            `json:"birthplace"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
-	PortraitUrl *string            `json:"portrait_url"`
+	PortraitKey *string            `json:"portrait_key"`
 }
 
 type Characteristic struct {

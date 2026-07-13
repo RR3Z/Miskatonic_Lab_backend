@@ -19,7 +19,7 @@ SELECT
     c.age,
     c.sex,
     c.residence,
-    c.portrait_url,
+    c.portrait_key,
     COALESCE(h.current_hp, 0)::smallint AS current_hp,
     COALESCE(h.max_hp, 0)::smallint AS max_hp,
     COALESCE(m.current_mp, 0)::smallint AS current_mp,
@@ -44,7 +44,7 @@ type GetAllUserCharacterCardsRow struct {
 	Age           *int16      `json:"age"`
 	Sex           *string     `json:"sex"`
 	Residence     *string     `json:"residence"`
-	PortraitUrl   *string     `json:"portrait_url"`
+	PortraitKey   *string     `json:"portrait_key"`
 	CurrentHp     int16       `json:"current_hp"`
 	MaxHp         int16       `json:"max_hp"`
 	CurrentMp     int16       `json:"current_mp"`
@@ -71,7 +71,7 @@ func (q *Queries) GetAllUserCharacterCards(ctx context.Context, userID string) (
 			&i.Age,
 			&i.Sex,
 			&i.Residence,
-			&i.PortraitUrl,
+			&i.PortraitKey,
 			&i.CurrentHp,
 			&i.MaxHp,
 			&i.CurrentMp,

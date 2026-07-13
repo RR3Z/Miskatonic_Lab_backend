@@ -6,7 +6,7 @@ SELECT
     c.age,
     c.sex,
     c.residence,
-    c.portrait_url,
+    c.portrait_key,
     COALESCE(h.current_hp, 0)::smallint AS current_hp,
     COALESCE(h.max_hp, 0)::smallint AS max_hp,
     COALESCE(m.current_mp, 0)::smallint AS current_mp,

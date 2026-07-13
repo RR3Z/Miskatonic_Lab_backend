@@ -15,7 +15,7 @@ const deleteCharacter = `-- name: DeleteCharacter :one
 DELETE FROM characters
 WHERE user_id = $1
   AND id = $2
-RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_url
+RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
 `
 
 type DeleteCharacterParams struct {
@@ -38,7 +38,7 @@ func (q *Queries) DeleteCharacter(ctx context.Context, arg DeleteCharacterParams
 		&i.Birthplace,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.PortraitUrl,
+		&i.PortraitKey,
 	)
 	return i, err
 }
