@@ -95,30 +95,28 @@ type CharacterModel struct {
 
 func ToCharacterShortModel(c db.Character) CharacterShortModel {
 	return CharacterShortModel{
-		ID:          c.ID,
-		UserID:      c.UserID,
-		Name:        c.Name,
-		PlayerName:  c.PlayerName,
-		Occupation:  c.Occupation,
-		Age:         c.Age,
-		Sex:         c.Sex,
-		Residence:   c.Residence,
-		Birthplace:  c.Birthplace,
-		PortraitUrl: c.PortraitUrl,
-		CreatedAt:   c.CreatedAt,
-		UpdatedAt:   c.UpdatedAt,
+		ID:         c.ID,
+		UserID:     c.UserID,
+		Name:       c.Name,
+		PlayerName: c.PlayerName,
+		Occupation: c.Occupation,
+		Age:        c.Age,
+		Sex:        c.Sex,
+		Residence:  c.Residence,
+		Birthplace: c.Birthplace,
+		CreatedAt:  c.CreatedAt,
+		UpdatedAt:  c.UpdatedAt,
 	}
 }
 
 func ToCharacterSummaryModel(row db.GetAllUserCharacterCardsRow) CharacterSummaryModel {
 	m := CharacterSummaryModel{
-		ID:          row.ID,
-		Name:        row.Name,
-		Occupation:  row.Occupation,
-		Age:         row.Age,
-		Sex:         row.Sex,
-		Residence:   row.Residence,
-		PortraitUrl: row.PortraitUrl,
+		ID:         row.ID,
+		Name:       row.Name,
+		Occupation: row.Occupation,
+		Age:        row.Age,
+		Sex:        row.Sex,
+		Residence:  row.Residence,
 	}
 	m.HP.Current = row.CurrentHp
 	m.HP.Max = row.MaxHp

@@ -1,6 +1,10 @@
 package characterDTO
 
-import "github.com/jackc/pgx/v5/pgtype"
+import (
+	"io"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type GetCharacterInput struct {
 	UserID      string
@@ -8,28 +12,32 @@ type GetCharacterInput struct {
 }
 
 type CreateCharacterInput struct {
-	UserID      string
-	Name        string
-	PlayerName  *string
-	Occupation  *string
-	Age         *int16
-	Sex         *string
-	Residence   *string
-	Birthplace  *string
-	PortraitUrl *string
+	UserID     string
+	Name       string
+	PlayerName *string
+	Occupation *string
+	Age        *int16
+	Sex        *string
+	Residence  *string
+	Birthplace *string
 }
 
 type UpdateCharacterInput struct {
+	UserID     string
+	ID         pgtype.UUID
+	Name       string
+	PlayerName *string
+	Occupation *string
+	Age        *int16
+	Sex        *string
+	Residence  *string
+	Birthplace *string
+}
+
+type ReplacePortraitInput struct {
 	UserID      string
-	ID          pgtype.UUID
-	Name        string
-	PlayerName  *string
-	Occupation  *string
-	Age         *int16
-	Sex         *string
-	Residence   *string
-	Birthplace  *string
-	PortraitUrl *string
+	CharacterID pgtype.UUID
+	File        io.Reader
 }
 
 type DeleteCharacterInput struct {
