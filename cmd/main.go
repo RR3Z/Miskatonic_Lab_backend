@@ -7,6 +7,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	appService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
+	portraitStorage "github.com/RR3Z/Miskatonic_Lab_backend/pkg/storage/portrait"
 )
 
 func run() int {
@@ -26,9 +27,19 @@ func run() int {
 
 	eventBus := newEventBus(ctx)
 
+	portraitStore, err := configurePortraitStore()
+	if err != nil {
+		return 1
+	}
+	portraitFileServer := portraitStorage.NewFileServer(portraitStore)
+
 	repos := repository.NewRepository(dbConnection)
-	services := appService.NewService(repos, eventBus)
-	appHandlers := handler.NewHandler(services)
+	services := appService.NewService(repos, eventBus, portraitStore)
+
+	appHandlers := handler.NewHandler(handler.Dependencies{
+		Services:           services,
+		PortraitFileServer: portraitFileServer,
+	})
 	appRouter := appHandlers.InitRoutes(authMiddleware)
 
 	startBackgroundWorkers(ctx, services, appHandlers)

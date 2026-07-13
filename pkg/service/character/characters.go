@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/publishers"
 	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -15,17 +16,16 @@ import (
 const MaxCharactersPerUser int64 = 30
 
 type CharacterService struct {
-	repos     *repository.Repository
-	publisher events.EventPublisher
+	repos         *repository.Repository
+	publisher     events.EventPublisher
+	portraitStore PortraitStore
 }
 
-func NewCharacterService(repos *repository.Repository, publisher ...events.EventPublisher) *CharacterService {
-	service := &CharacterService{repos: repos}
-	if len(publisher) > 0 {
-		service.publisher = publisher[0]
+func NewCharacterService(repos *repository.Repository, store PortraitStore, publisher events.EventPublisher) *CharacterService {
+	if publisher == nil {
+		publisher = &publishers.NoopPublisher{}
 	}
-
-	return service
+	return &CharacterService{repos: repos, portraitStore: store, publisher: publisher}
 }
 
 // Characters
@@ -38,6 +38,7 @@ func (s *CharacterService) GetAllCharacters(ctx context.Context, userID string) 
 	result := make([]characterDTO.CharacterSummaryModel, len(rows))
 	for i, row := range rows {
 		result[i] = characterDTO.ToCharacterSummaryModel(row)
+		result[i].PortraitUrl = s.portraitURL(row.PortraitKey)
 	}
 
 	return result, nil
@@ -149,7 +150,9 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterDTO.
 		rawData.Finances = &finances
 	}
 
-	return characterDTO.ToCharacterModel(rawData), nil
+	result := characterDTO.ToCharacterModel(rawData)
+	result.PortraitUrl = s.portraitURL(characterGeneralData.PortraitKey)
+	return result, nil
 }
 
 func (s *CharacterService) CreateCharacter(ctx context.Context, input characterDTO.CreateCharacterInput) (characterDTO.CharacterShortModel, error) {
@@ -180,15 +183,14 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 	}
 
 	character, err := queries.CreateCharacter(ctx, db.CreateCharacterParams{
-		UserID:      input.UserID,
-		Name:        input.Name,
-		PlayerName:  input.PlayerName,
-		Occupation:  input.Occupation,
-		Age:         input.Age,
-		Sex:         input.Sex,
-		Residence:   input.Residence,
-		Birthplace:  input.Birthplace,
-		PortraitUrl: input.PortraitUrl,
+		UserID:     input.UserID,
+		Name:       input.Name,
+		PlayerName: input.PlayerName,
+		Occupation: input.Occupation,
+		Age:        input.Age,
+		Sex:        input.Sex,
+		Residence:  input.Residence,
+		Birthplace: input.Birthplace,
 	})
 	if err != nil {
 		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
@@ -197,7 +199,9 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 		return characterDTO.CharacterShortModel{}, err
 	}
 
-	return characterDTO.ToCharacterShortModel(character), nil
+	result := characterDTO.ToCharacterShortModel(character)
+	result.PortraitUrl = s.portraitURL(character.PortraitKey)
+	return result, nil
 }
 
 func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterDTO.UpdateCharacterInput) (characterDTO.CharacterShortModel, error) {
@@ -209,16 +213,15 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterD
 	}
 
 	character, err := s.repos.Queries.UpdateCharacter(ctx, db.UpdateCharacterParams{
-		UserID:      input.UserID,
-		ID:          input.ID,
-		Name:        input.Name,
-		PlayerName:  input.PlayerName,
-		Occupation:  input.Occupation,
-		Age:         input.Age,
-		Sex:         input.Sex,
-		Residence:   input.Residence,
-		Birthplace:  input.Birthplace,
-		PortraitUrl: input.PortraitUrl,
+		UserID:     input.UserID,
+		ID:         input.ID,
+		Name:       input.Name,
+		PlayerName: input.PlayerName,
+		Occupation: input.Occupation,
+		Age:        input.Age,
+		Sex:        input.Sex,
+		Residence:  input.Residence,
+		Birthplace: input.Birthplace,
 	})
 	if err != nil {
 		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
@@ -229,13 +232,27 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterD
 		s.recalculateDerivedStats(ctx, character.UserID, character.ID, character.Age, characteristics, "character_update")
 	}
 
-	return characterDTO.ToCharacterShortModel(character), nil
+	result := characterDTO.ToCharacterShortModel(character)
+	result.PortraitUrl = s.portraitURL(character.PortraitKey)
+	return result, nil
 }
 
 func (s *CharacterService) DeleteCharacter(ctx context.Context, input characterDTO.DeleteCharacterInput) error {
-	_, err := s.repos.Queries.DeleteCharacter(ctx, db.DeleteCharacterParams{
+	character, err := s.repos.Queries.DeleteCharacter(ctx, db.DeleteCharacterParams{
 		ID:     input.ID,
 		UserID: input.UserID,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	if character.PortraitKey != nil {
+		s.removePortraitFile(
+			context.WithoutCancel(ctx),
+			*character.PortraitKey,
+			"failed to remove deleted character portrait",
+			"character_id", input.ID.String(),
+		)
+	}
+	return nil
 }

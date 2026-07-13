@@ -7,6 +7,11 @@ var (
 	ErrNameTooLong           = errors.New("character name exceeds max length")
 	ErrAgeNegative           = errors.New("character age must be >= 0")
 	ErrCharacterLimitReached = errors.New("character limit reached")
+	ErrPortraitRequired      = errors.New("portrait is required")
+	ErrPortraitTooLarge      = errors.New("portrait is too large")
+	ErrPortraitUnsupported   = errors.New("portrait format is unsupported")
+	ErrPortraitInvalid       = errors.New("portrait image is invalid")
+	ErrPortraitStorage       = errors.New("portrait storage is unavailable")
 
 	ErrCharacteristicsNegative = errors.New("characteristics values must be >= 0")
 

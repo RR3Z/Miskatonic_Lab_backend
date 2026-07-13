@@ -25,8 +25,8 @@ type BackgroundWorkerHooks struct {
 	RoomCleanup func(roomModel.CleanupRoomsResult)
 }
 
-func NewService(repos *repository.Repository, publisher events.EventPublisher) *Service {
-	characterService := character.NewCharacterService(repos, publisher)
+func NewService(repos *repository.Repository, publisher events.EventPublisher, portraitStore character.PortraitStore) *Service {
+	characterService := character.NewCharacterService(repos, portraitStore, publisher)
 	diceRollerService := diceRoller.NewDiceRollerService(repos)
 	roomService := room.NewRoomService(repos)
 	eventPublishingRoomService := room.NewEventPublishingRoomService(roomService, roomService, publisher)
