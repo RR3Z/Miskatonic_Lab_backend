@@ -31,7 +31,7 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 	character.Sex = nil
 	character.Residence = nil
 	character.Birthplace = nil
-	character.PortraitUrl = nil
+	character.PortraitKey = nil
 
 	result := characterDTO.ToCharacterShortModel(character)
 
@@ -45,7 +45,7 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 }
 
 func TestToCharacterSummaryModelMapsBaseFieldsAndStats(t *testing.T) {
-	portraitURL := "https://assets.example.test/portraits/armitage.webp"
+	portraitKey := "portraits/11111111-1111-1111-1111-111111111111.webp"
 	row := db.GetAllUserCharacterCardsRow{
 		ID:            testUUID("11111111-1111-1111-1111-111111111111"),
 		Name:          "Dr. Armitage",
@@ -53,7 +53,7 @@ func TestToCharacterSummaryModelMapsBaseFieldsAndStats(t *testing.T) {
 		Age:           int16Ptr(42),
 		Sex:           strPtr(""),
 		Residence:     strPtr("Arkham"),
-		PortraitUrl:   &portraitURL,
+		PortraitKey:   &portraitKey,
 		CurrentHp:     7,
 		MaxHp:         12,
 		CurrentMp:     4,
@@ -72,7 +72,7 @@ func TestToCharacterSummaryModelMapsBaseFieldsAndStats(t *testing.T) {
 	require.Equal(t, row.Age, result.Age)
 	require.Equal(t, row.Sex, result.Sex)
 	require.Equal(t, row.Residence, result.Residence)
-	require.Equal(t, row.PortraitUrl, result.PortraitUrl)
+	require.Nil(t, result.PortraitUrl)
 	require.Equal(t, int16(7), result.HP.Current)
 	require.Equal(t, int16(12), result.HP.Max)
 	require.Equal(t, int16(4), result.MP.Current)

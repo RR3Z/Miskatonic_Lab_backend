@@ -13,7 +13,7 @@ import (
 )
 
 func TestCreateCharacterRejectsBlankNameBeforeRepository(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{})
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
 
 	_, err := service.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{
 		UserID: "user_1",
@@ -24,7 +24,7 @@ func TestCreateCharacterRejectsBlankNameBeforeRepository(t *testing.T) {
 }
 
 func TestUpdateCharacterRejectsBlankNameBeforeRepository(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{})
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
 
 	_, err := service.UpdateCharacter(context.Background(), characterDTO.UpdateCharacterInput{
 		UserID: "user_1",
@@ -36,7 +36,7 @@ func TestUpdateCharacterRejectsBlankNameBeforeRepository(t *testing.T) {
 }
 
 func TestCreateCharacterRejectsNameTooLong(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{})
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
 	longName := string(make([]byte, 256))
 	for i := range longName {
 		longName = longName[:i] + "a" + longName[i+1:]
@@ -50,7 +50,7 @@ func TestCreateCharacterRejectsNameTooLong(t *testing.T) {
 }
 
 func TestUpdateCharacterRejectsNameTooLong(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{})
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
 	longName := string(make([]byte, 256))
 	for i := range longName {
 		longName = longName[:i] + "a" + longName[i+1:]
@@ -65,7 +65,7 @@ func TestUpdateCharacterRejectsNameTooLong(t *testing.T) {
 }
 
 func TestCreateCharacterRejectsNegativeAgeBeforeRepository(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{})
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
 	negativeAge := int16(-1)
 
 	_, err := service.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{
@@ -78,7 +78,7 @@ func TestCreateCharacterRejectsNegativeAgeBeforeRepository(t *testing.T) {
 }
 
 func TestUpdateCharacterRejectsNegativeAgeBeforeRepository(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{})
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
 	negativeAge := int16(-1)
 
 	_, err := service.UpdateCharacter(context.Background(), characterDTO.UpdateCharacterInput{

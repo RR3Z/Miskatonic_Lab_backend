@@ -723,7 +723,7 @@ func TestRoomOwnerCannotEditAnotherUsersCharacterThroughCharacterService(t *test
 
 	maxHP := int16(10)
 	currentHP := int16(7)
-	characterSvc := characterService.NewCharacterService(repository.NewRepository(subject.pool))
+	characterSvc := characterService.NewCharacterService(repository.NewRepository(subject.pool), nil, nil)
 	_, err = characterSvc.UpsertHealth(context.Background(), healthDTO.UpsertHealthInput{
 		UserID:      owner.ID,
 		CharacterID: playerCharacter.ID,

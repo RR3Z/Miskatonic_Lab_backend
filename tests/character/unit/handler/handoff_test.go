@@ -19,8 +19,7 @@ func TestCreateCharacterPassesBodyAndUserID(t *testing.T) {
 		"age":42,
 		"sex":"m",
 		"residence":"Arkham",
-		"birthplace":"Boston",
-		"portrait_url":"https://assets.example.test/portraits/harvey.webp"
+		"birthplace":"Boston"
 	}`)
 
 	require.Equal(t, http.StatusCreated, recorder.Code)
@@ -30,10 +29,33 @@ func TestCreateCharacterPassesBodyAndUserID(t *testing.T) {
 	require.Equal(t, "Professor", *service.createInput.Occupation)
 	require.Equal(t, int16(42), *service.createInput.Age)
 	require.Equal(t, "Boston", *service.createInput.Birthplace)
-	require.Equal(t, "https://assets.example.test/portraits/harvey.webp", *service.createInput.PortraitUrl)
 }
 
-func TestUpdateCharacterPassesPortraitURL(t *testing.T) {
+func TestCreateCharacterRejectsClientPortraitURL(t *testing.T) {
+	service, router := newCharacterHandlerTestSubject(nil)
+
+	recorder := performCharacterRequest(router, http.MethodPost, "/api/characters/", `{
+		"name":"Harvey Walters",
+		"portrait_url":"https://assets.example.test/portraits/harvey.webp"
+	}`)
+
+	requireCharacterError(t, recorder, http.StatusBadRequest, "character.portrait_managed_by_server")
+	require.Zero(t, service.createCalls)
+}
+
+func TestCreateCharacterRejectsNullClientPortraitURL(t *testing.T) {
+	service, router := newCharacterHandlerTestSubject(nil)
+
+	recorder := performCharacterRequest(router, http.MethodPost, "/api/characters/", `{
+		"name":"Harvey Walters",
+		"portrait_url":null
+	}`)
+
+	requireCharacterError(t, recorder, http.StatusBadRequest, "character.portrait_managed_by_server")
+	require.Zero(t, service.createCalls)
+}
+
+func TestUpdateCharacterRejectsClientPortraitURL(t *testing.T) {
 	service, router := newCharacterHandlerTestSubject(nil)
 
 	recorder := performCharacterRequest(router, http.MethodPut, "/api/characters/"+testCharacterID+"/", `{
@@ -41,12 +63,8 @@ func TestUpdateCharacterPassesPortraitURL(t *testing.T) {
 		"portrait_url":"https://assets.example.test/portraits/updated.webp"
 	}`)
 
-	require.Equal(t, http.StatusOK, recorder.Code)
-	require.Equal(t, 1, service.updateCalls)
-	require.Equal(t, "user_1", service.updateInput.UserID)
-	require.Equal(t, testCharacterUnitUUID(testCharacterID), service.updateInput.ID)
-	require.Equal(t, "Harvey Walters", service.updateInput.Name)
-	require.Equal(t, "https://assets.example.test/portraits/updated.webp", *service.updateInput.PortraitUrl)
+	requireCharacterError(t, recorder, http.StatusBadRequest, "character.portrait_managed_by_server")
+	require.Zero(t, service.updateCalls)
 }
 
 func TestGetAllCharactersReturnsSummaryJSON(t *testing.T) {

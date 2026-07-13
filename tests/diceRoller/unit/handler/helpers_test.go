@@ -16,7 +16,7 @@ func newDiceRollerTestRouter(svc *fakeDiceRollerHandlerService) http.Handler {
 	services := &service.Service{
 		DiceRoller: svc,
 	}
-	h := handler.NewHandler(services)
+	h := handler.NewHandler(handler.Dependencies{Services: services})
 	return h.InitRoutes(diceRollerAuthMiddleware)
 }
 

@@ -28,7 +28,7 @@ func TestCharacterTableCreateAndGetCharacter(t *testing.T) {
 	require.Equal(t, input.Sex, createdCharacter.Sex)
 	require.Equal(t, input.Residence, createdCharacter.Residence)
 	require.Equal(t, input.Birthplace, createdCharacter.Birthplace)
-	require.Equal(t, input.PortraitUrl, createdCharacter.PortraitUrl)
+	require.Nil(t, createdCharacter.PortraitKey)
 	require.True(t, createdCharacter.CreatedAt.Valid)
 	require.True(t, createdCharacter.UpdatedAt.Valid)
 
@@ -59,7 +59,7 @@ func TestCharacterTableCreateAllowsNilOptionalFields(t *testing.T) {
 	require.Nil(t, createdCharacter.Sex)
 	require.Nil(t, createdCharacter.Residence)
 	require.Nil(t, createdCharacter.Birthplace)
-	require.Nil(t, createdCharacter.PortraitUrl)
+	require.Nil(t, createdCharacter.PortraitKey)
 }
 
 func TestCharacterTableListsOnlyCharactersForRequestedUser(t *testing.T) {
@@ -105,7 +105,6 @@ func TestCharacterTableListsCharacterCardsWithPortraitAndStateStats(t *testing.T
 
 	noStatesInput := testCreateCharacterParams(testUser.ID)
 	noStatesInput.Name = "No State Rows"
-	noStatesInput.PortraitUrl = nil
 	emptySex := ""
 	noStatesInput.Sex = &emptySex
 	noStatesCharacter, err := subject.queries.CreateCharacter(context.Background(), noStatesInput)
@@ -113,11 +112,16 @@ func TestCharacterTableListsCharacterCardsWithPortraitAndStateStats(t *testing.T
 
 	time.Sleep(10 * time.Millisecond)
 
-	portraitURL := "https://assets.example.test/portraits/card.webp"
+	portraitKey := "portraits/11111111-1111-1111-1111-111111111111.webp"
 	withStatesInput := testCreateCharacterParams(testUser.ID)
 	withStatesInput.Name = "Card Ready"
-	withStatesInput.PortraitUrl = &portraitURL
 	withStatesCharacter, err := subject.queries.CreateCharacter(context.Background(), withStatesInput)
+	require.NoError(t, err)
+	withStatesCharacter, err = subject.queries.SetCharacterPortraitKey(context.Background(), db.SetCharacterPortraitKeyParams{
+		UserID:      testUser.ID,
+		ID:          withStatesCharacter.ID,
+		PortraitKey: &portraitKey,
+	})
 	require.NoError(t, err)
 
 	_, err = subject.queries.CreateCharacter(context.Background(), testCreateCharacterParams(otherUser.ID))
@@ -162,7 +166,7 @@ func TestCharacterTableListsCharacterCardsWithPortraitAndStateStats(t *testing.T
 	require.Equal(t, withStatesInput.Age, cards[0].Age)
 	require.Equal(t, withStatesInput.Sex, cards[0].Sex)
 	require.Equal(t, withStatesInput.Residence, cards[0].Residence)
-	require.Equal(t, &portraitURL, cards[0].PortraitUrl)
+	require.Equal(t, &portraitKey, cards[0].PortraitKey)
 	require.Equal(t, int16(7), cards[0].CurrentHp)
 	require.Equal(t, int16(12), cards[0].MaxHp)
 	require.Equal(t, int16(4), cards[0].CurrentMp)
@@ -175,7 +179,7 @@ func TestCharacterTableListsCharacterCardsWithPortraitAndStateStats(t *testing.T
 	require.Equal(t, noStatesCharacter.ID, cards[1].ID)
 	require.Equal(t, "No State Rows", cards[1].Name)
 	require.Equal(t, &emptySex, cards[1].Sex)
-	require.Nil(t, cards[1].PortraitUrl)
+	require.Nil(t, cards[1].PortraitKey)
 	require.Equal(t, int16(0), cards[1].CurrentHp)
 	require.Equal(t, int16(0), cards[1].MaxHp)
 	require.Equal(t, int16(0), cards[1].CurrentMp)

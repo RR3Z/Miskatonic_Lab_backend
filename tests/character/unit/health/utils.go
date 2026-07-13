@@ -15,7 +15,7 @@ func newTestCharacterServiceForHealth() (*FakeHealthDBTX, *characterServices.Cha
 	dbtx := &FakeHealthDBTX{QueryRowData: healthRowData(testHealthState())}
 	repos := &repository.Repository{Queries: db.New(dbtx)}
 
-	return dbtx, characterServices.NewCharacterService(repos)
+	return dbtx, characterServices.NewCharacterService(repos, nil, nil)
 }
 
 func testHealthState() db.HealthState {

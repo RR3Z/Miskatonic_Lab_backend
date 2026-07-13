@@ -118,18 +118,15 @@ func testCreateCharacterParams(userID string) db.CreateCharacterParams {
 	sex := "male"
 	residence := "Arkham"
 	birthplace := "Boston"
-	portraitURL := "https://assets.example.test/portraits/armitage.webp"
-
 	return db.CreateCharacterParams{
-		UserID:      userID,
-		Name:        "Dr. Henry Armitage",
-		PlayerName:  &playerName,
-		Occupation:  &occupation,
-		Age:         &age,
-		Sex:         &sex,
-		Residence:   &residence,
-		Birthplace:  &birthplace,
-		PortraitUrl: &portraitURL,
+		UserID:     userID,
+		Name:       "Dr. Henry Armitage",
+		PlayerName: &playerName,
+		Occupation: &occupation,
+		Age:        &age,
+		Sex:        &sex,
+		Residence:  &residence,
+		Birthplace: &birthplace,
 	}
 }
 

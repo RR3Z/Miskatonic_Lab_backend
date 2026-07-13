@@ -44,6 +44,8 @@ Service unit tests should focus on business rules and service flow. Avoid changi
 
 Character CRUD handler tests live in `tests/character`. They build the public handler router with `NewHandler`, inject Clerk claims into the request context, and keep fake services/helpers split from happy-path, validation, error, binding, and method tests.
 
+Character portrait HTTP tests live under `tests/character/unit/handler`, lifecycle/concurrency coverage lives under `tests/character/integration`, and local filesystem storage tests are split into local-store, file-server, and image-validation files under `tests/storage/portrait`.
+
 Focused Character HTTP contract tests live in `tests/character/unit/handler`. They cover route mounting, malformed JSON, invalid UUIDs, representative DTO handoff, delete status, and service-error JSON mapping without touching production service logic.
 
 Config and middleware unit tests live in `tests/config` and `tests/middleware`. They cover CORS origin parsing/headers, database URL formatting, request logging levels, and request error-code logging.

@@ -18,7 +18,7 @@ func TestCreateCharacterEnforcesPerUserLimit(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	user := createCharacterTestUser(t, subject)
 	otherUser := createCharacterTestUser(t, subject)
-	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool))
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, nil)
 
 	seedCharacters(t, subject, user.ID, characterServices.MaxCharactersPerUser-1)
 
@@ -40,7 +40,7 @@ func TestCreateCharacterEnforcesPerUserLimit(t *testing.T) {
 func TestConcurrentCreateCharacterAtLimitAllowsExactlyOne(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	user := createCharacterTestUser(t, subject)
-	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool))
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, nil)
 	seedCharacters(t, subject, user.ID, characterServices.MaxCharactersPerUser-1)
 
 	start := make(chan struct{})

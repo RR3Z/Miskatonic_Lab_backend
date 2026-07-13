@@ -15,7 +15,7 @@ func newTestCharacterServiceForMagic() (*FakeMagicDBTX, *characterServices.Chara
 	dbtx := &FakeMagicDBTX{QueryRowData: magicRowData(testMagicState())}
 	repos := &repository.Repository{Queries: db.New(dbtx)}
 
-	return dbtx, characterServices.NewCharacterService(repos)
+	return dbtx, characterServices.NewCharacterService(repos, nil, nil)
 }
 
 func testMagicState() db.MagicState {

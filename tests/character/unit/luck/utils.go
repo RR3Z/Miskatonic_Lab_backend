@@ -15,7 +15,7 @@ func newTestCharacterServiceForLuck() (*FakeLuckDBTX, *characterServices.Charact
 	dbtx := &FakeLuckDBTX{QueryRowData: luckRowData(testLuckState())}
 	repos := &repository.Repository{Queries: db.New(dbtx)}
 
-	return dbtx, characterServices.NewCharacterService(repos)
+	return dbtx, characterServices.NewCharacterService(repos, nil, nil)
 }
 
 func testLuckState() db.LuckState {

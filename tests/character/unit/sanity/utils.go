@@ -15,7 +15,7 @@ func newTestCharacterServiceForSanity() (*FakeSanityDBTX, *characterServices.Cha
 	dbtx := &FakeSanityDBTX{QueryRowData: sanityRowData(testSanityState())}
 	repos := &repository.Repository{Queries: db.New(dbtx)}
 
-	return dbtx, characterServices.NewCharacterService(repos)
+	return dbtx, characterServices.NewCharacterService(repos, nil, nil)
 }
 
 func testSanityState() db.SanityState {

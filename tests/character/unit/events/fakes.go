@@ -63,6 +63,10 @@ func (f *FakeCharacterService) UpdateCharacter(context.Context, characterDTO.Upd
 	return f.Character.CharacterShortModel, f.Err
 }
 
+func (f *FakeCharacterService) ReplacePortrait(context.Context, characterDTO.ReplacePortraitInput) (characterDTO.CharacterShortModel, error) {
+	return f.Character.CharacterShortModel, f.Err
+}
+
 func (f *FakeCharacterService) DeleteCharacter(context.Context, characterDTO.DeleteCharacterInput) error {
 	return f.Err
 }

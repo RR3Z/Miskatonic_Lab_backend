@@ -13,7 +13,7 @@ import (
 )
 
 func newRoomHandlerTestRouter(roomService room.IRoom) http.Handler {
-	h := handler.NewHandler(&service.Service{Room: roomService})
+	h := handler.NewHandler(handler.Dependencies{Services: &service.Service{Room: roomService}})
 	return h.InitRoutes(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := clerk.ContextWithSessionClaims(r.Context(), &clerk.SessionClaims{

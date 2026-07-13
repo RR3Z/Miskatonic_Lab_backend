@@ -7,8 +7,8 @@ import (
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/events"
 	characterEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/character"
-	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
 	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
@@ -66,6 +66,14 @@ func TestEventPublishingCharacterServicePublishesSuccessEvents(t *testing.T) {
 				return err
 			},
 			expectedEvent: characterEvents.CharacterUpdateSucceeded{UserID: testUserID, CharacterID: testCharacterID, Name: "Dr. Armitage"},
+		},
+		{
+			name: "replace character portrait",
+			call: func(ctx context.Context, service *characterServices.EventPublishingCharacterService) error {
+				_, err := service.ReplacePortrait(ctx, characterDTO.ReplacePortraitInput{UserID: testUserID, CharacterID: characterID})
+				return err
+			},
+			expectedEvent: characterEvents.CharacterPortraitReplaceSucceeded{UserID: testUserID, CharacterID: testCharacterID},
 		},
 		{
 			name: "delete character",
@@ -428,6 +436,14 @@ func TestEventPublishingCharacterServicePublishesFailureEvents(t *testing.T) {
 				return err
 			},
 			expectedEvent: characterEvents.CharacterUpdateFailed{UserID: testUserID, CharacterID: testCharacterID, Err: expectedErr},
+		},
+		{
+			name: "replace character portrait",
+			call: func(ctx context.Context, service *characterServices.EventPublishingCharacterService) error {
+				_, err := service.ReplacePortrait(ctx, characterDTO.ReplacePortraitInput{UserID: testUserID, CharacterID: characterID})
+				return err
+			},
+			expectedEvent: characterEvents.CharacterPortraitReplaceFailed{UserID: testUserID, CharacterID: testCharacterID, Err: expectedErr},
 		},
 		{
 			name: "delete character",

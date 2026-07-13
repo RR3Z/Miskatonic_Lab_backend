@@ -43,7 +43,7 @@ func int16Ptr(value int16) *int16 {
 }
 
 func testCharacter() db.Character {
-	portraitURL := "https://assets.example.test/portraits/armitage.webp"
+	portraitKey := "portraits/11111111-1111-1111-1111-111111111111.webp"
 	return db.Character{
 		ID:          testUUID("11111111-1111-1111-1111-111111111111"),
 		UserID:      "user_1",
@@ -56,7 +56,7 @@ func testCharacter() db.Character {
 		Birthplace:  strPtr("Boston"),
 		CreatedAt:   testTimestamptz("2026-06-07 12:00:00+03"),
 		UpdatedAt:   testTimestamptz("2026-06-07 13:00:00+03"),
-		PortraitUrl: &portraitURL,
+		PortraitKey: &portraitKey,
 	}
 }
 
@@ -140,7 +140,7 @@ func requireSameShortCharacter(t *testing.T, expected db.Character, actual chara
 	require.Equal(t, expected.Sex, actual.Sex)
 	require.Equal(t, expected.Residence, actual.Residence)
 	require.Equal(t, expected.Birthplace, actual.Birthplace)
-	require.Equal(t, expected.PortraitUrl, actual.PortraitUrl)
+	require.Nil(t, actual.PortraitUrl)
 	require.Equal(t, expected.CreatedAt.Time, actual.CreatedAt.Time)
 	require.Equal(t, expected.UpdatedAt.Time, actual.UpdatedAt.Time)
 }

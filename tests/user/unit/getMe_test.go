@@ -27,7 +27,7 @@ func newAuthenticatedMeTestSubject(t *testing.T, userService *FakeUserService) h
 		})
 	}
 
-	return handler.NewHandler(&service.Service{User: userService}).InitRoutes(authMiddleware)
+	return handler.NewHandler(handler.Dependencies{Services: &service.Service{User: userService}}).InitRoutes(authMiddleware)
 }
 
 func TestGetMeReturnsUserModel(t *testing.T) {

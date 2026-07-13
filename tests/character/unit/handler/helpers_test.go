@@ -21,7 +21,7 @@ const (
 )
 
 func newCharacterHandlerTestRouter(characterService *fakeCharacterHandlerService) http.Handler {
-	h := handler.NewHandler(&service.Service{Character: characterService})
+	h := handler.NewHandler(handler.Dependencies{Services: &service.Service{Character: characterService}})
 	return h.InitRoutes(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := clerk.ContextWithSessionClaims(r.Context(), &clerk.SessionClaims{

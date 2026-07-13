@@ -468,7 +468,7 @@ func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithou
 	require.NoError(t, err)
 
 	recorder := &characterEventRecorder{}
-	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, recorder)
 
 	characteristics, err := service.UpsertCharacteristics(context.Background(), characteristicsDTO.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
@@ -498,7 +498,7 @@ func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithou
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
 	recorder := &characterEventRecorder{}
-	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, recorder)
 
 	characteristics, err := service.UpsertCharacteristics(context.Background(), characteristicsDTO.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
@@ -528,7 +528,7 @@ func TestCharacterServiceUpsertCharacteristicsRecalculatesDerivedStats(t *testin
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
 	recorder := &characterEventRecorder{}
-	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, recorder)
 
 	_, err := service.UpsertCharacteristics(context.Background(), characteristicsDTO.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
@@ -560,7 +560,7 @@ func TestCharacterServiceUpdateCharacterAgeRecalculatesDerivedStats(t *testing.T
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
 	recorder := &characterEventRecorder{}
-	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, recorder)
 
 	_, err := service.UpsertCharacteristics(context.Background(), characteristicsDTO.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
@@ -605,7 +605,7 @@ func TestCharacterServiceUpdateCharacterSkipsDerivedStatsRecalculationWithoutAge
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
 	recorder := &characterEventRecorder{}
-	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), recorder)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, recorder)
 
 	_, err := service.UpsertCharacteristics(context.Background(), characteristicsDTO.UpsertCharacteristicsInput{
 		UserID:      testUser.ID,
