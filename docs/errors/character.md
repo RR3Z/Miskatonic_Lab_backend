@@ -9,6 +9,12 @@
 | `character.name_too_long` | 400 | Character name exceeds the maximum length. |
 | `character.age_negative` | 400 | Character age is negative. |
 | `character.limit_reached` | 409 | The authenticated user already has 30 or more characters. New character creation is blocked. |
+| `character.portrait_required` | 400 | Portrait upload is missing the `portrait` multipart file. |
+| `character.portrait_unsupported` | 400 | Portrait file is not JPEG, PNG, or WebP. |
+| `character.portrait_invalid` | 400 | Portrait is corrupted or its dimensions exceed 4096x4096. |
+| `character.portrait_too_large` | 413 | Portrait file exceeds 5 MiB. |
+| `character.portrait_managed_by_server` | 400 | Create or update JSON tries to provide client-owned `portrait_url`. |
+| `character.portrait_storage_unavailable` | 503 | Backend portrait storage is unavailable. |
 | `character.characteristics_negative` | 400 | One or more characteristic values are negative. |
 | `character.derived_stats_negative` | 400 | Derived stats such as speed or dodge are negative. |
 | `character.invalid_damage_bonus` | 400 | Derived stats damage bonus has an invalid format. |
@@ -33,7 +39,7 @@
 
 Sources:
 
-- Handler path/body parsing: `character.invalid_id`, `character.invalid_input`.
+- Handler path/body parsing: `character.invalid_id`, `character.invalid_input`, and `character.portrait_managed_by_server`.
 - Service validation: required, length, negative-value, state-bound, and per-user character-limit errors.
 - Repository/service constraint mapping: invalid finances, skills, backstory section, derived stats, and skill-in-use errors.
 

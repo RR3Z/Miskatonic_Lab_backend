@@ -27,6 +27,16 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 			},
 			Err: err,
 		}
+	case errors.Is(err, characterErrors.ErrPortraitRequired):
+		return badRequestError("character.portrait_required", "portrait file is required", err)
+	case errors.Is(err, characterErrors.ErrPortraitTooLarge):
+		return &myErrors.AppError{Status: http.StatusRequestEntityTooLarge, Code: "character.portrait_too_large", Message: "portrait exceeds 5 MiB", Err: err}
+	case errors.Is(err, characterErrors.ErrPortraitUnsupported):
+		return badRequestError("character.portrait_unsupported", "portrait must be JPEG, PNG, or WebP", err)
+	case errors.Is(err, characterErrors.ErrPortraitInvalid):
+		return badRequestError("character.portrait_invalid", "portrait must be a valid image up to 4096x4096", err)
+	case errors.Is(err, characterErrors.ErrPortraitStorage):
+		return &myErrors.AppError{Status: http.StatusServiceUnavailable, Code: "character.portrait_storage_unavailable", Message: "portrait storage is unavailable", Err: err}
 	case errors.Is(err, characterErrors.ErrCharacteristicsNegative):
 		return badRequestError("character.characteristics_negative", "characteristic values must be >= 0", err)
 	case errors.Is(err, characterErrors.ErrDerivedStatsNegative):
@@ -87,6 +97,10 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 			Err:     err,
 		}
 	}
+}
+
+func PortraitManagedByServerError() *myErrors.AppError {
+	return badRequestError("character.portrait_managed_by_server", "portrait_url is managed by the server", nil)
 }
 
 func MapNotFoundOrServiceError(err error, notFoundMessage, fallbackMessage string) *myErrors.AppError {
