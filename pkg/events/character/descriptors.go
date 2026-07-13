@@ -13,6 +13,8 @@ var descriptors = []events.EventDescriptor{
 	descriptor(CharacterCreateFailed{}, "character", "create", events.OutcomeFailed),
 	descriptor(CharacterUpdateSucceeded{}, "character", "update", events.OutcomeSucceeded),
 	descriptor(CharacterUpdateFailed{}, "character", "update", events.OutcomeFailed),
+	descriptor(CharacterPortraitUpdateSucceeded{}, "portrait", "update", events.OutcomeSucceeded),
+	descriptor(CharacterPortraitUpdateFailed{}, "portrait", "update", events.OutcomeFailed),
 	descriptor(CharacterDeleteSucceeded{}, "character", "delete", events.OutcomeSucceeded),
 	descriptor(CharacterDeleteFailed{}, "character", "delete", events.OutcomeFailed),
 
@@ -110,6 +112,7 @@ var descriptors = []events.EventDescriptor{
 
 var roomMutationDescriptors = []events.EventDescriptor{
 	descriptor(CharacterUpdateSucceeded{}, "character", "update", events.OutcomeSucceeded),
+	descriptor(CharacterPortraitUpdateSucceeded{}, "portrait", "update", events.OutcomeSucceeded),
 	descriptor(CharacterHealthUpsertSucceeded{}, "health", "upsert", events.OutcomeSucceeded),
 	descriptor(CharacterHealthDeleteSucceeded{}, "health", "delete", events.OutcomeSucceeded),
 	descriptor(CharacterSanityUpsertSucceeded{}, "sanity", "upsert", events.OutcomeSucceeded),

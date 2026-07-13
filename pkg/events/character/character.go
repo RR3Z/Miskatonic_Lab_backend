@@ -79,6 +79,25 @@ func (CharacterUpdateFailed) EventName() string {
 	return "character.update_failed"
 }
 
+type CharacterPortraitUpdateSucceeded struct {
+	UserID      string
+	CharacterID string
+}
+
+type CharacterPortraitUpdateFailed struct {
+	UserID      string
+	CharacterID string
+	Err         error
+}
+
+func (CharacterPortraitUpdateSucceeded) EventName() string {
+	return "character.portrait_update_succeeded"
+}
+
+func (CharacterPortraitUpdateFailed) EventName() string {
+	return "character.portrait_update_failed"
+}
+
 type CharacterDeleteSucceeded struct {
 	UserID      string
 	CharacterID string
