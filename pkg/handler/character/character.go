@@ -49,20 +49,19 @@ func (h *CharacterHandler) getCharacter(w http.ResponseWriter, r *http.Request) 
 func (h *CharacterHandler) createCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	userID := utils.GetUserIDFromContext(r.Context())
 
-	var req characterDTO.CharacterRequest
-	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
+	req, appErr := decodeCharacterWriteRequest(r)
+	if appErr != nil {
 		return appErr
 	}
 	input := characterDTO.CreateCharacterInput{
-		UserID:      userID,
-		Name:        req.Name,
-		PlayerName:  req.PlayerName,
-		Occupation:  req.Occupation,
-		Age:         req.Age,
-		Sex:         req.Sex,
-		Residence:   req.Residence,
-		Birthplace:  req.Birthplace,
-		PortraitUrl: req.PortraitUrl,
+		UserID:     userID,
+		Name:       req.Name,
+		PlayerName: req.PlayerName,
+		Occupation: req.Occupation,
+		Age:        req.Age,
+		Sex:        req.Sex,
+		Residence:  req.Residence,
+		Birthplace: req.Birthplace,
 	}
 
 	character, err := h.service.CreateCharacter(r.Context(), input)
@@ -82,21 +81,20 @@ func (h *CharacterHandler) updateCharacter(w http.ResponseWriter, r *http.Reques
 		return characterErrors.InvalidCharacterIDError(err)
 	}
 
-	var req characterDTO.CharacterRequest
-	if appErr := characterHelpers.DecodeJSON(r, &req); appErr != nil {
+	req, appErr := decodeCharacterWriteRequest(r)
+	if appErr != nil {
 		return appErr
 	}
 	input := characterDTO.UpdateCharacterInput{
-		UserID:      userID,
-		ID:          characterID,
-		Name:        req.Name,
-		PlayerName:  req.PlayerName,
-		Occupation:  req.Occupation,
-		Age:         req.Age,
-		Sex:         req.Sex,
-		Residence:   req.Residence,
-		Birthplace:  req.Birthplace,
-		PortraitUrl: req.PortraitUrl,
+		UserID:     userID,
+		ID:         characterID,
+		Name:       req.Name,
+		PlayerName: req.PlayerName,
+		Occupation: req.Occupation,
+		Age:        req.Age,
+		Sex:        req.Sex,
+		Residence:  req.Residence,
+		Birthplace: req.Birthplace,
 	}
 
 	character, err := h.service.UpdateCharacter(r.Context(), input)

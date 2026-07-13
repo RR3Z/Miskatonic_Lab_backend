@@ -16,7 +16,7 @@ import (
 
 const MaxPortraitUploadBytes = portraitStorage.MaxUploadBytes
 
-func (h *CharacterHandler) updatePortrait(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+func (h *CharacterHandler) replacePortrait(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
 	if err != nil {
 		return characterErrors.InvalidCharacterIDError(err)
@@ -31,12 +31,12 @@ func (h *CharacterHandler) updatePortrait(w http.ResponseWriter, r *http.Request
 	for {
 		part, nextErr := reader.NextPart()
 		if errors.Is(nextErr, io.EOF) {
-			return characterErrors.MapServiceError(characterServiceErrors.ErrPortraitRequired, "failed to update character portrait")
+			return characterErrors.MapServiceError(characterServiceErrors.ErrPortraitRequired, "failed to replace character portrait")
 		}
 		if nextErr != nil {
 			var maxBytesError *http.MaxBytesError
 			if errors.As(nextErr, &maxBytesError) {
-				return characterErrors.MapServiceError(characterServiceErrors.ErrPortraitTooLarge, "failed to update character portrait")
+				return characterErrors.MapServiceError(characterServiceErrors.ErrPortraitTooLarge, "failed to replace character portrait")
 			}
 			return characterErrors.InvalidInputError("invalid portrait upload", nextErr)
 		}
@@ -46,18 +46,18 @@ func (h *CharacterHandler) updatePortrait(w http.ResponseWriter, r *http.Request
 			continue
 		}
 
-		character, serviceErr := h.service.UpdatePortrait(r.Context(), characterDTO.UpdateCharacterPortraitInput{
+		character, serviceErr := h.service.ReplacePortrait(r.Context(), characterDTO.ReplacePortraitInput{
 			UserID:      utils.GetUserIDFromContext(r.Context()),
 			CharacterID: characterID,
-			Content:     part,
+			File:        part,
 		})
 		_ = part.Close()
 		if serviceErr != nil {
 			var maxBytesError *http.MaxBytesError
 			if errors.As(serviceErr, &maxBytesError) {
-				return characterErrors.MapServiceError(characterServiceErrors.ErrPortraitTooLarge, "failed to update character portrait")
+				return characterErrors.MapServiceError(characterServiceErrors.ErrPortraitTooLarge, "failed to replace character portrait")
 			}
-			return characterErrors.MapNotFoundOrServiceError(serviceErr, "character not found", "failed to update character portrait")
+			return characterErrors.MapNotFoundOrServiceError(serviceErr, "character not found", "failed to replace character portrait")
 		}
 
 		utils.WriteJSON(w, http.StatusOK, character)

@@ -2,35 +2,36 @@ package handler
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
-	"os"
 
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/config"
 	characterHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/character"
 	diceRollerHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/diceRoller"
 	roomHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/room"
 	userHandler "github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler/user"
-	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/middleware"
 	roomModel "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/service"
 	ws "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/room"
-	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct {
-	services          *service.Service
-	auxiliaryHandlers *AuxiliaryHandlers
+type Dependencies struct {
+	Services           *service.Service
+	PortraitFileServer http.Handler
 }
 
-type AuxiliaryHandlers struct {
+type Handler struct {
+	domainHandlers     *domainHandlers
+	portraitFileServer http.Handler
+}
+
+type domainHandlers struct {
 	characterHandler  *characterHandler.CharacterHandler
 	diceRollerHandler *diceRollerHandler.DiceRollerHandler
 	roomHandler       *roomHandler.RoomHandler
 	userHandler       *userHandler.UserHandler
 }
 
-func NewHandler(services *service.Service) *Handler {
+func NewHandler(dependencies Dependencies) *Handler {
+	services := dependencies.Services
 	roomHub := ws.NewRoomHub()
 	go roomHub.Run(context.Background())
 
@@ -41,54 +42,22 @@ func NewHandler(services *service.Service) *Handler {
 		diceHandler = diceRollerHandler.New(services.DiceRoller)
 	}
 
-	return &Handler{
-		services: services,
-		auxiliaryHandlers: new(AuxiliaryHandlers{
+	handler := &Handler{
+		domainHandlers: &domainHandlers{
 			characterHandler:  characterHandler.New(services.Character),
 			diceRollerHandler: diceHandler,
 			roomHandler:       roomHandler.NewWithHub(services.Room, roomHub),
 			userHandler:       userHandler.New(services.User),
-		}),
+		},
+		portraitFileServer: dependencies.PortraitFileServer,
 	}
+	return handler
 }
 
 func (h *Handler) RoomHub() *ws.RoomHub {
-	return h.auxiliaryHandlers.roomHandler.Hub()
+	return h.domainHandlers.roomHandler.Hub()
 }
 
 func (h *Handler) CloseDeletedRoomSockets(result roomModel.CleanupRoomsResult, reason string) {
-	h.auxiliaryHandlers.roomHandler.CloseDeletedRooms(result.DeletedRoomIDs, reason)
-}
-
-func (h *Handler) InitRoutes(authMiddleware func(http.Handler) http.Handler) *chi.Mux {
-	router := chi.NewRouter()
-
-	allowedOrigins := config.ParseAllowedOrigins(os.Getenv("CORS_ALLOWED_ORIGINS"))
-	router.Use(middleware.CORSMiddleware(middleware.CORSConfig{
-		AllowedOrigins: allowedOrigins,
-	}))
-
-	router.Use(middleware.RequestLoggingMiddleware(slog.Default()))
-
-	h.auxiliaryHandlers.userHandler.RegisterPublicRoutes(router)
-
-	router.Route("/api", func(r chi.Router) {
-		r.Use(authMiddleware)
-
-		h.auxiliaryHandlers.userHandler.RegisterProtectedRoutes(r)
-
-		r.Route("/characters", func(r chi.Router) {
-			h.auxiliaryHandlers.characterHandler.RegisterRoutes(r)
-		})
-
-		r.Route("/dice-roll", func(r chi.Router) {
-			h.auxiliaryHandlers.diceRollerHandler.RegisterRoutes(r)
-		})
-
-		r.Route("/rooms", func(r chi.Router) {
-			h.auxiliaryHandlers.roomHandler.RegisterRoutes(r)
-		})
-	})
-
-	return router
+	h.domainHandlers.roomHandler.CloseDeletedRooms(result.DeletedRoomIDs, reason)
 }
