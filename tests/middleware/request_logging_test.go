@@ -1,9 +1,12 @@
 package tests
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -85,4 +88,37 @@ func TestRequestLoggingMiddlewareLogsStatusLevelAndErrorCode(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRequestLoggingMiddlewareForwardsHijacker(t *testing.T) {
+	serverConn, clientConn := net.Pipe()
+	t.Cleanup(func() { _ = serverConn.Close() })
+	t.Cleanup(func() { _ = clientConn.Close() })
+
+	writer := &hijackableResponseWriter{
+		ResponseWriter: httptest.NewRecorder(),
+		conn:           serverConn,
+	}
+	handler := middleware.RequestLoggingMiddleware(slog.New(slog.NewTextHandler(io.Discard, nil)))(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hijacker, ok := w.(http.Hijacker)
+		require.True(t, ok)
+
+		conn, _, err := hijacker.Hijack()
+		require.NoError(t, err)
+		require.Same(t, serverConn, conn)
+	}))
+
+	handler.ServeHTTP(writer, httptest.NewRequest(http.MethodGet, "/ws", nil))
+	require.True(t, writer.hijacked)
+}
+
+type hijackableResponseWriter struct {
+	http.ResponseWriter
+	conn     net.Conn
+	hijacked bool
+}
+
+func (w *hijackableResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	w.hijacked = true
+	return w.conn, bufio.NewReadWriter(bufio.NewReader(w.conn), bufio.NewWriter(w.conn)), nil
 }
