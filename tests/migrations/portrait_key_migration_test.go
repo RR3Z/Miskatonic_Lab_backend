@@ -14,6 +14,8 @@ import (
 )
 
 func TestPortraitKeyMigrationRenamesColumnClearsLegacyURLsAndRollsBack(t *testing.T) {
+	loadMigrationTestEnv(t)
+
 	if !migrationSmokeEnabled() {
 		t.Skip("set MIGRATION_SMOKE_TESTS=1 to run migration rollback smoke")
 	}

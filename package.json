@@ -7,18 +7,14 @@
     "migrate:up": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 up",
     "migrate:up:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 up-all",
     "migrate:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/migrate.ps1 version",
-    "testdb:start": "docker compose up -d --wait postgres-test",
-    "testdb:migrate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/testdb.ps1 migrate",
-    "testdb:seed": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/testdb.ps1 seed",
-    "testdb:prepare": "npm run testdb:start && powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/testdb.ps1 prepare",
-    "test:db": "npm run testdb:prepare && go test ./tests/character/integration ./tests/diceRoller/integration ./tests/room/integration",
     "sqlc:generate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 generate",
     "sqlc:version": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sqlc.ps1 version",
     "test:pretty": "gotestsum --format testname -- ./tests/...",
-    "test:e2e": "powershell -NoProfile -Command \"$env:E2E_TESTS='1'; go test ./tests/e2e -v\"",
-    "test:migrations": "powershell -NoProfile -Command \"$env:MIGRATION_SMOKE_TESTS='1'; go test ./tests/migrations -v\"",
-    "test:all": "powershell -NoProfile -Command \"go test ./...; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; $env:CLERK_INTEGRATION_TESTS='1'; go test ./tests/user/integration -v; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; $env:E2E_TESTS='1'; go test ./tests/e2e -v; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; $env:MIGRATION_SMOKE_TESTS='1'; go test ./tests/migrations -v\"",
-    "test:clerk": "powershell -NoProfile -Command \"$env:CLERK_INTEGRATION_TESTS='1'; go test ./tests/user/integration -v\"",
-    "user:create": "go run ./cmd/create-user"
+    "test:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test.ps1 setup",
+    "test:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test.ps1 local",
+    "test:e2e": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test.ps1 e2e",
+    "test:clerk": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test.ps1 clerk",
+    "test:migrations": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test.ps1 migrations",
+    "test:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test.ps1 all"
   }
 }

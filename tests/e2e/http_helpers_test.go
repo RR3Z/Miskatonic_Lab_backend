@@ -120,7 +120,7 @@ func (s *e2eSubject) doMultipartFile(t *testing.T, method string, path string, f
 
 	req, err := http.NewRequest(method, s.baseURL+path, body)
 	require.NoError(t, err)
-	req.Header.Set("Authorization", "Bearer "+s.token)
+	req.Header.Set("Authorization", s.authorization(t))
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	res, err := s.client.Do(req)
 	require.NoError(t, err)
@@ -160,7 +160,7 @@ func (s *e2eSubject) newRequest(t *testing.T, method string, path string, body a
 
 	req, err := http.NewRequest(method, s.baseURL+path, reader)
 	require.NoError(t, err)
-	req.Header.Set("Authorization", "Bearer "+s.token)
+	req.Header.Set("Authorization", s.authorization(t))
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -181,6 +181,12 @@ func (s *e2eSubject) wsURL(t *testing.T, path string) string {
 		t.Fatalf("unsupported E2E_BASE_URL scheme %q", value.Scheme)
 	}
 	return value.String()
+}
+
+func (s *e2eSubject) authorization(t testing.TB) string {
+	t.Helper()
+	require.NotNil(t, suiteE2EClerkFixture, "E2E Clerk fixture is not initialized")
+	return suiteE2EClerkFixture.authorization(t, s.identity)
 }
 
 func (s *e2eSubject) waitForRoomEvents(t *testing.T, roomID string, eventType string) []e2eRoomEventResponse {

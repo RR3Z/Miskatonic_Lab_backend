@@ -2,8 +2,6 @@ package tests
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -20,49 +18,51 @@ import (
 
 func newE2ESubject(t *testing.T) *e2eSubject {
 	t.Helper()
-	return newE2ESubjectFromEnv(t, "E2E_AUTH_TOKEN")
+	requireE2EEnabled(t)
+	loadE2EEnv(t)
+	require.NotNil(t, suiteE2EClerkFixture, "E2E Clerk fixture is not initialized")
+	return newE2ESubjectForIdentity(t, suiteE2EClerkFixture.primary)
 }
 
 func newSecondE2ESubject(t *testing.T) *e2eSubject {
 	t.Helper()
 	requireE2EEnabled(t)
 	loadE2EEnv(t)
-	if strings.TrimSpace(os.Getenv("E2E_SECOND_AUTH_TOKEN")) == "" {
-		t.Skip("set E2E_SECOND_AUTH_TOKEN to run real multi-user E2E tests")
-	}
-	return newE2ESubjectFromEnv(t, "E2E_SECOND_AUTH_TOKEN")
+	require.NotNil(t, suiteE2EClerkFixture, "E2E Clerk fixture is not initialized")
+	return newE2ESubjectForIdentity(t, suiteE2EClerkFixture.secondary)
 }
 
-func newE2ESubjectFromEnv(t *testing.T, tokenEnv string) *e2eSubject {
+func newE2ESubjectForIdentity(t *testing.T, identity e2eClerkIdentity) *e2eSubject {
 	t.Helper()
 	requireE2EEnabled(t)
 	loadE2EEnv(t)
 
-	token := normalizedE2EToken(t, tokenEnv)
-	userID := subjectFromJWT(t, token)
-
 	pool := testdb.Open(t)
 
 	queries := repository.NewRepository(pool).Queries
-	cleanupUser := ensureLocalE2EUser(t, queries, userID)
+	cleanupUser := ensureLocalE2EUser(t, queries, identity.userID)
 	t.Cleanup(cleanupUser)
 
 	return &e2eSubject{
-		baseURL: e2eBaseURL(),
-		token:   token,
-		userID:  userID,
-		client:  &http.Client{Timeout: 10 * time.Second},
-		pool:    pool,
-		queries: queries,
+		baseURL:  e2eBaseURL(),
+		identity: identity,
+		userID:   identity.userID,
+		client:   &http.Client{Timeout: 10 * time.Second},
+		pool:     pool,
+		queries:  queries,
 	}
 }
 
 func requireE2EEnabled(t *testing.T) {
 	t.Helper()
-	value := strings.ToLower(strings.TrimSpace(os.Getenv("E2E_TESTS")))
-	if value != "1" && value != "true" && value != "yes" {
+	if !e2eEnabled() {
 		t.Skip("set E2E_TESTS=1 to run live backend E2E tests")
 	}
+}
+
+func e2eEnabled() bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv("E2E_TESTS")))
+	return value == "1" || value == "true" || value == "yes"
 }
 
 func loadE2EEnv(t *testing.T) {
@@ -77,32 +77,6 @@ func e2eBaseURL() string {
 		value = "http://localhost:" + e2eEnvOrDefault("PORT", "8000")
 	}
 	return strings.TrimRight(value, "/")
-}
-
-func normalizedE2EToken(t *testing.T, tokenEnv string) string {
-	t.Helper()
-	token := strings.TrimSpace(os.Getenv(tokenEnv))
-	require.NotEmpty(t, token, "%s must be set when E2E_TESTS=1", tokenEnv)
-	token = strings.TrimPrefix(token, "Bearer ")
-	token = strings.TrimPrefix(token, "bearer ")
-	require.NotEmpty(t, token, "%s must contain a token", tokenEnv)
-	return token
-}
-
-func subjectFromJWT(t *testing.T, token string) string {
-	t.Helper()
-	parts := strings.Split(token, ".")
-	require.Len(t, parts, 3, "E2E auth token must be a JWT")
-
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	require.NoError(t, err)
-
-	var claims struct {
-		Subject string `json:"sub"`
-	}
-	require.NoError(t, json.Unmarshal(payload, &claims))
-	require.NotEmpty(t, strings.TrimSpace(claims.Subject), "E2E auth token JWT must contain sub")
-	return claims.Subject
 }
 
 func ensureLocalE2EUser(t *testing.T, queries *db.Queries, userID string) func() {

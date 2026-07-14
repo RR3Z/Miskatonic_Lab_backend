@@ -7,10 +7,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/RR3Z/Miskatonic_Lab_backend/internal/testdb"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMigrationRollbackSmoke(t *testing.T) {
+	loadMigrationTestEnv(t)
+
 	if !migrationSmokeEnabled() {
 		t.Skip("set MIGRATION_SMOKE_TESTS=1 to run migration rollback smoke")
 	}
@@ -27,6 +30,11 @@ func TestMigrationRollbackSmoke(t *testing.T) {
 	runMigrate(t, root, migratePath, databaseURL, "up", "1")
 	versionOutput := runMigrate(t, root, migratePath, databaseURL, "version")
 	require.NotEmpty(t, strings.TrimSpace(versionOutput))
+}
+
+func loadMigrationTestEnv(t *testing.T) {
+	t.Helper()
+	require.NoError(t, testdb.LoadEnv())
 }
 
 func migrationSmokeEnabled() bool {

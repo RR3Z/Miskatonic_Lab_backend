@@ -11,9 +11,7 @@ import (
 func TestE2EMultiUserRoomSelectedCharacterVisibility(t *testing.T) {
 	owner := newE2ESubject(t)
 	player := newSecondE2ESubject(t)
-	if owner.userID == player.userID {
-		t.Skip("E2E_SECOND_AUTH_TOKEN must belong to a different Clerk subject")
-	}
+	require.NotEqual(t, owner.userID, player.userID)
 
 	password := "e2e-multi-" + e2eHash(owner.userID+player.userID)
 	room := owner.createRoom(t, password)

@@ -9,12 +9,12 @@ import (
 )
 
 type e2eSubject struct {
-	baseURL string
-	token   string
-	userID  string
-	client  *http.Client
-	pool    *pgxpool.Pool
-	queries *db.Queries
+	baseURL  string
+	identity e2eClerkIdentity
+	userID   string
+	client   *http.Client
+	pool     *pgxpool.Pool
+	queries  *db.Queries
 }
 
 type e2eUserResponse struct {

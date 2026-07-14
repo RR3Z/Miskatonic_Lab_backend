@@ -26,7 +26,7 @@ func TestE2ERoomWebSocketChatPersistsAndBroadcasts(t *testing.T) {
 	defer cancel()
 
 	conn, _, err := websocket.Dial(ctx, subject.wsURL(t, "/api/rooms/"+url.PathEscape(room.ID)+"/ws"), &websocket.DialOptions{
-		HTTPHeader: http.Header{"Authorization": []string{"Bearer " + subject.token}},
+		HTTPHeader: http.Header{"Authorization": []string{subject.authorization(t)}},
 	})
 	require.NoError(t, err)
 	defer conn.Close(websocket.StatusNormalClosure, "test done")
