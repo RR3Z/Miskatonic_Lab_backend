@@ -7,144 +7,111 @@
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white">
   <img alt="Docker" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white">
   <img alt="Clerk" src="https://img.shields.io/badge/Auth-Clerk-6C47FF?logo=clerk&logoColor=white">
-  <img alt="chi" src="https://img.shields.io/badge/Router-chi-111111">
-  <img alt="sqlc" src="https://img.shields.io/badge/SQL-sqlc-2F855A">
-  <img alt="WebSocket" src="https://img.shields.io/badge/Realtime-WebSocket-0F766E">
 </p>
 
 # Miskatonic Lab Backend
 
-Backend for a Call of Cthulhu character and room-management app.
+Go backend для листов персонажей Call of Cthulhu, комнат, бросков кубов и WebSocket-чата. PostgreSQL хранит данные, Clerk отвечает за аутентификацию и пользовательские webhook-события, а `sqlc` генерирует типизированный слой запросов.
 
-It provides a small HTTP API for users, characters, dice rolls, rooms, room events, and room WebSocket chat. PostgreSQL stores the domain data, Clerk handles authentication, and sqlc generates the typed repository layer.
+## Возможности
 
-## Features
+- Листы персонажей: характеристики, навыки, состояния, предыстория, финансы, заметки и портреты.
+- Броски кубов с историей и необязательным контекстом комнаты.
+- Комнаты: участники, роли, выбранные персонажи, история событий и WebSocket-чат.
+- Защищённые API-маршруты и Clerk webhook `POST /webhooks/clerk/user`.
 
-- Character sheets with characteristics, skills, states, backstory, finances, and notes.
-- Dice rolls with persisted history and optional room context.
-- Rooms with members, selected characters, event history, and WebSocket delivery.
-- Clerk user webhooks and protected API routes.
-- Focused Go tests for handlers, services, integrations, WebSocket flow, and migrations.
-
-## Testing
-
-### Стек тестирования
-
-| Инструмент | Назначение |
-|---|---|
-| `testing` (stdlib) | Каркас тестов |
-| `testify` (require/assert) | Утверждения |
-| `httptest` (stdlib) | API-тесты хендлеров |
-| `gotestsum` | Форматированный вывод тестов |
-| Hand-written fakes | Заглушки на границах пакетов (вместо mock-библиотек) |
-| PostgreSQL (Docker) | Реальная БД для интеграционных тестов |
-
-### Проведённое тестирование
-
-| Уровень | Что покрывает | Кол-во тестов |
-|---|---|---|
-| **Модульные** | Бизнес-логика сервисов, хендлеры, валидация, мапперы, парсеры, middleware, утилиты, WebSocket-хаб | ~450 |
-| **Интеграционные** | `sqlc`-запросы, constraints, foreign keys, upserts, каскады, owner-scoping, миграции — на реальной PostgreSQL | ~250 |
-| **End-to-End** | HTTP + WebSocket поверх реального сервера и БД (опционально, с реальным Clerk-токеном) | 7 |
-| **Clerk Integration** | Реальный Clerk API → webhook → локальная БД (опционально) | 1 |
-| **Migration Smoke** | `migrate up/down` против disposable-БД (опционально) | 1 |
-
-**Всего: 710 тестовых сценариев** — все `pass`. Детальная трасса по доменам:
-
-| Домен | Кол-во |
-|---|---|
-| Персонажи | 385 |
-| Комнаты | 102 |
-| Броски кубов | 73 |
-| Пользователи | 49 |
-| События | 21 |
-| Модели | 20 |
-| WebSocket | 11 |
-| Слушатели | 11 |
-| Утилиты | 9 |
-| Сквозные проверки | 7 |
-| Middleware | 7 |
-| Наблюдаемость | 7 |
-| HTTP-адаптер | 4 |
-| Конфигурация | 3 |
-| Миграции | 1 |
-
-Полная тестовая трасса — [docs/test-trace.md](docs/test-trace.md). Подробнее о стратегии — [docs/testing.md](docs/testing.md).
-
-## Requirements
+## Требования
 
 - Go `1.26.3`
-- Node.js and npm for project scripts
-- Docker for local PostgreSQL
-- `migrate` CLI for database migrations
+- Node.js и npm
+- Docker Desktop
+- `migrate` CLI
+- `.env`, созданный на основе [.env.example](.env.example)
 
-## Setup
+`npm run test:setup` самостоятельно скачивает Dev Tunnel CLI при его отсутствии; `winget` не требуется.
 
-### Supabase
+## Запуск приложения
+
+### Supabase / внешний PostgreSQL
 
 ```powershell
-cp .env.example .env
-# Set DATABASE_URL in .env to your Supabase Direct connection or Session pooler URL.
+Copy-Item .env.example .env
+# Заполни DATABASE_URL и Clerk runtime values в .env.
 npm run migrate:up:all
 go run ./cmd
 ```
 
-Use `sslmode=require` in the Supabase URL. Do not use the Transaction pooler URL for the backend runtime; transaction pooling does not support prepared statements, while the Go repository layer uses `pgx`/`sqlc`.
+Для Supabase используй `sslmode=require`. Runtime не должен использовать Transaction Pooler: `pgx`/`sqlc` работают с prepared statements.
 
-### Local PostgreSQL fallback
+### Локальный PostgreSQL
 
 ```powershell
-cp .env.example .env
-docker compose up -d
+Copy-Item .env.example .env
+docker compose up -d postgres
 npm run migrate:up:all
 go run ./cmd
 ```
 
-### Local database tests
+По умолчанию API слушает `http://localhost:8000`.
+
+## Тесты
+
+Главная команда полного прогона:
 
 ```powershell
-npm run test:db
+npm run test:all
 ```
 
-This starts isolated PostgreSQL on port `5433`, applies migrations, seeds deterministic data, then runs database tests. Tests use `TEST_DATABASE_URL` only; Supabase and database names without `_test` are rejected.
+Она валидирует `.env`, поднимает Docker test DB, пересоздаёт disposable migration-smoke DB, запускает локальные Go-тесты, временный backend и Dev Tunnel, выполняет реальные Clerk/E2E проверки, migration smoke и останавливает созданные backend/tunnel процессы.
 
-The server listens on `http://localhost:8000` by default.
+### Однократная настройка live-тестов
 
-## Environment
+1. Заполни runtime, test DB и два `E2E_TEST*_MAIL` в `.env`.
+2. Выполни:
 
-See [.env.example](.env.example) for the local template.
+   ```powershell
+   npm run test:setup
+   ```
 
-Required for the app:
+   Команда запросит Dev Tunnel login при необходимости, создаст persistent anonymous tunnel на `8001` и заполнит `DEVTUNNEL_TUNNEL_ID` с `CLERK_WEBHOOK_PUBLIC_URL`.
 
-- `DATABASE_URL` for Supabase or `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_SSLMODE` for local PostgreSQL
-- `CLERK_SECRET_KEY`
-- `CLERK_WEBHOOK_SIGNING_SECRET`
+3. Один раз укажи напечатанный адрес `<CLERK_WEBHOOK_PUBLIC_URL>/webhooks/clerk/user` в Clerk Dashboard для `user.created`, `user.updated` и `user.deleted`.
 
-Optional:
+После этого для полного набора достаточно одной команды: `npm run test:all`.
 
-- `PORT`
-- `CORS_ALLOWED_ORIGINS`
+### Команды
 
-## Scripts
+| Команда | Назначение |
+| --- | --- |
+| `npm run test:setup` | Подготовить и проверить Dev Tunnel, test DB и обязательный env-контракт. |
+| `npm run test:local` | Поднять/подготовить Docker test DB и запустить `go test ./...`. |
+| `npm run test:e2e` | Запустить изолированный backend и live HTTP/WebSocket E2E. |
+| `npm run test:clerk` | Запустить реальную Clerk webhook integration suite через Dev Tunnel. |
+| `npm run test:migrations` | Сбросить disposable smoke DB и проверить migration `up/down/up`. |
+| `npm run test:all` | Запустить все suites в воспроизводимом порядке. |
+| `npm run test:pretty` | Детальный вывод по отдельным локальным тестам; `test:all` намеренно выводит только краткий итог этапов. |
+
+`TEST_DATABASE_URL` разрешён только для loopback DB с именем `*_test`. `MIGRATION_SMOKE_DATABASE_URL` должен быть отдельной loopback БД с именем `*_migration_smoke_test`; перед smoke-тестом она удаляется и создаётся заново. Основной Supabase/runtime database runner не затрагивает.
+
+Полный env-контракт, порядок, cleanup и разбор ошибок: [docs/testing.md](docs/testing.md).
+
+## Остальные команды
 
 ```powershell
-npm run migrate:up:all   # apply all migrations
-npm run migrate:version  # print current migration version
-npm run migrate:down -- 1 # roll back one migration
-npm run testdb:prepare   # start, migrate, and seed local test DB
-npm run test:db          # prepare local DB and run database tests
-npm run sqlc:generate    # regenerate sqlc repository code
-npm run test:pretty      # run tests under ./tests with readable output
-npm run test:all         # run local, Clerk, E2E, and migration smoke suites
+npm run migrate:up:all   # применить все migrations
+npm run migrate:version  # показать версию migrations
+npm run migrate:down -- 1 # откатить одну migration
+npm run sqlc:generate    # обновить сгенерированный sqlc-код
+npm run test:pretty      # читаемый вывод тестов
 ```
 
-## API Surface
+## API
 
-Public:
+Публичный маршрут:
 
 - `POST /webhooks/clerk/user`
 
-Protected under `/api`:
+Защищённые маршруты находятся под `/api`:
 
 - `GET /me`
 - `/characters`
@@ -152,4 +119,4 @@ Protected under `/api`:
 - `/rooms`
 - `GET /rooms/{roomID}/ws`
 
-More detail lives in [docs/testing.md](docs/testing.md), [docs/test-trace.md](docs/test-trace.md), [docs/room-realtime.md](docs/room-realtime.md), and [docs/errors/index.md](docs/errors/index.md).
+Подробности: [docs/testing.md](docs/testing.md), [docs/room-realtime.md](docs/room-realtime.md), [docs/errors/index.md](docs/errors/index.md).
