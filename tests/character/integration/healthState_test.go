@@ -17,6 +17,9 @@ func TestHealthStateTableUpsertCreatesGetsAndPartiallyUpdatesState(t *testing.T)
 	maxHp := int16(12)
 	currentHp := int16(7)
 	majorWound := true
+	unconscious := true
+	dying := true
+	dead := true
 
 	createdState, err := subject.queries.UpsertHealthState(context.Background(), db.UpsertHealthStateParams{
 		UserID:      testUser.ID,
@@ -24,6 +27,9 @@ func TestHealthStateTableUpsertCreatesGetsAndPartiallyUpdatesState(t *testing.T)
 		MaxHp:       &maxHp,
 		CurrentHp:   &currentHp,
 		MajorWound:  &majorWound,
+		Unconscious: &unconscious,
+		Dying:       &dying,
+		Dead:        &dead,
 	})
 	require.NoError(t, err)
 
@@ -32,9 +38,9 @@ func TestHealthStateTableUpsertCreatesGetsAndPartiallyUpdatesState(t *testing.T)
 	require.Equal(t, maxHp, createdState.MaxHp)
 	require.Equal(t, currentHp, createdState.CurrentHp)
 	require.True(t, createdState.MajorWound)
-	require.False(t, createdState.Unconscious)
-	require.False(t, createdState.Dying)
-	require.False(t, createdState.Dead)
+	require.True(t, createdState.Unconscious)
+	require.True(t, createdState.Dying)
+	require.True(t, createdState.Dead)
 
 	fetchedState, err := subject.queries.GetHealthState(context.Background(), db.GetHealthStateParams{
 		UserID:      testUser.ID,
@@ -43,19 +49,55 @@ func TestHealthStateTableUpsertCreatesGetsAndPartiallyUpdatesState(t *testing.T)
 	require.NoError(t, err)
 	require.Equal(t, createdState.ID, fetchedState.ID)
 
-	dead := true
-	updatedState, err := subject.queries.UpsertHealthState(context.Background(), db.UpsertHealthStateParams{
-		UserID:      testUser.ID,
-		CharacterID: character.ID,
-		Dead:        &dead,
-	})
-	require.NoError(t, err)
+	falseValue := false
+	updates := []struct {
+		name string
+		set  func(*db.UpsertHealthStateParams)
+		want struct {
+			majorWound  bool
+			unconscious bool
+			dying       bool
+			dead        bool
+		}
+	}{
+		{
+			name: "major wound",
+			set:  func(input *db.UpsertHealthStateParams) { input.MajorWound = &falseValue },
+			want: struct{ majorWound, unconscious, dying, dead bool }{false, true, true, true},
+		},
+		{
+			name: "unconscious",
+			set:  func(input *db.UpsertHealthStateParams) { input.Unconscious = &falseValue },
+			want: struct{ majorWound, unconscious, dying, dead bool }{false, false, true, true},
+		},
+		{
+			name: "dying",
+			set:  func(input *db.UpsertHealthStateParams) { input.Dying = &falseValue },
+			want: struct{ majorWound, unconscious, dying, dead bool }{false, false, false, true},
+		},
+		{
+			name: "dead",
+			set:  func(input *db.UpsertHealthStateParams) { input.Dead = &falseValue },
+			want: struct{ majorWound, unconscious, dying, dead bool }{false, false, false, false},
+		},
+	}
 
-	require.Equal(t, createdState.ID, updatedState.ID)
-	require.Equal(t, maxHp, updatedState.MaxHp)
-	require.Equal(t, currentHp, updatedState.CurrentHp)
-	require.True(t, updatedState.MajorWound)
-	require.True(t, updatedState.Dead)
+	for _, update := range updates {
+		t.Run(update.name, func(t *testing.T) {
+			input := db.UpsertHealthStateParams{UserID: testUser.ID, CharacterID: character.ID}
+			update.set(&input)
+
+			updatedState, err := subject.queries.UpsertHealthState(context.Background(), input)
+			require.NoError(t, err)
+			require.Equal(t, createdState.ID, updatedState.ID)
+			require.Equal(t, maxHp, updatedState.MaxHp)
+			require.Equal(t, currentHp, updatedState.CurrentHp)
+			require.Equal(t, update.want.majorWound, updatedState.MajorWound)
+			require.Equal(t, update.want.unconscious, updatedState.Unconscious)
+			require.Equal(t, update.want.dying, updatedState.Dying)
+			require.Equal(t, update.want.dead, updatedState.Dead)
+		})
+	}
 }
 
 func TestHealthStateTableUpsertUsesDatabaseDefaults(t *testing.T) {

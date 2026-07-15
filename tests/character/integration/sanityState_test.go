@@ -17,6 +17,7 @@ func TestSanityStateTableUpsertCreatesGetsAndPartiallyUpdatesState(t *testing.T)
 	maxSanity := int16(80)
 	currentSanity := int16(65)
 	tempInsanity := true
+	indefInsanity := true
 
 	createdState, err := subject.queries.UpsertSanityState(context.Background(), db.UpsertSanityStateParams{
 		UserID:        testUser.ID,
@@ -24,6 +25,7 @@ func TestSanityStateTableUpsertCreatesGetsAndPartiallyUpdatesState(t *testing.T)
 		MaxSanity:     &maxSanity,
 		CurrentSanity: &currentSanity,
 		TempInsanity:  &tempInsanity,
+		IndefInsanity: &indefInsanity,
 	})
 	require.NoError(t, err)
 
@@ -32,7 +34,7 @@ func TestSanityStateTableUpsertCreatesGetsAndPartiallyUpdatesState(t *testing.T)
 	require.Equal(t, maxSanity, createdState.MaxSanity)
 	require.Equal(t, currentSanity, createdState.CurrentSanity)
 	require.True(t, createdState.TempInsanity)
-	require.False(t, createdState.IndefInsanity)
+	require.True(t, createdState.IndefInsanity)
 
 	fetchedState, err := subject.queries.GetSanityState(context.Background(), db.GetSanityStateParams{
 		UserID:      testUser.ID,
@@ -41,19 +43,41 @@ func TestSanityStateTableUpsertCreatesGetsAndPartiallyUpdatesState(t *testing.T)
 	require.NoError(t, err)
 	require.Equal(t, createdState.ID, fetchedState.ID)
 
-	indefInsanity := true
-	updatedState, err := subject.queries.UpsertSanityState(context.Background(), db.UpsertSanityStateParams{
-		UserID:        testUser.ID,
-		CharacterID:   character.ID,
-		IndefInsanity: &indefInsanity,
-	})
-	require.NoError(t, err)
+	falseValue := false
+	updates := []struct {
+		name string
+		set  func(*db.UpsertSanityStateParams)
+		want struct {
+			temp  bool
+			indef bool
+		}
+	}{
+		{
+			name: "temporary insanity",
+			set:  func(input *db.UpsertSanityStateParams) { input.TempInsanity = &falseValue },
+			want: struct{ temp, indef bool }{false, true},
+		},
+		{
+			name: "indefinite insanity",
+			set:  func(input *db.UpsertSanityStateParams) { input.IndefInsanity = &falseValue },
+			want: struct{ temp, indef bool }{false, false},
+		},
+	}
 
-	require.Equal(t, createdState.ID, updatedState.ID)
-	require.Equal(t, maxSanity, updatedState.MaxSanity)
-	require.Equal(t, currentSanity, updatedState.CurrentSanity)
-	require.True(t, updatedState.TempInsanity)
-	require.True(t, updatedState.IndefInsanity)
+	for _, update := range updates {
+		t.Run(update.name, func(t *testing.T) {
+			input := db.UpsertSanityStateParams{UserID: testUser.ID, CharacterID: character.ID}
+			update.set(&input)
+
+			updatedState, err := subject.queries.UpsertSanityState(context.Background(), input)
+			require.NoError(t, err)
+			require.Equal(t, createdState.ID, updatedState.ID)
+			require.Equal(t, maxSanity, updatedState.MaxSanity)
+			require.Equal(t, currentSanity, updatedState.CurrentSanity)
+			require.Equal(t, update.want.temp, updatedState.TempInsanity)
+			require.Equal(t, update.want.indef, updatedState.IndefInsanity)
+		})
+	}
 }
 
 func TestSanityStateTableUpsertUsesDatabaseDefaults(t *testing.T) {
