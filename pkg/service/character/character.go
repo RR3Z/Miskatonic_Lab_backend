@@ -22,6 +22,7 @@ type ICharacter interface {
 	GetCharacter(ctx context.Context, input characterDTO.GetCharacterInput) (characterDTO.CharacterModel, error)
 	CreateCharacter(ctx context.Context, input characterDTO.CreateCharacterInput) (characterDTO.CharacterShortModel, error)
 	UpdateCharacter(ctx context.Context, input characterDTO.UpdateCharacterInput) (characterDTO.CharacterShortModel, error)
+	PatchCharacter(ctx context.Context, input characterDTO.PatchCharacterInput) (characterDTO.CharacterShortModel, error)
 	ReplacePortrait(ctx context.Context, input characterDTO.ReplacePortraitInput) (characterDTO.CharacterShortModel, error)
 	DeleteCharacter(ctx context.Context, input characterDTO.DeleteCharacterInput) error
 

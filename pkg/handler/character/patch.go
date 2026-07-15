@@ -3,6 +3,7 @@ package character
 import (
 	"errors"
 	"io"
+	"mime"
 	"net/http"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
@@ -15,6 +16,52 @@ import (
 )
 
 const MaxPortraitUploadBytes = portraitStorage.MaxUploadBytes
+
+func (h *CharacterHandler) patchCharacter(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil {
+		return characterErrors.InvalidInputError("invalid content type", err)
+	}
+
+	switch mediaType {
+	case "multipart/form-data":
+		return h.replacePortrait(w, r)
+	case "application/json":
+		return h.patchCharacterProfile(w, r)
+	default:
+		return characterErrors.InvalidInputError("content type must be application/json or multipart/form-data", nil)
+	}
+}
+
+func (h *CharacterHandler) patchCharacterProfile(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)
+	if err != nil {
+		return characterErrors.InvalidCharacterIDError(err)
+	}
+
+	request, appErr := decodeCharacterPatchRequest(r)
+	if appErr != nil {
+		return appErr
+	}
+
+	character, err := h.service.PatchCharacter(r.Context(), characterDTO.PatchCharacterInput{
+		UserID:     utils.GetUserIDFromContext(r.Context()),
+		ID:         characterID,
+		Name:       request.Name,
+		PlayerName: request.PlayerName,
+		Occupation: request.Occupation,
+		Age:        request.Age,
+		Sex:        request.Sex,
+		Residence:  request.Residence,
+		Birthplace: request.Birthplace,
+	})
+	if err != nil {
+		return characterErrors.MapNotFoundOrServiceError(err, "character not found", "failed to patch character")
+	}
+
+	utils.WriteJSON(w, http.StatusOK, character)
+	return nil
+}
 
 func (h *CharacterHandler) replacePortrait(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	characterID, err := characterHelpers.GetCharacterIDFromRequest(r)

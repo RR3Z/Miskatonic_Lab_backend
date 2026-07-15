@@ -7,6 +7,7 @@ var (
 	ErrNameTooLong           = errors.New("character name exceeds max length")
 	ErrAgeNegative           = errors.New("character age must be >= 0")
 	ErrSexInvalid            = errors.New("character sex must be male or female")
+	ErrPatchInvalid          = errors.New("character patch input is invalid")
 	ErrCharacterLimitReached = errors.New("character limit reached")
 	ErrPortraitRequired      = errors.New("portrait is required")
 	ErrPortraitTooLarge      = errors.New("portrait is too large")

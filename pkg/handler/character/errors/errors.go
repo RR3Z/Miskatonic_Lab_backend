@@ -19,6 +19,8 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 		return badRequestError("character.age_negative", "age must be >= 0", err)
 	case errors.Is(err, characterErrors.ErrSexInvalid):
 		return badRequestError("character.sex_invalid", "sex must be male or female", err)
+	case errors.Is(err, characterErrors.ErrPatchInvalid):
+		return InvalidInputError("character patch input is invalid", err)
 	case errors.Is(err, characterErrors.ErrCharacterLimitReached):
 		return &myErrors.AppError{
 			Status:  http.StatusConflict,

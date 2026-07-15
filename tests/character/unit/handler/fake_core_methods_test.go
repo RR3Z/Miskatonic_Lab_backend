@@ -31,6 +31,12 @@ func (f *fakeCharacterHandlerService) UpdateCharacter(_ context.Context, input c
 	return f.character.CharacterShortModel, f.err
 }
 
+func (f *fakeCharacterHandlerService) PatchCharacter(_ context.Context, input characterDTO.PatchCharacterInput) (characterDTO.CharacterShortModel, error) {
+	f.patchCalls++
+	f.patchInput = input
+	return f.character.CharacterShortModel, f.err
+}
+
 func (f *fakeCharacterHandlerService) ReplacePortrait(_ context.Context, input characterDTO.ReplacePortraitInput) (characterDTO.CharacterShortModel, error) {
 	f.replacePortraitCalls++
 	f.replacePortraitInput = input

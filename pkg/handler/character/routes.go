@@ -25,7 +25,7 @@ func (h *CharacterHandler) characterRoutes(r chi.Router) {
 	r.Route("/{characterID}", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getCharacter).ServeHTTP)
 		r.Put("/", httpAdapter.AppHandler(h.updateCharacter).ServeHTTP)
-		r.Patch("/", httpAdapter.AppHandler(h.replacePortrait).ServeHTTP)
+		r.Patch("/", httpAdapter.AppHandler(h.patchCharacter).ServeHTTP)
 		r.Delete("/", httpAdapter.AppHandler(h.deleteCharacter).ServeHTTP)
 
 		h.characteristicsRoutes(r)

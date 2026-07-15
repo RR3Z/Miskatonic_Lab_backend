@@ -238,6 +238,57 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterD
 	return result, nil
 }
 
+func (s *CharacterService) PatchCharacter(ctx context.Context, input characterDTO.PatchCharacterInput) (characterDTO.CharacterShortModel, error) {
+	if !input.HasChanges() || input.Name.Set && input.Name.Value == nil {
+		return characterDTO.CharacterShortModel{}, characterErrors.ErrPatchInvalid
+	}
+	if input.Name.Set {
+		if err := validateRequiredString(*input.Name.Value, 255, characterErrors.ErrNameRequired, characterErrors.ErrNameTooLong); err != nil {
+			return characterDTO.CharacterShortModel{}, err
+		}
+	}
+	if input.Age.Set {
+		if err := validateNonNegative(characterErrors.ErrAgeNegative, input.Age.Value); err != nil {
+			return characterDTO.CharacterShortModel{}, err
+		}
+	}
+	if input.Sex.Set {
+		if err := validateSex(input.Sex.Value); err != nil {
+			return characterDTO.CharacterShortModel{}, err
+		}
+	}
+
+	name := ""
+	if input.Name.Value != nil {
+		name = *input.Name.Value
+	}
+	character, err := s.repos.Queries.PatchCharacter(ctx, db.PatchCharacterParams{
+		UserID:        input.UserID,
+		ID:            input.ID,
+		SetName:       input.Name.Set,
+		Name:          name,
+		SetPlayerName: input.PlayerName.Set,
+		PlayerName:    input.PlayerName.Value,
+		SetOccupation: input.Occupation.Set,
+		Occupation:    input.Occupation.Value,
+		SetAge:        input.Age.Set,
+		Age:           input.Age.Value,
+		SetSex:        input.Sex.Set,
+		Sex:           input.Sex.Value,
+		SetResidence:  input.Residence.Set,
+		Residence:     input.Residence.Value,
+		SetBirthplace: input.Birthplace.Set,
+		Birthplace:    input.Birthplace.Value,
+	})
+	if err != nil {
+		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
+	}
+
+	result := characterDTO.ToCharacterShortModel(character)
+	result.PortraitUrl = s.portraitURL(character.PortraitKey)
+	return result, nil
+}
+
 func (s *CharacterService) DeleteCharacter(ctx context.Context, input characterDTO.DeleteCharacterInput) error {
 	character, err := s.repos.Queries.DeleteCharacter(ctx, db.DeleteCharacterParams{
 		ID:     input.ID,

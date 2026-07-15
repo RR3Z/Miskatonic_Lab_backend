@@ -85,6 +85,26 @@ func (s *EventPublishingCharacterService) UpdateCharacter(ctx context.Context, i
 	return character, nil
 }
 
+func (s *EventPublishingCharacterService) PatchCharacter(ctx context.Context, input characterDTO.PatchCharacterInput) (characterDTO.CharacterShortModel, error) {
+	character, err := s.next.PatchCharacter(ctx, input)
+	if err != nil {
+		s.publisher.Publish(ctx, characterEvents.CharacterUpdateFailed{
+			UserID:      input.UserID,
+			CharacterID: input.ID.String(),
+			Err:         err,
+		})
+		return characterDTO.CharacterShortModel{}, err
+	}
+
+	s.publisher.Publish(ctx, characterEvents.CharacterUpdateSucceeded{
+		UserID:      input.UserID,
+		CharacterID: character.ID.String(),
+		Name:        character.Name,
+	})
+
+	return character, nil
+}
+
 func (s *EventPublishingCharacterService) DeleteCharacter(ctx context.Context, input characterDTO.DeleteCharacterInput) error {
 	if err := s.next.DeleteCharacter(ctx, input); err != nil {
 		s.publisher.Publish(ctx, characterEvents.CharacterDeleteFailed{

@@ -26,6 +26,8 @@ type fakeCharacterHandlerService struct {
 
 	updateCalls            int
 	updateInput            characterDTO.UpdateCharacterInput
+	patchCalls             int
+	patchInput             characterDTO.PatchCharacterInput
 	replacePortraitCalls   int
 	replacePortraitInput   characterDTO.ReplacePortraitInput
 	replacePortraitContent []byte
@@ -68,7 +70,7 @@ type fakeCharacterHandlerService struct {
 }
 
 func (f *fakeCharacterHandlerService) totalCalls() int {
-	return f.getAllCalls + f.getCalls + f.createCalls + f.updateCalls + f.replacePortraitCalls + f.deleteCalls +
+	return f.getAllCalls + f.getCalls + f.createCalls + f.updateCalls + f.patchCalls + f.replacePortraitCalls + f.deleteCalls +
 		f.getHealthCalls + f.upsertHealthCalls + f.deleteHealthCalls +
 		f.getCharacteristicsCalls + f.upsertCharacteristicsCalls + f.deleteCharacteristicsCalls +
 		f.getBackstoryItemCalls + f.createBackstoryItemCalls + f.deleteSkillCalls +
