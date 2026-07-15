@@ -17,6 +17,8 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 		return badRequestError("character.name_too_long", "name exceeds maximum length", err)
 	case errors.Is(err, characterErrors.ErrAgeNegative):
 		return badRequestError("character.age_negative", "age must be >= 0", err)
+	case errors.Is(err, characterErrors.ErrSexInvalid):
+		return badRequestError("character.sex_invalid", "sex must be male or female", err)
 	case errors.Is(err, characterErrors.ErrCharacterLimitReached):
 		return &myErrors.AppError{
 			Status:  http.StatusConflict,

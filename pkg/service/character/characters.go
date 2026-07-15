@@ -162,6 +162,9 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 	if err := validateNonNegative(characterErrors.ErrAgeNegative, input.Age); err != nil {
 		return characterDTO.CharacterShortModel{}, err
 	}
+	if err := validateSex(input.Sex); err != nil {
+		return characterDTO.CharacterShortModel{}, err
+	}
 
 	tx, err := s.repos.DB.Begin(ctx)
 	if err != nil {
@@ -209,6 +212,9 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterD
 		return characterDTO.CharacterShortModel{}, err
 	}
 	if err := validateNonNegative(characterErrors.ErrAgeNegative, input.Age); err != nil {
+		return characterDTO.CharacterShortModel{}, err
+	}
+	if err := validateSex(input.Sex); err != nil {
 		return characterDTO.CharacterShortModel{}, err
 	}
 

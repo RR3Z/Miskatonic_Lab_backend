@@ -8,6 +8,7 @@
 | `character.name_required` | 400 | Character creation or update did not include a non-empty `name`. |
 | `character.name_too_long` | 400 | Character name exceeds the maximum length. |
 | `character.age_negative` | 400 | Character age is negative. |
+| `character.sex_invalid` | 400 | Character sex is not `male` or `female`. |
 | `character.limit_reached` | 409 | The authenticated user already has 30 or more characters. New character creation is blocked. |
 | `character.portrait_required` | 400 | Portrait upload is missing the `portrait` multipart file. |
 | `character.portrait_unsupported` | 400 | Portrait file is not JPEG, PNG, or WebP. |

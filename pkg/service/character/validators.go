@@ -28,6 +28,19 @@ func validateNonNegative(err error, fields ...*int16) error {
 	return nil
 }
 
+func validateSex(sex *string) error {
+	if sex == nil {
+		return nil
+	}
+
+	switch *sex {
+	case "male", "female":
+		return nil
+	default:
+		return characterErrors.ErrSexInvalid
+	}
+}
+
 func validateSkillInput(name string, baseValue, value int16) error {
 	if err := validateRequiredString(name, 100, characterErrors.ErrSkillNameRequired, characterErrors.ErrSkillNameTooLong); err != nil {
 		return err
