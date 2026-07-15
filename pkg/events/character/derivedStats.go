@@ -19,25 +19,6 @@ func (CharacterDerivedStatsGetFailed) EventName() string {
 	return "character.derived_stats.get_failed"
 }
 
-type CharacterDerivedStatsUpsertSucceeded struct {
-	UserID      string
-	CharacterID string
-}
-
-type CharacterDerivedStatsUpsertFailed struct {
-	UserID      string
-	CharacterID string
-	Err         error
-}
-
-func (CharacterDerivedStatsUpsertSucceeded) EventName() string {
-	return "character.derived_stats.upsert_succeeded"
-}
-
-func (CharacterDerivedStatsUpsertFailed) EventName() string {
-	return "character.derived_stats.upsert_failed"
-}
-
 type CharacterDerivedStatsAutoRecalculateSucceeded struct {
 	UserID      string
 	CharacterID string
@@ -68,23 +49,4 @@ func (CharacterDerivedStatsAutoRecalculateSkipped) EventName() string {
 
 func (CharacterDerivedStatsAutoRecalculateFailed) EventName() string {
 	return "character.derived_stats.auto_recalculate_failed"
-}
-
-type CharacterDerivedStatsDeleteSucceeded struct {
-	UserID      string
-	CharacterID string
-}
-
-type CharacterDerivedStatsDeleteFailed struct {
-	UserID      string
-	CharacterID string
-	Err         error
-}
-
-func (CharacterDerivedStatsDeleteSucceeded) EventName() string {
-	return "character.derived_stats.delete_succeeded"
-}
-
-func (CharacterDerivedStatsDeleteFailed) EventName() string {
-	return "character.derived_stats.delete_failed"
 }

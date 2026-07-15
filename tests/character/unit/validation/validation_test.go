@@ -6,7 +6,6 @@ import (
 
 	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
-	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
 	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
 	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
@@ -111,33 +110,6 @@ func TestUpsertCharacteristicsRejectsNegativeValue(t *testing.T) {
 		Strength: &negVal,
 	})
 	require.ErrorIs(t, err, characterErrors.ErrCharacteristicsNegative)
-}
-
-func TestUpsertDerivedStatsRejectsNegativeSpeed(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
-	negSpeed := int16(-1)
-	_, err := service.UpsertDerivedStats(context.Background(), derivedStatsDTO.UpsertDerivedStatsInput{
-		Speed: &negSpeed,
-	})
-	require.ErrorIs(t, err, characterErrors.ErrDerivedStatsNegative)
-}
-
-func TestUpsertDerivedStatsRejectsNegativeDodge(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
-	negDodge := int16(-1)
-	_, err := service.UpsertDerivedStats(context.Background(), derivedStatsDTO.UpsertDerivedStatsInput{
-		DodgeValue: &negDodge,
-	})
-	require.ErrorIs(t, err, characterErrors.ErrDerivedStatsNegative)
-}
-
-func TestUpsertDerivedStatsRejectsInvalidDamageBonus(t *testing.T) {
-	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
-	invalidDB := "invalid"
-	_, err := service.UpsertDerivedStats(context.Background(), derivedStatsDTO.UpsertDerivedStatsInput{
-		DamageBonus: &invalidDB,
-	})
-	require.ErrorIs(t, err, characterErrors.ErrInvalidDamageBonus)
 }
 
 func TestUpsertFinancesRejectsSpendingLimitTooLong(t *testing.T) {

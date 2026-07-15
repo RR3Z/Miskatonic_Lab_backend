@@ -100,11 +100,3 @@ func (f *fakeCharacterHandlerService) DeleteFinances(_ context.Context, _ financ
 func (f *fakeCharacterHandlerService) GetDerivedStats(_ context.Context, _ derivedStatsDTO.GetDerivedStatsInput) (db.DerivedStat, error) {
 	return db.DerivedStat{}, f.err
 }
-
-func (f *fakeCharacterHandlerService) UpsertDerivedStats(_ context.Context, _ derivedStatsDTO.UpsertDerivedStatsInput) (db.DerivedStat, error) {
-	return db.DerivedStat{}, f.err
-}
-
-func (f *fakeCharacterHandlerService) DeleteDerivedStats(_ context.Context, _ derivedStatsDTO.DeleteDerivedStatsInput) error {
-	return f.err
-}

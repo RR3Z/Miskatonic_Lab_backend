@@ -25,6 +25,7 @@ func TestCharacterRoutesAreMounted(t *testing.T) {
 		{"get character", http.MethodGet, "/api/characters/" + testCharacterID + "/"},
 		{"get health", http.MethodGet, "/api/characters/" + testCharacterID + "/health/"},
 		{"get characteristics", http.MethodGet, "/api/characters/" + testCharacterID + "/characteristics/"},
+		{"get derived stats", http.MethodGet, "/api/characters/" + testCharacterID + "/derived-stats/"},
 		{"get backstory item", http.MethodGet, "/api/characters/" + testCharacterID + "/backstory/items/" + testItemID + "/"},
 		{"get skill", http.MethodGet, "/api/characters/" + testCharacterID + "/skills/" + testSkillID + "/"},
 		{"get note", http.MethodGet, "/api/characters/" + testCharacterID + "/notes/" + testNoteID + "/"},
@@ -35,6 +36,19 @@ func TestCharacterRoutesAreMounted(t *testing.T) {
 			recorder := performCharacterRequest(router, tc.method, tc.path, "")
 
 			require.Equal(t, http.StatusOK, recorder.Code)
+		})
+	}
+}
+
+func TestCharacterDerivedStatsRoutesAreReadOnly(t *testing.T) {
+	router := newCharacterHandlerTestRouter(&fakeCharacterHandlerService{})
+	path := "/api/characters/" + testCharacterID + "/derived-stats/"
+
+	for _, method := range []string{http.MethodPut, http.MethodDelete} {
+		t.Run(method, func(t *testing.T) {
+			recorder := performCharacterRequest(router, method, path, `{}`)
+
+			require.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
 		})
 	}
 }

@@ -55,13 +55,9 @@ var descriptors = []events.EventDescriptor{
 
 	descriptor(CharacterDerivedStatsGetSucceeded{}, "derived_stats", "get", events.OutcomeSucceeded),
 	descriptor(CharacterDerivedStatsGetFailed{}, "derived_stats", "get", events.OutcomeFailed),
-	descriptor(CharacterDerivedStatsUpsertSucceeded{}, "derived_stats", "upsert", events.OutcomeSucceeded),
-	descriptor(CharacterDerivedStatsUpsertFailed{}, "derived_stats", "upsert", events.OutcomeFailed),
 	descriptor(CharacterDerivedStatsAutoRecalculateSucceeded{}, "derived_stats", "auto_recalculate", events.OutcomeSucceeded),
 	descriptor(CharacterDerivedStatsAutoRecalculateSkipped{}, "derived_stats", "auto_recalculate", events.OutcomeSkipped),
 	descriptor(CharacterDerivedStatsAutoRecalculateFailed{}, "derived_stats", "auto_recalculate", events.OutcomeFailed),
-	descriptor(CharacterDerivedStatsDeleteSucceeded{}, "derived_stats", "delete", events.OutcomeSucceeded),
-	descriptor(CharacterDerivedStatsDeleteFailed{}, "derived_stats", "delete", events.OutcomeFailed),
 
 	descriptor(CharacterCharacteristicsGetSucceeded{}, "characteristics", "get", events.OutcomeSucceeded),
 	descriptor(CharacterCharacteristicsGetFailed{}, "characteristics", "get", events.OutcomeFailed),
@@ -123,8 +119,6 @@ var roomMutationDescriptors = []events.EventDescriptor{
 	descriptor(CharacterLuckDeleteSucceeded{}, "luck", "delete", events.OutcomeSucceeded),
 	descriptor(CharacterCharacteristicsUpsertSucceeded{}, "characteristics", "upsert", events.OutcomeSucceeded),
 	descriptor(CharacterCharacteristicsDeleteSucceeded{}, "characteristics", "delete", events.OutcomeSucceeded),
-	descriptor(CharacterDerivedStatsUpsertSucceeded{}, "derived_stats", "upsert", events.OutcomeSucceeded),
-	descriptor(CharacterDerivedStatsDeleteSucceeded{}, "derived_stats", "delete", events.OutcomeSucceeded),
 	descriptor(CharacterFinancesUpsertSucceeded{}, "finances", "upsert", events.OutcomeSucceeded),
 	descriptor(CharacterFinancesDeleteSucceeded{}, "finances", "delete", events.OutcomeSucceeded),
 	descriptor(CharacterBackstoryUpsertSucceeded{}, "backstory", "upsert", events.OutcomeSucceeded),

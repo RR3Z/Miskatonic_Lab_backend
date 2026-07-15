@@ -55,8 +55,6 @@ func (h *CharacterHandler) characteristicsRoutes(r chi.Router) {
 func (h *CharacterHandler) derivedStatsRoutes(r chi.Router) {
 	r.Route("/derived-stats", func(r chi.Router) {
 		r.Get("/", httpAdapter.AppHandler(h.getDerivedStats).ServeHTTP)
-		r.Put("/", httpAdapter.AppHandler(h.upsertDerivedStats).ServeHTTP)
-		r.Delete("/", httpAdapter.AppHandler(h.deleteDerivedStats).ServeHTTP)
 	})
 }
 

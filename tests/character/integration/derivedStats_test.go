@@ -558,6 +558,43 @@ func TestCharacterServiceUpsertCharacteristicsRecalculatesDerivedStats(t *testin
 	require.Equal(t, "characteristics_upsert", event.Source)
 }
 
+func TestCharacterServiceUpsertCharacteristicsClearsStaleDerivedStatsWhenFormulaCharacteristicsAreMissing(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	character := createCharacterTestCharacter(t, subject, testUser.ID)
+	recorder := &characterEventRecorder{}
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, recorder)
+
+	_, err := service.UpsertCharacteristics(context.Background(), characteristicsDTO.UpsertCharacteristicsInput{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Strength:    characterInt16(60),
+		Size:        characterInt16(40),
+		Dexterity:   characterInt16(70),
+	})
+	require.NoError(t, err)
+
+	_, err = service.UpsertCharacteristics(context.Background(), characteristicsDTO.UpsertCharacteristicsInput{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Strength:    characterInt16(60),
+		Size:        characterInt16(40),
+	})
+	require.NoError(t, err)
+
+	_, err = subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+
+	event := requireLastCharacterEvent[characterEvents.CharacterDerivedStatsAutoRecalculateSkipped](t, recorder)
+	require.Equal(t, testUser.ID, event.UserID)
+	require.Equal(t, character.ID.String(), event.CharacterID)
+	require.Equal(t, "characteristics_upsert", event.Source)
+	require.Equal(t, "required_characteristics_missing", event.Reason)
+}
+
 func TestCharacterServiceUpdateCharacterAgeDoesNotRecalculateDerivedStats(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	testUser := createCharacterTestUser(t, subject)

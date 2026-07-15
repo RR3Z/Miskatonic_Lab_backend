@@ -55,5 +55,5 @@ func (s *CharacterService) DeleteCharacteristics(ctx context.Context, input char
 		return err
 	}
 
-	return nil
+	return s.clearDerivedStats(ctx, input.UserID, input.CharacterID)
 }

@@ -307,21 +307,6 @@ func TestEventPublishingCharacterServicePublishesSuccessEvents(t *testing.T) {
 			expectedEvent: characterEvents.CharacterDerivedStatsGetSucceeded{UserID: testUserID, CharacterID: testCharacterID},
 		},
 		{
-			name: "upsert derived stats",
-			call: func(ctx context.Context, service *characterServices.EventPublishingCharacterService) error {
-				_, err := service.UpsertDerivedStats(ctx, derivedStatsDTO.UpsertDerivedStatsInput{UserID: testUserID, CharacterID: characterID})
-				return err
-			},
-			expectedEvent: characterEvents.CharacterDerivedStatsUpsertSucceeded{UserID: testUserID, CharacterID: testCharacterID},
-		},
-		{
-			name: "delete derived stats",
-			call: func(ctx context.Context, service *characterServices.EventPublishingCharacterService) error {
-				return service.DeleteDerivedStats(ctx, derivedStatsDTO.DeleteDerivedStatsInput{UserID: testUserID, CharacterID: characterID})
-			},
-			expectedEvent: characterEvents.CharacterDerivedStatsDeleteSucceeded{UserID: testUserID, CharacterID: testCharacterID},
-		},
-		{
 			name: "get characteristics",
 			call: func(ctx context.Context, service *characterServices.EventPublishingCharacterService) error {
 				_, err := service.GetCharacteristics(ctx, characteristicsDTO.GetCharacteristicsInput{UserID: testUserID, CharacterID: characterID})
@@ -675,21 +660,6 @@ func TestEventPublishingCharacterServicePublishesFailureEvents(t *testing.T) {
 				return err
 			},
 			expectedEvent: characterEvents.CharacterDerivedStatsGetFailed{UserID: testUserID, CharacterID: testCharacterID, Err: expectedErr},
-		},
-		{
-			name: "upsert derived stats",
-			call: func(ctx context.Context, service *characterServices.EventPublishingCharacterService) error {
-				_, err := service.UpsertDerivedStats(ctx, derivedStatsDTO.UpsertDerivedStatsInput{UserID: testUserID, CharacterID: characterID})
-				return err
-			},
-			expectedEvent: characterEvents.CharacterDerivedStatsUpsertFailed{UserID: testUserID, CharacterID: testCharacterID, Err: expectedErr},
-		},
-		{
-			name: "delete derived stats",
-			call: func(ctx context.Context, service *characterServices.EventPublishingCharacterService) error {
-				return service.DeleteDerivedStats(ctx, derivedStatsDTO.DeleteDerivedStatsInput{UserID: testUserID, CharacterID: characterID})
-			},
-			expectedEvent: characterEvents.CharacterDerivedStatsDeleteFailed{UserID: testUserID, CharacterID: testCharacterID, Err: expectedErr},
 		},
 		{
 			name: "get characteristics",

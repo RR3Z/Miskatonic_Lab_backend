@@ -191,14 +191,6 @@ func (f *FakeCharacterService) GetDerivedStats(context.Context, derivedStatsDTO.
 	return f.DerivedStats, f.Err
 }
 
-func (f *FakeCharacterService) UpsertDerivedStats(context.Context, derivedStatsDTO.UpsertDerivedStatsInput) (db.DerivedStat, error) {
-	return f.DerivedStats, f.Err
-}
-
-func (f *FakeCharacterService) DeleteDerivedStats(context.Context, derivedStatsDTO.DeleteDerivedStatsInput) error {
-	return f.Err
-}
-
 func (f *FakeCharacterService) GetCharacteristics(context.Context, characteristicsDTO.GetCharacteristicsInput) (db.Characteristic, error) {
 	return f.Characteristics, f.Err
 }

@@ -34,10 +34,6 @@ func CharacterChangedRoomEventInput(event events.Event) (string, string, model.C
 		return e.UserID, e.CharacterID, change("characteristics", "upsert", nil, &sourceEvent), true
 	case characterEvents.CharacterCharacteristicsDeleteSucceeded:
 		return e.UserID, e.CharacterID, change("characteristics", "delete", nil, &sourceEvent), true
-	case characterEvents.CharacterDerivedStatsUpsertSucceeded:
-		return e.UserID, e.CharacterID, change("derived_stats", "upsert", nil, &sourceEvent), true
-	case characterEvents.CharacterDerivedStatsDeleteSucceeded:
-		return e.UserID, e.CharacterID, change("derived_stats", "delete", nil, &sourceEvent), true
 	case characterEvents.CharacterFinancesUpsertSucceeded:
 		return e.UserID, e.CharacterID, change("finances", "upsert", nil, &sourceEvent), true
 	case characterEvents.CharacterFinancesDeleteSucceeded:
