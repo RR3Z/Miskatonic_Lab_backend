@@ -227,11 +227,6 @@ func (s *CharacterService) UpdateCharacter(ctx context.Context, input characterD
 		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
 	}
 
-	characteristics, shouldRecalculate := s.getCharacteristicsForDerivedStatsRecalculation(ctx, input.UserID, input.ID)
-	if shouldRecalculate {
-		s.recalculateDerivedStats(ctx, character.UserID, character.ID, character.Age, characteristics, "character_update")
-	}
-
 	result := characterDTO.ToCharacterShortModel(character)
 	result.PortraitUrl = s.portraitURL(character.PortraitKey)
 	return result, nil

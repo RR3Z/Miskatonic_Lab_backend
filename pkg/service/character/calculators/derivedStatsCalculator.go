@@ -7,18 +7,18 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func CalculateDerivedStats(userID string, characterID pgtype.UUID, age int16, characteristics db.Characteristic) db.UpsertDerivedStatsParams {
+func CalculateDerivedStats(userID string, characterID pgtype.UUID, characteristics db.Characteristic) db.UpsertDerivedStatsParams {
 	return db.UpsertDerivedStatsParams{
 		UserID:      userID,
 		CharacterID: characterID,
-		Speed:       calculateSpeed(characteristics, age),
+		Speed:       calculateSpeed(characteristics),
 		Physique:    calculatePhysique(characteristics),
 		DamageBonus: calculateDamageBonus(characteristics),
 		DodgeValue:  calculateDodgeValue(characteristics),
 	}
 }
 
-func calculateSpeed(characteristics db.Characteristic, age int16) *int16 {
+func calculateSpeed(characteristics db.Characteristic) *int16 {
 	var speed int16
 
 	if *characteristics.Strength > *characteristics.Size && *characteristics.Dexterity > *characteristics.Size {
@@ -29,27 +29,7 @@ func calculateSpeed(characteristics db.Characteristic, age int16) *int16 {
 		speed = 8
 	}
 
-	speed -= ageSpeedPenalty(age)
-
 	return &speed
-}
-
-func ageSpeedPenalty(age int16) int16 {
-	var penaltyValue int16 = 0
-
-	if age >= 40 && age <= 49 {
-		penaltyValue = 1
-	} else if age >= 50 && age <= 59 {
-		penaltyValue = 2
-	} else if age >= 60 && age <= 69 {
-		penaltyValue = 3
-	} else if age >= 70 && age <= 79 {
-		penaltyValue = 4
-	} else if age >= 80 {
-		penaltyValue = 5
-	}
-
-	return penaltyValue
 }
 
 func calculatePhysique(characteristics db.Characteristic) *int16 {

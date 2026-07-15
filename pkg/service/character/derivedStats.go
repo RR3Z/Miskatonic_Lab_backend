@@ -68,31 +68,14 @@ func (s *CharacterService) DeleteDerivedStats(ctx context.Context, input derived
 	return nil
 }
 
-func (s *CharacterService) getCharacteristicsForDerivedStatsRecalculation(
-	ctx context.Context,
-	userID string,
-	characterID pgtype.UUID,
-) (db.Characteristic, bool) {
-	characteristics, err := s.repos.Queries.GetCharacteristics(ctx, db.GetCharacteristicsParams{
-		UserID:      userID,
-		CharacterID: characterID,
-	})
-	if err != nil {
-		return db.Characteristic{}, false
-	}
-
-	return characteristics, true
-}
-
 func (s *CharacterService) recalculateDerivedStats(
 	ctx context.Context,
 	userID string,
 	characterID pgtype.UUID,
-	age *int16,
 	characteristics db.Characteristic,
 	source string,
 ) {
-	if reason, canCalculate := characterHelpers.DerivedStatsRecalculationReadiness(age, characteristics); !canCalculate {
+	if reason, canCalculate := characterHelpers.DerivedStatsRecalculationReadiness(characteristics); !canCalculate {
 		s.publisher.Publish(ctx, characterEvents.CharacterDerivedStatsAutoRecalculateSkipped{
 			UserID:      userID,
 			CharacterID: characterID.String(),
@@ -105,7 +88,6 @@ func (s *CharacterService) recalculateDerivedStats(
 	derivedStatsInput := calculators.CalculateDerivedStats(
 		userID,
 		characterID,
-		*age,
 		characteristics,
 	)
 

@@ -42,13 +42,7 @@ func (s *CharacterService) UpsertCharacteristics(ctx context.Context, input char
 		return db.Characteristic{}, err
 	}
 
-	character, err := s.repos.Queries.GetCharacter(ctx, db.GetCharacterParams{
-		UserID: input.UserID,
-		ID:     input.CharacterID,
-	})
-	if err == nil {
-		s.recalculateDerivedStats(ctx, input.UserID, input.CharacterID, character.Age, characteristics, "characteristics_upsert")
-	}
+	s.recalculateDerivedStats(ctx, input.UserID, input.CharacterID, characteristics, "characteristics_upsert")
 
 	return characteristics, nil
 }
