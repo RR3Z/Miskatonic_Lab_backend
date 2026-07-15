@@ -11,7 +11,7 @@ import (
 func TestCalculateDerivedStatsPreservesTargetIdentity(t *testing.T) {
 	characterID := testUUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 
-	stats := calculators.CalculateDerivedStats("user_id", characterID, 30, testCharacteristics(50, 50, 50))
+	stats := calculators.CalculateDerivedStats("user_id", characterID, testCharacteristics(50, 50, 50))
 
 	require.Equal(t, "user_id", stats.UserID)
 	require.Equal(t, characterID, stats.CharacterID)
@@ -64,31 +64,7 @@ func TestCalculateDerivedStatsCalculatesBaseSpeed(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			stats := calculators.CalculateDerivedStats("user_id", pgtype.UUID{}, 30, testCharacteristics(tc.strength, tc.size, tc.dexterity))
-
-			requireInt16PointerValue(t, stats.Speed, tc.expectedSpeed)
-		})
-	}
-}
-
-func TestCalculateDerivedStatsAppliesAgeSpeedPenalty(t *testing.T) {
-	tests := []struct {
-		name          string
-		age           int16
-		expectedSpeed int16
-	}{
-		{name: "under 40", age: 39, expectedSpeed: 9},
-		{name: "40 to 49", age: 40, expectedSpeed: 8},
-		{name: "50 to 59", age: 50, expectedSpeed: 7},
-		{name: "60 to 69", age: 60, expectedSpeed: 6},
-		{name: "70 to 79", age: 70, expectedSpeed: 5},
-		{name: "80 and older", age: 80, expectedSpeed: 4},
-		{name: "older than table", age: 95, expectedSpeed: 4},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			stats := calculators.CalculateDerivedStats("user_id", pgtype.UUID{}, tc.age, testCharacteristics(60, 40, 60))
+			stats := calculators.CalculateDerivedStats("user_id", pgtype.UUID{}, testCharacteristics(tc.strength, tc.size, tc.dexterity))
 
 			requireInt16PointerValue(t, stats.Speed, tc.expectedSpeed)
 		})
@@ -108,7 +84,7 @@ func TestCalculateDerivedStatsCalculatesDodgeAsHalfDexterityRoundedDown(t *testi
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			stats := calculators.CalculateDerivedStats("user_id", pgtype.UUID{}, 30, testCharacteristics(50, 50, tc.dexterity))
+			stats := calculators.CalculateDerivedStats("user_id", pgtype.UUID{}, testCharacteristics(50, 50, tc.dexterity))
 
 			requireInt16PointerValue(t, stats.DodgeValue, tc.expectedDodge)
 		})
@@ -145,7 +121,7 @@ func TestCalculateDerivedStatsCalculatesPhysiqueAndDamageBonusBoundaries(t *test
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			strength, size := splitTotal(tc.strengthPlusSize)
-			stats := calculators.CalculateDerivedStats("user_id", pgtype.UUID{}, 30, testCharacteristics(strength, size, 50))
+			stats := calculators.CalculateDerivedStats("user_id", pgtype.UUID{}, testCharacteristics(strength, size, 50))
 
 			requireInt16PointerValue(t, stats.Physique, tc.expectedPhysique)
 			requireStringPointerValue(t, stats.DamageBonus, tc.expectedDamageBonus)

@@ -458,7 +458,7 @@ func TestDerivedStatsTableDeletingCharacterCascadesStats(t *testing.T) {
 	require.ErrorIs(t, err, pgx.ErrNoRows)
 }
 
-func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithoutAge(t *testing.T) {
+func TestCharacterServiceUpsertCharacteristicsRecalculatesDerivedStatsWithoutAge(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	testUser := createCharacterTestUser(t, subject)
 	character, err := subject.queries.CreateCharacter(context.Background(), db.CreateCharacterParams{
@@ -480,17 +480,20 @@ func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithou
 	require.NoError(t, err)
 	requireCharacteristicValue(t, characteristics.Strength, 60)
 
-	_, err = subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
+	stats, err := subject.queries.GetDerivedStats(context.Background(), db.GetDerivedStatsParams{
 		UserID:      testUser.ID,
 		CharacterID: character.ID,
 	})
-	require.ErrorIs(t, err, pgx.ErrNoRows)
+	require.NoError(t, err)
+	requireDerivedStatValue(t, stats.Speed, 9)
+	requireDerivedStatValue(t, stats.Physique, 0)
+	requireDerivedStatString(t, stats.DamageBonus, "0")
+	requireDerivedStatValue(t, stats.DodgeValue, 35)
 
-	event := requireLastCharacterEvent[characterEvents.CharacterDerivedStatsAutoRecalculateSkipped](t, recorder)
+	event := requireLastCharacterEvent[characterEvents.CharacterDerivedStatsAutoRecalculateSucceeded](t, recorder)
 	require.Equal(t, testUser.ID, event.UserID)
 	require.Equal(t, character.ID.String(), event.CharacterID)
 	require.Equal(t, "characteristics_upsert", event.Source)
-	require.Equal(t, "age_missing", event.Reason)
 }
 
 func TestCharacterServiceUpsertCharacteristicsSkipsDerivedStatsCalculationWithoutFormulaCharacteristics(t *testing.T) {
@@ -555,7 +558,7 @@ func TestCharacterServiceUpsertCharacteristicsRecalculatesDerivedStats(t *testin
 	require.Equal(t, "characteristics_upsert", event.Source)
 }
 
-func TestCharacterServiceUpdateCharacterAgeRecalculatesDerivedStats(t *testing.T) {
+func TestCharacterServiceUpdateCharacterAgeDoesNotRecalculateDerivedStats(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
@@ -592,15 +595,11 @@ func TestCharacterServiceUpdateCharacterAgeRecalculatesDerivedStats(t *testing.T
 		CharacterID: character.ID,
 	})
 	require.NoError(t, err)
-	requireDerivedStatValue(t, stats.Speed, 4)
-
-	event := requireLastCharacterEvent[characterEvents.CharacterDerivedStatsAutoRecalculateSucceeded](t, recorder)
-	require.Equal(t, testUser.ID, event.UserID)
-	require.Equal(t, character.ID.String(), event.CharacterID)
-	require.Equal(t, "character_update", event.Source)
+	requireDerivedStatValue(t, stats.Speed, 9)
+	require.Empty(t, recorder.events)
 }
 
-func TestCharacterServiceUpdateCharacterSkipsDerivedStatsRecalculationWithoutAge(t *testing.T) {
+func TestCharacterServiceUpdateCharacterDoesNotRecalculateDerivedStatsWhenAgeCleared(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
@@ -645,9 +644,5 @@ func TestCharacterServiceUpdateCharacterSkipsDerivedStatsRecalculationWithoutAge
 	require.NoError(t, err)
 	requireDerivedStatValue(t, stats.Speed, 9)
 
-	event := requireLastCharacterEvent[characterEvents.CharacterDerivedStatsAutoRecalculateSkipped](t, recorder)
-	require.Equal(t, testUser.ID, event.UserID)
-	require.Equal(t, character.ID.String(), event.CharacterID)
-	require.Equal(t, "character_update", event.Source)
-	require.Equal(t, "age_missing", event.Reason)
+	require.Empty(t, recorder.events)
 }
