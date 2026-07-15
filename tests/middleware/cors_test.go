@@ -18,14 +18,14 @@ func TestCORSMiddlewareAllowsConfiguredOriginPreflight(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodOptions, "/api/me", nil)
 	req.Header.Set("Origin", "https://app.example.com")
-	req.Header.Set("Access-Control-Request-Method", http.MethodGet)
+	req.Header.Set("Access-Control-Request-Method", http.MethodPatch)
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	require.Equal(t, "https://app.example.com", rec.Header().Get("Access-Control-Allow-Origin"))
-	require.Contains(t, rec.Header().Get("Access-Control-Allow-Methods"), "GET")
+	require.Contains(t, rec.Header().Get("Access-Control-Allow-Methods"), "PATCH")
 }
 
 func TestCORSMiddlewareDoesNotAllowUnknownOrigin(t *testing.T) {
