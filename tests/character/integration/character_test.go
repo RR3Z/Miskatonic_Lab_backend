@@ -231,6 +231,44 @@ func TestCharacterTableUpdateCharacterRequiresOwner(t *testing.T) {
 	require.Equal(t, &updatedAge, updatedCharacter.Age)
 }
 
+func TestCharacterTablePatchCharacterUpdatesOnlySelectedColumnsAndClearsNull(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	owner := createCharacterTestUser(t, subject)
+	createdCharacter, err := subject.queries.CreateCharacter(context.Background(), testCreateCharacterParams(owner.ID))
+	require.NoError(t, err)
+
+	updatedOccupation := "Rare Book Dealer"
+	patchedCharacter, err := subject.queries.PatchCharacter(context.Background(), db.PatchCharacterParams{
+		SetOccupation: true,
+		Occupation:    &updatedOccupation,
+		UserID:        owner.ID,
+		ID:            createdCharacter.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, createdCharacter.Name, patchedCharacter.Name)
+	require.Equal(t, createdCharacter.PlayerName, patchedCharacter.PlayerName)
+	require.Equal(t, &updatedOccupation, patchedCharacter.Occupation)
+	require.Equal(t, createdCharacter.Age, patchedCharacter.Age)
+	require.Equal(t, createdCharacter.Sex, patchedCharacter.Sex)
+	require.Equal(t, createdCharacter.Residence, patchedCharacter.Residence)
+	require.Equal(t, createdCharacter.Birthplace, patchedCharacter.Birthplace)
+
+	clearedAgeCharacter, err := subject.queries.PatchCharacter(context.Background(), db.PatchCharacterParams{
+		SetAge: true,
+		Age:    nil,
+		UserID: owner.ID,
+		ID:     createdCharacter.ID,
+	})
+	require.NoError(t, err)
+	require.Nil(t, clearedAgeCharacter.Age)
+	require.Equal(t, &updatedOccupation, clearedAgeCharacter.Occupation)
+	require.Equal(t, createdCharacter.Name, clearedAgeCharacter.Name)
+	require.Equal(t, createdCharacter.PlayerName, clearedAgeCharacter.PlayerName)
+	require.Equal(t, createdCharacter.Sex, clearedAgeCharacter.Sex)
+	require.Equal(t, createdCharacter.Residence, clearedAgeCharacter.Residence)
+	require.Equal(t, createdCharacter.Birthplace, clearedAgeCharacter.Birthplace)
+}
+
 func TestCharacterTableDeleteCharacterRequiresOwner(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	owner := createCharacterTestUser(t, subject)
