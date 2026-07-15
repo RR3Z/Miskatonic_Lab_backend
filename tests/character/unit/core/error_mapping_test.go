@@ -55,6 +55,15 @@ func TestCharacterHandlerMapsGenericDomainErrors(t *testing.T) {
 			wantCode:   "character.age_negative",
 		},
 		{
+			name: "sex invalid",
+			appErr: func() errorMappingResult {
+				err := characterHandlerErrors.MapServiceError(characterServiceErrors.ErrSexInvalid, "failed")
+				return errorMappingResult{status: err.StatusCode(), code: err.Response().Code}
+			},
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "character.sex_invalid",
+		},
+		{
 			name: "character limit reached",
 			appErr: func() errorMappingResult {
 				err := characterHandlerErrors.MapServiceError(characterServiceErrors.ErrCharacterLimitReached, "failed")

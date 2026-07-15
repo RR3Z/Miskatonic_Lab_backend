@@ -17,7 +17,7 @@ func TestCreateCharacterPassesBodyAndUserID(t *testing.T) {
 		"player_name":"Roger",
 		"occupation":"Professor",
 		"age":42,
-		"sex":"m",
+		"sex":"male",
 		"residence":"Arkham",
 		"birthplace":"Boston"
 	}`)

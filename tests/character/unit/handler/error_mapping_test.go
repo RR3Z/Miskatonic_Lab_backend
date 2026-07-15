@@ -38,6 +38,15 @@ func TestCharacterServiceErrorsMapToJSON(t *testing.T) {
 			wantCode:   "character.name_required",
 		},
 		{
+			name:       "sex invalid",
+			method:     http.MethodPost,
+			path:       "/api/characters/",
+			body:       `{"name":"Professor Armitage","sex":"other"}`,
+			err:        characterErrors.ErrSexInvalid,
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "character.sex_invalid",
+		},
+		{
 			name:       "character limit reached",
 			method:     http.MethodPost,
 			path:       "/api/characters/",

@@ -92,6 +92,33 @@ func TestUpdateCharacterRejectsNegativeAgeBeforeRepository(t *testing.T) {
 	require.ErrorIs(t, err, characterErrors.ErrAgeNegative)
 }
 
+func TestCreateCharacterRejectsInvalidSexBeforeRepository(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
+	sex := "other"
+
+	_, err := service.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{
+		UserID: "user_1",
+		Name:   "Investigator",
+		Sex:    &sex,
+	})
+
+	require.ErrorIs(t, err, characterErrors.ErrSexInvalid)
+}
+
+func TestUpdateCharacterRejectsInvalidSexBeforeRepository(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
+	sex := "other"
+
+	_, err := service.UpdateCharacter(context.Background(), characterDTO.UpdateCharacterInput{
+		UserID: "user_1",
+		ID:     testCoreUUID("11111111-1111-1111-1111-111111111111"),
+		Name:   "Investigator",
+		Sex:    &sex,
+	})
+
+	require.ErrorIs(t, err, characterErrors.ErrSexInvalid)
+}
+
 func TestReplacePortraitRejectsMissingFileBeforeRepository(t *testing.T) {
 	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
 
