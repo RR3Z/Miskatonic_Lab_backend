@@ -19,8 +19,6 @@ type CreateSkillInput struct {
 	BaseValue   int16
 	Value       int16
 	Checked     bool
-	Specialized bool
-	SpecialtyID pgtype.UUID
 	UserID      string
 	CharacterID pgtype.UUID
 }
@@ -31,8 +29,6 @@ type UpdateSkillInput struct {
 	BaseValue   int16
 	Value       int16
 	Checked     bool
-	Specialized bool
-	SpecialtyID pgtype.UUID
 	UserID      string
 	CharacterID pgtype.UUID
 	SkillID     pgtype.UUID

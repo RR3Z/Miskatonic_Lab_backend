@@ -1,15 +1,8 @@
 -- name: GetSkills :many
 SELECT s.*,
-    sc.name as category_name,
-    ss.id as specialty_pk_id,
-    ss.name as specialty_name,
-    ss.description as specialty_description,
-    ss.base_value as specialty_base_value,
-    ss.created_at as specialty_created_at,
-    ss.updated_at as specialty_updated_at
+    sc.name as category_name
 FROM skills s
 JOIN skills_categories sc ON s.category_id = sc.id
-LEFT JOIN skills_specialties ss ON s.specialty_id = ss.id
 WHERE s.character_id = $1
 ORDER BY s.name;
 

@@ -7,8 +7,6 @@ WITH updated AS (
         base_value = sqlc.arg(base_value),
         value = sqlc.arg(value),
         checked = sqlc.arg(checked),
-        specialized = sqlc.arg(specialized),
-        specialty_id = sqlc.narg('specialty_id')::uuid,
         updated_at = NOW()
     FROM characters c
     WHERE c.id = s.character_id
@@ -18,13 +16,6 @@ WITH updated AS (
     RETURNING s.*
 )
 SELECT updated.*,
-    sc.name as category_name,
-    ss.id as specialty_pk_id,
-    ss.name as specialty_name,
-    ss.description as specialty_description,
-    ss.base_value as specialty_base_value,
-    ss.created_at as specialty_created_at,
-    ss.updated_at as specialty_updated_at
+    sc.name as category_name
 FROM updated
-JOIN skills_categories sc ON updated.category_id = sc.id
-LEFT JOIN skills_specialties ss ON updated.specialty_id = ss.id;
+JOIN skills_categories sc ON updated.category_id = sc.id;

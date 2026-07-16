@@ -40,8 +40,7 @@ func MapCharacterConstraintError(err error) error {
 		return ErrInvalidDerivedStats
 	case "skills_base_value_check",
 		"skills_value_check",
-		"fk_skills_category",
-		"fk_skills_specialty":
+		"fk_skills_category":
 		return ErrInvalidSkill
 	default:
 		return err

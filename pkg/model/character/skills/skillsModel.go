@@ -5,27 +5,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type SkillSpecialtyModel struct {
-	ID pgtype.UUID `json:"id"`
-
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	BaseValue   int16  `json:"base_value"`
-
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-}
-
 type SkillModel struct {
 	ID pgtype.UUID `json:"id"`
 
-	Name        string               `json:"name"`
-	BaseValue   int16                `json:"base_value"`
-	Value       int16                `json:"value"`
-	Checked     bool                 `json:"checked"`
-	Category    string               `json:"category"`
-	Specialized bool                 `json:"specialized"`
-	Specialty   *SkillSpecialtyModel `json:"specialty"`
+	Name        string  `json:"name"`
+	BaseValue   int16   `json:"base_value"`
+	Value       int16   `json:"value"`
+	Checked     bool    `json:"checked"`
+	Category    string  `json:"category"`
+	IsProtected bool    `json:"is_protected"`
+	BaseRule    *string `json:"base_rule"`
 
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
@@ -39,32 +28,14 @@ type skillModelFields struct {
 	Value        int16
 	Checked      bool
 	CategoryName string
-	Specialized  bool
-
-	SpecialtyPkID        pgtype.UUID
-	SpecialtyName        *string
-	SpecialtyDescription *string
-	SpecialtyBaseValue   *int16
-	SpecialtyCreatedAt   pgtype.Timestamptz
-	SpecialtyUpdatedAt   pgtype.Timestamptz
+	IsProtected  bool
+	BaseRule     *string
 
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
 }
 
 func skillModelFromFields(row skillModelFields) SkillModel {
-	var specialty *SkillSpecialtyModel
-	if row.SpecialtyPkID.Valid {
-		specialty = &SkillSpecialtyModel{
-			ID:          row.SpecialtyPkID,
-			Name:        *row.SpecialtyName,
-			Description: *row.SpecialtyDescription,
-			BaseValue:   *row.SpecialtyBaseValue,
-			CreatedAt:   row.SpecialtyCreatedAt,
-			UpdatedAt:   row.SpecialtyUpdatedAt,
-		}
-	}
-
 	return SkillModel{
 		ID:          row.ID,
 		Name:        row.Name,
@@ -72,8 +43,8 @@ func skillModelFromFields(row skillModelFields) SkillModel {
 		Value:       row.Value,
 		Checked:     row.Checked,
 		Category:    row.CategoryName,
-		Specialized: row.Specialized,
-		Specialty:   specialty,
+		IsProtected: row.IsProtected,
+		BaseRule:    row.BaseRule,
 		CreatedAt:   row.CreatedAt,
 		UpdatedAt:   row.UpdatedAt,
 	}
@@ -81,21 +52,16 @@ func skillModelFromFields(row skillModelFields) SkillModel {
 
 func ToSkillModel(row db.GetSkillsRow) SkillModel {
 	return skillModelFromFields(skillModelFields{
-		ID:                   row.ID,
-		Name:                 row.Name,
-		BaseValue:            row.BaseValue,
-		Value:                row.Value,
-		Checked:              row.Checked,
-		CategoryName:         row.CategoryName,
-		Specialized:          row.Specialized,
-		SpecialtyPkID:        row.SpecialtyPkID,
-		SpecialtyName:        row.SpecialtyName,
-		SpecialtyDescription: row.SpecialtyDescription,
-		SpecialtyBaseValue:   row.SpecialtyBaseValue,
-		SpecialtyCreatedAt:   row.SpecialtyCreatedAt,
-		SpecialtyUpdatedAt:   row.SpecialtyUpdatedAt,
-		CreatedAt:            row.CreatedAt,
-		UpdatedAt:            row.UpdatedAt,
+		ID:           row.ID,
+		Name:         row.Name,
+		BaseValue:    row.BaseValue,
+		Value:        row.Value,
+		Checked:      row.Checked,
+		CategoryName: row.CategoryName,
+		IsProtected:  row.IsProtected,
+		BaseRule:     row.BaseRule,
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
 	})
 }
 
@@ -109,80 +75,60 @@ func ToCharacterSkillModels(rows []db.GetCharacterSkillsRow) []SkillModel {
 
 func ToCharacterSkillModel(row db.GetCharacterSkillsRow) SkillModel {
 	return skillModelFromFields(skillModelFields{
-		ID:                   row.ID,
-		Name:                 row.Name,
-		BaseValue:            row.BaseValue,
-		Value:                row.Value,
-		Checked:              row.Checked,
-		CategoryName:         row.CategoryName,
-		Specialized:          row.Specialized,
-		SpecialtyPkID:        row.SpecialtyPkID,
-		SpecialtyName:        row.SpecialtyName,
-		SpecialtyDescription: row.SpecialtyDescription,
-		SpecialtyBaseValue:   row.SpecialtyBaseValue,
-		SpecialtyCreatedAt:   row.SpecialtyCreatedAt,
-		SpecialtyUpdatedAt:   row.SpecialtyUpdatedAt,
-		CreatedAt:            row.CreatedAt,
-		UpdatedAt:            row.UpdatedAt,
+		ID:           row.ID,
+		Name:         row.Name,
+		BaseValue:    row.BaseValue,
+		Value:        row.Value,
+		Checked:      row.Checked,
+		CategoryName: row.CategoryName,
+		IsProtected:  row.IsProtected,
+		BaseRule:     row.BaseRule,
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
 	})
 }
 
 func ToSingleCharacterSkillModel(row db.GetCharacterSkillRow) SkillModel {
 	return skillModelFromFields(skillModelFields{
-		ID:                   row.ID,
-		Name:                 row.Name,
-		BaseValue:            row.BaseValue,
-		Value:                row.Value,
-		Checked:              row.Checked,
-		CategoryName:         row.CategoryName,
-		Specialized:          row.Specialized,
-		SpecialtyPkID:        row.SpecialtyPkID,
-		SpecialtyName:        row.SpecialtyName,
-		SpecialtyDescription: row.SpecialtyDescription,
-		SpecialtyBaseValue:   row.SpecialtyBaseValue,
-		SpecialtyCreatedAt:   row.SpecialtyCreatedAt,
-		SpecialtyUpdatedAt:   row.SpecialtyUpdatedAt,
-		CreatedAt:            row.CreatedAt,
-		UpdatedAt:            row.UpdatedAt,
+		ID:           row.ID,
+		Name:         row.Name,
+		BaseValue:    row.BaseValue,
+		Value:        row.Value,
+		Checked:      row.Checked,
+		CategoryName: row.CategoryName,
+		IsProtected:  row.IsProtected,
+		BaseRule:     row.BaseRule,
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
 	})
 }
 
 func ToCreatedCharacterSkillModel(row db.CreateCharacterSkillRow) SkillModel {
 	return skillModelFromFields(skillModelFields{
-		ID:                   row.ID,
-		Name:                 row.Name,
-		BaseValue:            row.BaseValue,
-		Value:                row.Value,
-		Checked:              row.Checked,
-		CategoryName:         row.CategoryName,
-		Specialized:          row.Specialized,
-		SpecialtyPkID:        row.SpecialtyPkID,
-		SpecialtyName:        row.SpecialtyName,
-		SpecialtyDescription: row.SpecialtyDescription,
-		SpecialtyBaseValue:   row.SpecialtyBaseValue,
-		SpecialtyCreatedAt:   row.SpecialtyCreatedAt,
-		SpecialtyUpdatedAt:   row.SpecialtyUpdatedAt,
-		CreatedAt:            row.CreatedAt,
-		UpdatedAt:            row.UpdatedAt,
+		ID:           row.ID,
+		Name:         row.Name,
+		BaseValue:    row.BaseValue,
+		Value:        row.Value,
+		Checked:      row.Checked,
+		CategoryName: row.CategoryName,
+		IsProtected:  row.IsProtected,
+		BaseRule:     row.BaseRule,
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
 	})
 }
 
 func ToUpdatedCharacterSkillModel(row db.UpdateCharacterSkillRow) SkillModel {
 	return skillModelFromFields(skillModelFields{
-		ID:                   row.ID,
-		Name:                 row.Name,
-		BaseValue:            row.BaseValue,
-		Value:                row.Value,
-		Checked:              row.Checked,
-		CategoryName:         row.CategoryName,
-		Specialized:          row.Specialized,
-		SpecialtyPkID:        row.SpecialtyPkID,
-		SpecialtyName:        row.SpecialtyName,
-		SpecialtyDescription: row.SpecialtyDescription,
-		SpecialtyBaseValue:   row.SpecialtyBaseValue,
-		SpecialtyCreatedAt:   row.SpecialtyCreatedAt,
-		SpecialtyUpdatedAt:   row.SpecialtyUpdatedAt,
-		CreatedAt:            row.CreatedAt,
-		UpdatedAt:            row.UpdatedAt,
+		ID:           row.ID,
+		Name:         row.Name,
+		BaseValue:    row.BaseValue,
+		Value:        row.Value,
+		Checked:      row.Checked,
+		CategoryName: row.CategoryName,
+		IsProtected:  row.IsProtected,
+		BaseRule:     row.BaseRule,
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
 	})
 }

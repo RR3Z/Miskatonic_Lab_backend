@@ -45,8 +45,6 @@ func (s *CharacterService) CreateSkill(ctx context.Context, input skillsDTO.Crea
 		BaseValue:   input.BaseValue,
 		Value:       input.Value,
 		Checked:     input.Checked,
-		Specialized: input.Specialized,
-		SpecialtyID: input.SpecialtyID,
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
 	})
@@ -68,8 +66,6 @@ func (s *CharacterService) UpdateSkill(ctx context.Context, input skillsDTO.Upda
 		BaseValue:   input.BaseValue,
 		Value:       input.Value,
 		Checked:     input.Checked,
-		Specialized: input.Specialized,
-		SpecialtyID: input.SpecialtyID,
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
 		SkillID:     input.SkillID,

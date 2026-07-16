@@ -74,8 +74,6 @@ func (h *CharacterHandler) createSkill(w http.ResponseWriter, r *http.Request) *
 		BaseValue:   req.BaseValue,
 		Value:       req.Value,
 		Checked:     req.Checked,
-		Specialized: req.Specialized,
-		SpecialtyID: req.SpecialtyID,
 		UserID:      userID,
 		CharacterID: characterID,
 	}
@@ -112,8 +110,6 @@ func (h *CharacterHandler) updateSkill(w http.ResponseWriter, r *http.Request) *
 		BaseValue:   req.BaseValue,
 		Value:       req.Value,
 		Checked:     req.Checked,
-		Specialized: req.Specialized,
-		SpecialtyID: req.SpecialtyID,
 		UserID:      userID,
 		CharacterID: characterID,
 		SkillID:     skillID,

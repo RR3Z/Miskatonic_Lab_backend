@@ -62,40 +62,27 @@ func (q *Queries) GetBackstoryItemsByBackstoryID(ctx context.Context, backstoryI
 }
 
 const getSkills = `-- name: GetSkills :many
-SELECT s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.specialized, s.specialty_id, s.created_at, s.updated_at,
-    sc.name as category_name,
-    ss.id as specialty_pk_id,
-    ss.name as specialty_name,
-    ss.description as specialty_description,
-    ss.base_value as specialty_base_value,
-    ss.created_at as specialty_created_at,
-    ss.updated_at as specialty_updated_at
+SELECT s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.created_at, s.updated_at, s.is_protected, s.base_rule,
+    sc.name as category_name
 FROM skills s
 JOIN skills_categories sc ON s.category_id = sc.id
-LEFT JOIN skills_specialties ss ON s.specialty_id = ss.id
 WHERE s.character_id = $1
 ORDER BY s.name
 `
 
 type GetSkillsRow struct {
-	ID                   pgtype.UUID        `json:"id"`
-	CharacterID          pgtype.UUID        `json:"character_id"`
-	Name                 string             `json:"name"`
-	CategoryID           pgtype.UUID        `json:"category_id"`
-	BaseValue            int16              `json:"base_value"`
-	Value                int16              `json:"value"`
-	Checked              bool               `json:"checked"`
-	Specialized          bool               `json:"specialized"`
-	SpecialtyID          pgtype.UUID        `json:"specialty_id"`
-	CreatedAt            pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
-	CategoryName         string             `json:"category_name"`
-	SpecialtyPkID        pgtype.UUID        `json:"specialty_pk_id"`
-	SpecialtyName        *string            `json:"specialty_name"`
-	SpecialtyDescription *string            `json:"specialty_description"`
-	SpecialtyBaseValue   *int16             `json:"specialty_base_value"`
-	SpecialtyCreatedAt   pgtype.Timestamptz `json:"specialty_created_at"`
-	SpecialtyUpdatedAt   pgtype.Timestamptz `json:"specialty_updated_at"`
+	ID           pgtype.UUID        `json:"id"`
+	CharacterID  pgtype.UUID        `json:"character_id"`
+	Name         string             `json:"name"`
+	CategoryID   pgtype.UUID        `json:"category_id"`
+	BaseValue    int16              `json:"base_value"`
+	Value        int16              `json:"value"`
+	Checked      bool               `json:"checked"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	IsProtected  bool               `json:"is_protected"`
+	BaseRule     *string            `json:"base_rule"`
+	CategoryName string             `json:"category_name"`
 }
 
 func (q *Queries) GetSkills(ctx context.Context, characterID pgtype.UUID) ([]GetSkillsRow, error) {
@@ -115,17 +102,11 @@ func (q *Queries) GetSkills(ctx context.Context, characterID pgtype.UUID) ([]Get
 			&i.BaseValue,
 			&i.Value,
 			&i.Checked,
-			&i.Specialized,
-			&i.SpecialtyID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.IsProtected,
+			&i.BaseRule,
 			&i.CategoryName,
-			&i.SpecialtyPkID,
-			&i.SpecialtyName,
-			&i.SpecialtyDescription,
-			&i.SpecialtyBaseValue,
-			&i.SpecialtyCreatedAt,
-			&i.SpecialtyUpdatedAt,
 		); err != nil {
 			return nil, err
 		}

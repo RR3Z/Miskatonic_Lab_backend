@@ -18,7 +18,7 @@ WHERE c.id = s.character_id
   AND c.user_id = $1
   AND s.character_id = $2
   AND s.id = $3
-RETURNING s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.specialized, s.specialty_id, s.created_at, s.updated_at
+RETURNING s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.created_at, s.updated_at, s.is_protected, s.base_rule
 `
 
 type DeleteCharacterSkillParams struct {
@@ -38,10 +38,10 @@ func (q *Queries) DeleteCharacterSkill(ctx context.Context, arg DeleteCharacterS
 		&i.BaseValue,
 		&i.Value,
 		&i.Checked,
-		&i.Specialized,
-		&i.SpecialtyID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsProtected,
+		&i.BaseRule,
 	)
 	return i, err
 }
