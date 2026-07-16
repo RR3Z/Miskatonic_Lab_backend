@@ -6,11 +6,111 @@ import (
 	"testing"
 	"time"
 
+	characterDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
+	characterServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
+
+type defaultSkillDefinition struct {
+	baseValue   int16
+	isProtected bool
+	baseRule    string
+}
+
+func defaultSkillDefinitions() map[string]defaultSkillDefinition {
+	return map[string]defaultSkillDefinition{
+		"Антропология":           {1, true, ""},
+		"Археология":             {1, true, ""},
+		"Ближний бой (драка)":    {25, true, ""},
+		"Бухгалтерское дело":     {5, true, ""},
+		"Верховая езда":          {5, true, ""},
+		"Взлом":                  {1, true, ""},
+		"Внимание":               {25, true, ""},
+		"Вождение":               {20, true, ""},
+		"Выживание":              {10, false, ""},
+		"Естествознание":         {10, true, ""},
+		"Запугивание":            {15, true, ""},
+		"Искусство/ремесло":      {5, false, ""},
+		"История":                {5, true, ""},
+		"Красноречие":            {5, true, ""},
+		"Лазание":                {20, true, ""},
+		"Ловкость рук":           {10, true, ""},
+		"Маскировка":             {5, true, ""},
+		"Медицина":               {1, true, ""},
+		"Метание":                {20, true, ""},
+		"Механика":               {10, true, ""},
+		"Мифы Ктулху":            {0, true, ""},
+		"Наука":                  {1, false, ""},
+		"Обаяние":                {15, true, ""},
+		"Обоняние":               {15, true, ""},
+		"Оккультизм":             {5, true, ""},
+		"Ориентирование":         {10, true, ""},
+		"Оценка":                 {5, true, ""},
+		"Первая помощь":          {30, true, ""},
+		"Пилотирование":          {1, true, ""},
+		"Плавание":               {20, true, ""},
+		"Прыжки":                 {20, true, ""},
+		"Психоанализ":            {1, true, ""},
+		"Психология":             {10, true, ""},
+		"Работа в библиотеке":    {20, true, ""},
+		"Скрытность":             {20, true, ""},
+		"Слух":                   {20, true, ""},
+		"Стрельба (винт./дроб.)": {25, true, ""},
+		"Стрельба (пистолет)":    {20, true, ""},
+		"Убеждение":              {10, true, ""},
+		"Уклонение":              {0, true, "dodge"},
+		"Управление тяжелыми машинами": {1, true, ""},
+		"Чтение следов":                {10, true, ""},
+		"Электрика":                    {10, true, ""},
+		"Юриспруденция":                {5, true, ""},
+		"Язык, иностранный":            {1, false, ""},
+		"Язык, родной":                 {0, true, "native_language"},
+	}
+}
+
+func requireDefaultSkills(t *testing.T, skills []db.GetCharacterSkillsRow) {
+	t.Helper()
+
+	expected := defaultSkillDefinitions()
+	require.Len(t, skills, len(expected))
+	for _, skill := range skills {
+		expectedSkill, ok := expected[skill.Name]
+		require.True(t, ok, "unexpected skill %q", skill.Name)
+		require.Equal(t, expectedSkill.baseValue, skill.BaseValue, skill.Name)
+		require.Zero(t, skill.Value, skill.Name)
+		require.False(t, skill.Checked, skill.Name)
+		require.Equal(t, expectedSkill.isProtected, skill.IsProtected, skill.Name)
+		require.Equal(t, "Базовые навыки", skill.CategoryName, skill.Name)
+		if expectedSkill.baseRule == "" {
+			require.Nil(t, skill.BaseRule, skill.Name)
+		} else {
+			require.NotNil(t, skill.BaseRule, skill.Name)
+			require.Equal(t, expectedSkill.baseRule, *skill.BaseRule, skill.Name)
+		}
+	}
+}
+
+func TestCharacterServiceCreatesDefaultSkills(t *testing.T) {
+	subject := newCharacterIntegrationSubject(t)
+	testUser := createCharacterTestUser(t, subject)
+	service := characterServices.NewCharacterService(repository.NewRepository(subject.pool), nil, nil)
+	character, err := service.CreateCharacter(context.Background(), characterDTO.CreateCharacterInput{
+		UserID: testUser.ID,
+		Name:   "Default Skills Investigator",
+	})
+	require.NoError(t, err)
+
+	skills, err := subject.queries.GetCharacterSkills(context.Background(), db.GetCharacterSkillsParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+	})
+	require.NoError(t, err)
+	requireDefaultSkills(t, skills)
+}
 
 func TestSkillsTableCreateListGetUpdateAndDeleteSkill(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
