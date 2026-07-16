@@ -81,20 +81,18 @@ func testBackstoryItem() db.BackstoryItem {
 	}
 }
 
-func testSkillRow() db.GetSkillsRow {
-	return db.GetSkillsRow{
-		ID:           testUUID("44444444-4444-4444-4444-444444444444"),
-		CharacterID:  testUUID("11111111-1111-1111-1111-111111111111"),
-		Name:         "Library Use",
-		CategoryID:   testUUID("55555555-5555-5555-5555-555555555555"),
-		BaseValue:    20,
-		Value:        65,
-		Checked:      true,
-		IsProtected:  true,
-		BaseRule:     strPtr("dodge"),
-		CreatedAt:    testTimestamptz("2026-06-07 12:00:00+03"),
-		UpdatedAt:    testTimestamptz("2026-06-07 13:00:00+03"),
-		CategoryName: "Investigation",
+func testSkillRow() db.Skill {
+	return db.Skill{
+		ID:          testUUID("44444444-4444-4444-4444-444444444444"),
+		CharacterID: testUUID("11111111-1111-1111-1111-111111111111"),
+		Name:        "Library Use",
+		BaseValue:   20,
+		Value:       65,
+		Checked:     true,
+		IsProtected: true,
+		BaseRule:    strPtr("dodge"),
+		CreatedAt:   testTimestamptz("2026-06-07 12:00:00+03"),
+		UpdatedAt:   testTimestamptz("2026-06-07 13:00:00+03"),
 	}
 }
 
@@ -127,15 +125,15 @@ func requireSameShortCharacter(t *testing.T, expected db.Character, actual chara
 	require.Equal(t, expected.UpdatedAt.Time, actual.UpdatedAt.Time)
 }
 
-func requireSameSkill(t *testing.T, expected db.GetSkillsRow, actual skillsDTO.SkillModel) {
+func requireSameSkill(t *testing.T, expected db.Skill, actual skillsDTO.SkillModel) {
 	t.Helper()
 
 	require.Equal(t, expected.ID, actual.ID)
 	require.Equal(t, expected.Name, actual.Name)
 	require.Equal(t, expected.BaseValue, actual.BaseValue)
 	require.Equal(t, expected.Value, actual.Value)
+	require.Equal(t, int32(expected.BaseValue)+int32(expected.Value), actual.TotalValue)
 	require.Equal(t, expected.Checked, actual.Checked)
-	require.Equal(t, expected.CategoryName, actual.Category)
 	require.Equal(t, expected.IsProtected, actual.IsProtected)
 	require.Equal(t, expected.BaseRule, actual.BaseRule)
 	require.Equal(t, expected.CreatedAt.Time, actual.CreatedAt.Time)

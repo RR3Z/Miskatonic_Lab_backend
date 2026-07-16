@@ -142,7 +142,7 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 		MP:              mp,
 		Sanity:          sanity,
 		Luck:            luck,
-		Skills:          []db.GetSkillsRow{skill, creditSkill},
+		Skills:          []db.Skill{skill, creditSkill},
 		Backstory:       &backstory,
 		BackstoryItems:  []db.BackstoryItem{item},
 		Finances:        &finance,
@@ -174,7 +174,7 @@ func TestToFullCharacterModelLeavesCreditRatingNilWhenFinanceSkillDoesNotMatch(t
 
 	result := characterDTO.ToCharacterModel(characterDTO.CharacterDBData{
 		Character: testCharacter(),
-		Skills:    []db.GetSkillsRow{testSkillRow()},
+		Skills:    []db.Skill{testSkillRow()},
 		Finances:  &finance,
 	})
 

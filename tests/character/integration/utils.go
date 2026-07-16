@@ -176,39 +176,23 @@ func requireDerivedStatString(t *testing.T, actual *string, expected string) {
 	require.Equal(t, expected, *actual)
 }
 
-func createSkillTestCategory(t *testing.T, subject *characterIntegrationSubject, name string) (pgtype.UUID, string) {
-	t.Helper()
-
-	var id pgtype.UUID
-	uniqueName := name + " " + uniqueCharacterIntegrationSuffix()
-	err := subject.pool.QueryRow(context.Background(),
-		"INSERT INTO skills_categories (name) VALUES ($1) RETURNING id",
-		uniqueName,
-	).Scan(&id)
-	require.NoError(t, err)
-
-	return id, uniqueName
-}
-
-func testCreateSkillParams(userID string, characterID pgtype.UUID, categoryID pgtype.UUID, name string) db.CreateCharacterSkillParams {
+func testCreateSkillParams(userID string, characterID pgtype.UUID, name string) db.CreateCharacterSkillParams {
 	return db.CreateCharacterSkillParams{
 		UserID:      userID,
 		CharacterID: characterID,
 		Name:        name,
-		CategoryID:  categoryID,
 		BaseValue:   10,
 		Value:       35,
 		Checked:     false,
 	}
 }
 
-func testUpdateSkillParams(userID string, characterID pgtype.UUID, skillID pgtype.UUID, categoryID pgtype.UUID, name string) db.UpdateCharacterSkillParams {
+func testUpdateSkillParams(userID string, characterID pgtype.UUID, skillID pgtype.UUID, name string) db.UpdateCharacterSkillParams {
 	return db.UpdateCharacterSkillParams{
 		UserID:      userID,
 		CharacterID: characterID,
 		SkillID:     skillID,
 		Name:        name,
-		CategoryID:  categoryID,
 		BaseValue:   15,
 		Value:       45,
 		Checked:     true,
@@ -224,12 +208,10 @@ func createFinanceTestCreditRatingSkill(t *testing.T, subject *characterIntegrat
 func createFinanceTestSkill(t *testing.T, subject *characterIntegrationSubject, userID string, characterID pgtype.UUID, name string) db.CreateCharacterSkillRow {
 	t.Helper()
 
-	categoryID, _ := createSkillTestCategory(t, subject, "Credit Rating")
 	skill, err := subject.queries.CreateCharacterSkill(context.Background(), db.CreateCharacterSkillParams{
 		UserID:      userID,
 		CharacterID: characterID,
 		Name:        name,
-		CategoryID:  categoryID,
 		BaseValue:   0,
 		Value:       35,
 		Checked:     false,

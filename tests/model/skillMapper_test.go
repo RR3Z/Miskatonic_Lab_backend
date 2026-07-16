@@ -24,10 +24,7 @@ func TestToCharacterSkillModelsMapsAllRows(t *testing.T) {
 	second.IsProtected = false
 	second.BaseRule = nil
 
-	rows := []db.GetCharacterSkillsRow{
-		characterSkillsRowFromGetSkillsRow(first),
-		characterSkillsRowFromGetSkillsRow(second),
-	}
+	rows := []db.Skill{first, second}
 
 	result := skillsDTO.ToCharacterSkillModels(rows)
 
@@ -49,81 +46,20 @@ func TestToCharacterSkillModelsReturnsEmptySliceForEmptyInput(t *testing.T) {
 func TestSingleCreatedAndUpdatedSkillMappersKeepNewFields(t *testing.T) {
 	row := testSkillRow()
 
-	single := skillsDTO.ToSingleCharacterSkillModel(singleCharacterSkillRowFromGetSkillsRow(row))
-	created := skillsDTO.ToCreatedCharacterSkillModel(createdCharacterSkillRowFromGetSkillsRow(row))
-	updated := skillsDTO.ToUpdatedCharacterSkillModel(updatedCharacterSkillRowFromGetSkillsRow(row))
+	single := skillsDTO.ToSingleCharacterSkillModel(row)
+	created := skillsDTO.ToCreatedCharacterSkillModel(db.CreateCharacterSkillRow{
+		ID: row.ID, CharacterID: row.CharacterID, Name: row.Name, BaseValue: row.BaseValue, Value: row.Value,
+		Checked: row.Checked, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, IsProtected: row.IsProtected, BaseRule: row.BaseRule,
+	})
+	updated := skillsDTO.ToUpdatedCharacterSkillModel(db.UpdateCharacterSkillRow{
+		ID: row.ID, CharacterID: row.CharacterID, Name: row.Name, BaseValue: row.BaseValue, Value: row.Value,
+		Checked: row.Checked, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, IsProtected: row.IsProtected, BaseRule: row.BaseRule,
+	})
 
 	for _, result := range []skillsDTO.SkillModel{single, created, updated} {
 		require.Equal(t, row.Name, result.Name)
+		require.Equal(t, int32(row.BaseValue)+int32(row.Value), result.TotalValue)
 		require.True(t, result.IsProtected)
 		require.Equal(t, "dodge", *result.BaseRule)
-	}
-}
-
-func characterSkillsRowFromGetSkillsRow(row db.GetSkillsRow) db.GetCharacterSkillsRow {
-	return db.GetCharacterSkillsRow{
-		ID:           row.ID,
-		CharacterID:  row.CharacterID,
-		Name:         row.Name,
-		CategoryID:   row.CategoryID,
-		BaseValue:    row.BaseValue,
-		Value:        row.Value,
-		Checked:      row.Checked,
-		CreatedAt:    row.CreatedAt,
-		UpdatedAt:    row.UpdatedAt,
-		IsProtected:  row.IsProtected,
-		BaseRule:     row.BaseRule,
-		CategoryName: row.CategoryName,
-	}
-}
-
-func singleCharacterSkillRowFromGetSkillsRow(row db.GetSkillsRow) db.GetCharacterSkillRow {
-	return db.GetCharacterSkillRow{
-		ID:           row.ID,
-		CharacterID:  row.CharacterID,
-		Name:         row.Name,
-		CategoryID:   row.CategoryID,
-		BaseValue:    row.BaseValue,
-		Value:        row.Value,
-		Checked:      row.Checked,
-		CreatedAt:    row.CreatedAt,
-		UpdatedAt:    row.UpdatedAt,
-		IsProtected:  row.IsProtected,
-		BaseRule:     row.BaseRule,
-		CategoryName: row.CategoryName,
-	}
-}
-
-func createdCharacterSkillRowFromGetSkillsRow(row db.GetSkillsRow) db.CreateCharacterSkillRow {
-	return db.CreateCharacterSkillRow{
-		ID:           row.ID,
-		CharacterID:  row.CharacterID,
-		Name:         row.Name,
-		CategoryID:   row.CategoryID,
-		BaseValue:    row.BaseValue,
-		Value:        row.Value,
-		Checked:      row.Checked,
-		CreatedAt:    row.CreatedAt,
-		UpdatedAt:    row.UpdatedAt,
-		IsProtected:  row.IsProtected,
-		BaseRule:     row.BaseRule,
-		CategoryName: row.CategoryName,
-	}
-}
-
-func updatedCharacterSkillRowFromGetSkillsRow(row db.GetSkillsRow) db.UpdateCharacterSkillRow {
-	return db.UpdateCharacterSkillRow{
-		ID:           row.ID,
-		CharacterID:  row.CharacterID,
-		Name:         row.Name,
-		CategoryID:   row.CategoryID,
-		BaseValue:    row.BaseValue,
-		Value:        row.Value,
-		Checked:      row.Checked,
-		CreatedAt:    row.CreatedAt,
-		UpdatedAt:    row.UpdatedAt,
-		IsProtected:  row.IsProtected,
-		BaseRule:     row.BaseRule,
-		CategoryName: row.CategoryName,
 	}
 }
