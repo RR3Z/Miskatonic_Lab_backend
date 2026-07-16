@@ -3,7 +3,7 @@
 | Code | HTTP | Why it happens |
 | --- | --- | --- |
 | `dice.invalid_character_id` | 400 | Character id in the dice route is not a valid UUID. |
-| `dice.invalid_expression` | 400 | Dice expression is empty or cannot be parsed. |
+| `dice.invalid_expression` | 400 | Dice expression is invalid, or `d100_mode` is not `normal`, `bonus`, or `penalty` for `1d100`. |
 | `dice.invalid_input` | 400 | Request body is malformed JSON. |
 | `dice.character_not_found` | 404 | Character does not exist or does not belong to the user. |
 | `dice.room_not_available` | 403 | Dice request with `room_id` where user is not a room member, or room is not reachable. |
