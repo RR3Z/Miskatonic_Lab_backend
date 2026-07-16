@@ -19,7 +19,9 @@ WITH inserted AS (
         category_id,
         base_value,
         value,
-        checked
+        checked,
+        is_protected,
+        base_rule
     )
     SELECT
         c.id,
@@ -27,10 +29,12 @@ WITH inserted AS (
         $2,
         $3,
         $4,
-        $5
+        $5,
+        $6,
+        $7
     FROM characters c
-    WHERE c.user_id = $6
-      AND c.id = $7
+    WHERE c.user_id = $8
+      AND c.id = $9
     RETURNING id, character_id, name, category_id, base_value, value, checked, created_at, updated_at, is_protected, base_rule
 )
 SELECT inserted.id, inserted.character_id, inserted.name, inserted.category_id, inserted.base_value, inserted.value, inserted.checked, inserted.created_at, inserted.updated_at, inserted.is_protected, inserted.base_rule,
@@ -45,6 +49,8 @@ type CreateCharacterSkillParams struct {
 	BaseValue   int16       `json:"base_value"`
 	Value       int16       `json:"value"`
 	Checked     bool        `json:"checked"`
+	IsProtected bool        `json:"is_protected"`
+	BaseRule    *string     `json:"base_rule"`
 	UserID      string      `json:"user_id"`
 	CharacterID pgtype.UUID `json:"character_id"`
 }
@@ -71,6 +77,8 @@ func (q *Queries) CreateCharacterSkill(ctx context.Context, arg CreateCharacterS
 		arg.BaseValue,
 		arg.Value,
 		arg.Checked,
+		arg.IsProtected,
+		arg.BaseRule,
 		arg.UserID,
 		arg.CharacterID,
 	)

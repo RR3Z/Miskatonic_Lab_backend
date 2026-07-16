@@ -6,7 +6,9 @@ WITH inserted AS (
         category_id,
         base_value,
         value,
-        checked
+        checked,
+        is_protected,
+        base_rule
     )
     SELECT
         c.id,
@@ -14,7 +16,9 @@ WITH inserted AS (
         sqlc.arg(category_id),
         sqlc.arg(base_value),
         sqlc.arg(value),
-        sqlc.arg(checked)
+        sqlc.arg(checked),
+        sqlc.arg(is_protected),
+        sqlc.narg(base_rule)
     FROM characters c
     WHERE c.user_id = sqlc.arg(user_id)
       AND c.id = sqlc.arg(character_id)
