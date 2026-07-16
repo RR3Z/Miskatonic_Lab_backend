@@ -15,6 +15,7 @@ import (
 type characterWriteRequestEnvelope struct {
 	characterDTO.CharacterRequest
 	ForbiddenPortraitURL json.RawMessage `json:"portrait_url"`
+	ForbiddenPlayerName  json.RawMessage `json:"player_name"`
 }
 
 func decodeCharacterPatchRequest(r *http.Request) (characterDTO.PatchCharacterRequest, *myErrors.AppError) {
@@ -42,6 +43,9 @@ func decodeCharacterWriteRequest(r *http.Request) (characterDTO.CharacterRequest
 	}
 	if len(envelope.ForbiddenPortraitURL) > 0 {
 		return characterDTO.CharacterRequest{}, characterErrors.PortraitManagedByServerError()
+	}
+	if len(envelope.ForbiddenPlayerName) > 0 {
+		return characterDTO.CharacterRequest{}, characterErrors.InvalidInputError("player_name is no longer supported", nil)
 	}
 	return envelope.CharacterRequest, nil
 }

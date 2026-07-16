@@ -35,7 +35,6 @@ type CharacterShortModel struct {
 	UserID string      `json:"user_id"`
 
 	Name        string  `json:"name"`
-	PlayerName  *string `json:"player_name"`
 	Occupation  *string `json:"occupation"`
 	Age         *int16  `json:"age"`
 	Sex         *string `json:"sex"`
@@ -98,7 +97,6 @@ func ToCharacterShortModel(c db.Character) CharacterShortModel {
 		ID:         c.ID,
 		UserID:     c.UserID,
 		Name:       c.Name,
-		PlayerName: c.PlayerName,
 		Occupation: c.Occupation,
 		Age:        c.Age,
 		Sex:        c.Sex,

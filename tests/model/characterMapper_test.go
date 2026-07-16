@@ -25,7 +25,6 @@ func TestToShortCharacterModelCopiesAllCharacterFields(t *testing.T) {
 
 func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 	character := testCharacter()
-	character.PlayerName = nil
 	character.Occupation = nil
 	character.Age = nil
 	character.Sex = nil
@@ -35,7 +34,6 @@ func TestToShortCharacterModelPreservesNilOptionalFields(t *testing.T) {
 
 	result := characterDTO.ToCharacterShortModel(character)
 
-	require.Nil(t, result.PlayerName)
 	require.Nil(t, result.Occupation)
 	require.Nil(t, result.Age)
 	require.Nil(t, result.Sex)

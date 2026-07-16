@@ -15,23 +15,21 @@ const updateCharacter = `-- name: UpdateCharacter :one
 UPDATE characters
 SET
     name = $3,
-    player_name = $4,
-    occupation = $5,
-    age = $6,
-    sex = $7,
-    residence = $8,
-    birthplace = $9,
+    occupation = $4,
+    age = $5,
+    sex = $6,
+    residence = $7,
+    birthplace = $8,
     updated_at = NOW()
 WHERE user_id = $1
   AND id = $2
-RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
+RETURNING id, user_id, name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
 `
 
 type UpdateCharacterParams struct {
 	UserID     string      `json:"user_id"`
 	ID         pgtype.UUID `json:"id"`
 	Name       string      `json:"name"`
-	PlayerName *string     `json:"player_name"`
 	Occupation *string     `json:"occupation"`
 	Age        *int16      `json:"age"`
 	Sex        *string     `json:"sex"`
@@ -44,7 +42,6 @@ func (q *Queries) UpdateCharacter(ctx context.Context, arg UpdateCharacterParams
 		arg.UserID,
 		arg.ID,
 		arg.Name,
-		arg.PlayerName,
 		arg.Occupation,
 		arg.Age,
 		arg.Sex,
@@ -56,7 +53,6 @@ func (q *Queries) UpdateCharacter(ctx context.Context, arg UpdateCharacterParams
 		&i.ID,
 		&i.UserID,
 		&i.Name,
-		&i.PlayerName,
 		&i.Occupation,
 		&i.Age,
 		&i.Sex,

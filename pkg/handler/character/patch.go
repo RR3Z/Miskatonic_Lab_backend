@@ -48,7 +48,6 @@ func (h *CharacterHandler) patchCharacterProfile(w http.ResponseWriter, r *http.
 		UserID:     utils.GetUserIDFromContext(r.Context()),
 		ID:         characterID,
 		Name:       request.Name,
-		PlayerName: request.PlayerName,
 		Occupation: request.Occupation,
 		Age:        request.Age,
 		Sex:        request.Sex,

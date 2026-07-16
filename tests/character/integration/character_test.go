@@ -22,7 +22,6 @@ func TestCharacterTableCreateAndGetCharacter(t *testing.T) {
 	require.True(t, createdCharacter.ID.Valid)
 	require.Equal(t, input.UserID, createdCharacter.UserID)
 	require.Equal(t, input.Name, createdCharacter.Name)
-	require.Equal(t, input.PlayerName, createdCharacter.PlayerName)
 	require.Equal(t, input.Occupation, createdCharacter.Occupation)
 	require.Equal(t, input.Age, createdCharacter.Age)
 	require.Equal(t, input.Sex, createdCharacter.Sex)
@@ -53,7 +52,6 @@ func TestCharacterTableCreateAllowsNilOptionalFields(t *testing.T) {
 
 	require.True(t, createdCharacter.ID.Valid)
 	require.Equal(t, "Nameless Investigator", createdCharacter.Name)
-	require.Nil(t, createdCharacter.PlayerName)
 	require.Nil(t, createdCharacter.Occupation)
 	require.Nil(t, createdCharacter.Age)
 	require.Nil(t, createdCharacter.Sex)
@@ -199,15 +197,13 @@ func TestCharacterTableUpdateCharacterRequiresOwner(t *testing.T) {
 	require.NoError(t, err)
 
 	updatedName := "Updated Investigator"
-	updatedPlayerName := "Updated Player"
 	updatedAge := int16(42)
 
 	_, err = subject.queries.UpdateCharacter(context.Background(), db.UpdateCharacterParams{
-		UserID:     otherUser.ID,
-		ID:         createdCharacter.ID,
-		Name:       updatedName,
-		PlayerName: &updatedPlayerName,
-		Age:        &updatedAge,
+		UserID: otherUser.ID,
+		ID:     createdCharacter.ID,
+		Name:   updatedName,
+		Age:    &updatedAge,
 	})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
 
@@ -219,15 +215,13 @@ func TestCharacterTableUpdateCharacterRequiresOwner(t *testing.T) {
 	require.Equal(t, createdCharacter.Name, unchangedCharacter.Name)
 
 	updatedCharacter, err := subject.queries.UpdateCharacter(context.Background(), db.UpdateCharacterParams{
-		UserID:     owner.ID,
-		ID:         createdCharacter.ID,
-		Name:       updatedName,
-		PlayerName: &updatedPlayerName,
-		Age:        &updatedAge,
+		UserID: owner.ID,
+		ID:     createdCharacter.ID,
+		Name:   updatedName,
+		Age:    &updatedAge,
 	})
 	require.NoError(t, err)
 	require.Equal(t, updatedName, updatedCharacter.Name)
-	require.Equal(t, &updatedPlayerName, updatedCharacter.PlayerName)
 	require.Equal(t, &updatedAge, updatedCharacter.Age)
 }
 
@@ -246,7 +240,6 @@ func TestCharacterTablePatchCharacterUpdatesOnlySelectedColumnsAndClearsNull(t *
 	})
 	require.NoError(t, err)
 	require.Equal(t, createdCharacter.Name, patchedCharacter.Name)
-	require.Equal(t, createdCharacter.PlayerName, patchedCharacter.PlayerName)
 	require.Equal(t, &updatedOccupation, patchedCharacter.Occupation)
 	require.Equal(t, createdCharacter.Age, patchedCharacter.Age)
 	require.Equal(t, createdCharacter.Sex, patchedCharacter.Sex)
@@ -263,7 +256,6 @@ func TestCharacterTablePatchCharacterUpdatesOnlySelectedColumnsAndClearsNull(t *
 	require.Nil(t, clearedAgeCharacter.Age)
 	require.Equal(t, &updatedOccupation, clearedAgeCharacter.Occupation)
 	require.Equal(t, createdCharacter.Name, clearedAgeCharacter.Name)
-	require.Equal(t, createdCharacter.PlayerName, clearedAgeCharacter.PlayerName)
 	require.Equal(t, createdCharacter.Sex, clearedAgeCharacter.Sex)
 	require.Equal(t, createdCharacter.Residence, clearedAgeCharacter.Residence)
 	require.Equal(t, createdCharacter.Birthplace, clearedAgeCharacter.Birthplace)

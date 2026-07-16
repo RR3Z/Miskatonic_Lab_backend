@@ -28,12 +28,11 @@ END $$;
 INSERT INTO users (id, username, email)
 VALUES ('test_seed_user', 'test_seed_user', 'test.seed@example.com');
 
-INSERT INTO characters (id, user_id, name, player_name, occupation, age, residence, birthplace)
+INSERT INTO characters (id, user_id, name, occupation, age, residence, birthplace)
 VALUES (
     '00000000-0000-0000-0000-000000000001',
     'test_seed_user',
     'Dr. Henry Armitage',
-    'Test Player',
     'Librarian',
     63,
     'Arkham',

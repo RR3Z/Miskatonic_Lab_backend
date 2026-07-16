@@ -48,7 +48,6 @@ func testCharacter() db.Character {
 		ID:          testUUID("11111111-1111-1111-1111-111111111111"),
 		UserID:      "user_1",
 		Name:        "Dr. Armitage",
-		PlayerName:  strPtr("Roger"),
 		Occupation:  strPtr("Antiquarian"),
 		Age:         int16Ptr(42),
 		Sex:         strPtr("male"),
@@ -134,7 +133,6 @@ func requireSameShortCharacter(t *testing.T, expected db.Character, actual chara
 	require.Equal(t, expected.ID, actual.ID)
 	require.Equal(t, expected.UserID, actual.UserID)
 	require.Equal(t, expected.Name, actual.Name)
-	require.Equal(t, expected.PlayerName, actual.PlayerName)
 	require.Equal(t, expected.Occupation, actual.Occupation)
 	require.Equal(t, expected.Age, actual.Age)
 	require.Equal(t, expected.Sex, actual.Sex)

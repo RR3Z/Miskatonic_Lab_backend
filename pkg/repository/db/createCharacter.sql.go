@@ -13,7 +13,6 @@ const createCharacter = `-- name: CreateCharacter :one
 INSERT INTO characters (
     user_id,
     name,
-    player_name,
     occupation,
     age,
     sex,
@@ -26,16 +25,14 @@ INSERT INTO characters (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 )
-RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
+RETURNING id, user_id, name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
 `
 
 type CreateCharacterParams struct {
 	UserID     string  `json:"user_id"`
 	Name       string  `json:"name"`
-	PlayerName *string `json:"player_name"`
 	Occupation *string `json:"occupation"`
 	Age        *int16  `json:"age"`
 	Sex        *string `json:"sex"`
@@ -47,7 +44,6 @@ func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams
 	row := q.db.QueryRow(ctx, createCharacter,
 		arg.UserID,
 		arg.Name,
-		arg.PlayerName,
 		arg.Occupation,
 		arg.Age,
 		arg.Sex,
@@ -59,7 +55,6 @@ func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams
 		&i.ID,
 		&i.UserID,
 		&i.Name,
-		&i.PlayerName,
 		&i.Occupation,
 		&i.Age,
 		&i.Sex,

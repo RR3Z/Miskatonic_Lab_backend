@@ -27,7 +27,6 @@ func TestPatchCharacterProfilePassesOnlyProvidedFields(t *testing.T) {
 	require.True(t, service.patchInput.Age.Set)
 	require.Nil(t, service.patchInput.Age.Value)
 	require.False(t, service.patchInput.Name.Set)
-	require.False(t, service.patchInput.PlayerName.Set)
 	require.False(t, service.patchInput.Sex.Set)
 	require.False(t, service.patchInput.Residence.Set)
 	require.False(t, service.patchInput.Birthplace.Set)
@@ -40,6 +39,7 @@ func TestPatchCharacterProfileRejectsInvalidPayloadBeforeService(t *testing.T) {
 	}{
 		{name: "empty object", body: `{}`},
 		{name: "unknown field", body: `{"unknown":"value"}`},
+		{name: "removed player name", body: `{"player_name":"Roger"}`},
 		{name: "portrait url", body: `{"portrait_url":"https://example.test/portrait.png"}`},
 		{name: "null required name", body: `{"name":null}`},
 		{name: "invalid field type", body: `{"age":"forty-two"}`},

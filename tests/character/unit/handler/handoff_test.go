@@ -14,7 +14,6 @@ func TestCreateCharacterPassesBodyAndUserID(t *testing.T) {
 
 	recorder := performCharacterRequest(router, http.MethodPost, "/api/characters/", `{
 		"name":"Harvey Walters",
-		"player_name":"Roger",
 		"occupation":"Professor",
 		"age":42,
 		"sex":"male",
@@ -29,6 +28,18 @@ func TestCreateCharacterPassesBodyAndUserID(t *testing.T) {
 	require.Equal(t, "Professor", *service.createInput.Occupation)
 	require.Equal(t, int16(42), *service.createInput.Age)
 	require.Equal(t, "Boston", *service.createInput.Birthplace)
+}
+
+func TestCreateCharacterRejectsRemovedPlayerName(t *testing.T) {
+	service, router := newCharacterHandlerTestSubject(nil)
+
+	recorder := performCharacterRequest(router, http.MethodPost, "/api/characters/", `{
+		"name":"Harvey Walters",
+		"player_name":"Roger"
+	}`)
+
+	requireCharacterError(t, recorder, http.StatusBadRequest, "character.invalid_input")
+	require.Zero(t, service.createCalls)
 }
 
 func TestCreateCharacterRejectsClientPortraitURL(t *testing.T) {

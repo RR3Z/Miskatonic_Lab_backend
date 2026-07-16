@@ -69,7 +69,6 @@ func createDiceTestUser(t *testing.T, subject *diceIntegrationSubject) diceTestU
 func createDiceTestCharacter(t *testing.T, subject *diceIntegrationSubject, userID string) db.Character {
 	t.Helper()
 
-	playerName := "Roger"
 	occupation := "Antiquarian"
 	age := int16(37)
 	sex := "male"
@@ -79,7 +78,6 @@ func createDiceTestCharacter(t *testing.T, subject *diceIntegrationSubject, user
 	character, err := subject.queries.CreateCharacter(context.Background(), db.CreateCharacterParams{
 		UserID:     userID,
 		Name:       "Dr. Henry Armitage",
-		PlayerName: &playerName,
 		Occupation: &occupation,
 		Age:        &age,
 		Sex:        &sex,

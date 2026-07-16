@@ -7,7 +7,6 @@ import (
 
 type CharacterRequest struct {
 	Name       string  `json:"name"`
-	PlayerName *string `json:"player_name"`
 	Occupation *string `json:"occupation"`
 	Age        *int16  `json:"age"`
 	Sex        *string `json:"sex"`
@@ -37,7 +36,6 @@ func (v *PatchValue[T]) UnmarshalJSON(data []byte) error {
 
 type PatchCharacterRequest struct {
 	Name       PatchValue[string] `json:"name"`
-	PlayerName PatchValue[string] `json:"player_name"`
 	Occupation PatchValue[string] `json:"occupation"`
 	Age        PatchValue[int16]  `json:"age"`
 	Sex        PatchValue[string] `json:"sex"`
@@ -47,7 +45,6 @@ type PatchCharacterRequest struct {
 
 func (r PatchCharacterRequest) HasChanges() bool {
 	return r.Name.Set ||
-		r.PlayerName.Set ||
 		r.Occupation.Set ||
 		r.Age.Set ||
 		r.Sex.Set ||

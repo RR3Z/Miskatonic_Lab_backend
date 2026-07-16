@@ -56,7 +56,6 @@ func (h *CharacterHandler) createCharacter(w http.ResponseWriter, r *http.Reques
 	input := characterDTO.CreateCharacterInput{
 		UserID:     userID,
 		Name:       req.Name,
-		PlayerName: req.PlayerName,
 		Occupation: req.Occupation,
 		Age:        req.Age,
 		Sex:        req.Sex,
@@ -89,7 +88,6 @@ func (h *CharacterHandler) updateCharacter(w http.ResponseWriter, r *http.Reques
 		UserID:     userID,
 		ID:         characterID,
 		Name:       req.Name,
-		PlayerName: req.PlayerName,
 		Occupation: req.Occupation,
 		Age:        req.Age,
 		Sex:        req.Sex,

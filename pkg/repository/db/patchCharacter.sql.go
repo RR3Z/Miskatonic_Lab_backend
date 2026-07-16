@@ -15,23 +15,20 @@ const patchCharacter = `-- name: PatchCharacter :one
 UPDATE characters
 SET
     name = CASE WHEN $1::boolean THEN $2::text ELSE name END,
-    player_name = CASE WHEN $3::boolean THEN $4::text ELSE player_name END,
-    occupation = CASE WHEN $5::boolean THEN $6::text ELSE occupation END,
-    age = CASE WHEN $7::boolean THEN $8::smallint ELSE age END,
-    sex = CASE WHEN $9::boolean THEN $10::text ELSE sex END,
-    residence = CASE WHEN $11::boolean THEN $12::text ELSE residence END,
-    birthplace = CASE WHEN $13::boolean THEN $14::text ELSE birthplace END,
+    occupation = CASE WHEN $3::boolean THEN $4::text ELSE occupation END,
+    age = CASE WHEN $5::boolean THEN $6::smallint ELSE age END,
+    sex = CASE WHEN $7::boolean THEN $8::text ELSE sex END,
+    residence = CASE WHEN $9::boolean THEN $10::text ELSE residence END,
+    birthplace = CASE WHEN $11::boolean THEN $12::text ELSE birthplace END,
     updated_at = NOW()
-WHERE user_id = $15
-  AND id = $16
-RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
+WHERE user_id = $13
+  AND id = $14
+RETURNING id, user_id, name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
 `
 
 type PatchCharacterParams struct {
 	SetName       bool        `json:"set_name"`
 	Name          string      `json:"name"`
-	SetPlayerName bool        `json:"set_player_name"`
-	PlayerName    *string     `json:"player_name"`
 	SetOccupation bool        `json:"set_occupation"`
 	Occupation    *string     `json:"occupation"`
 	SetAge        bool        `json:"set_age"`
@@ -50,8 +47,6 @@ func (q *Queries) PatchCharacter(ctx context.Context, arg PatchCharacterParams) 
 	row := q.db.QueryRow(ctx, patchCharacter,
 		arg.SetName,
 		arg.Name,
-		arg.SetPlayerName,
-		arg.PlayerName,
 		arg.SetOccupation,
 		arg.Occupation,
 		arg.SetAge,
@@ -70,7 +65,6 @@ func (q *Queries) PatchCharacter(ctx context.Context, arg PatchCharacterParams) 
 		&i.ID,
 		&i.UserID,
 		&i.Name,
-		&i.PlayerName,
 		&i.Occupation,
 		&i.Age,
 		&i.Sex,

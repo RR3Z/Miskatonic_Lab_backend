@@ -12,7 +12,7 @@ import (
 )
 
 const lockCharacterForPortraitReplacement = `-- name: LockCharacterForPortraitReplacement :one
-SELECT id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
+SELECT id, user_id, name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
 FROM characters
 WHERE user_id = $1
   AND id = $2
@@ -31,7 +31,6 @@ func (q *Queries) LockCharacterForPortraitReplacement(ctx context.Context, arg L
 		&i.ID,
 		&i.UserID,
 		&i.Name,
-		&i.PlayerName,
 		&i.Occupation,
 		&i.Age,
 		&i.Sex,
@@ -51,7 +50,7 @@ SET
     updated_at = NOW()
 WHERE user_id = $1
   AND id = $2
-RETURNING id, user_id, name, player_name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
+RETURNING id, user_id, name, occupation, age, sex, residence, birthplace, created_at, updated_at, portrait_key
 `
 
 type SetCharacterPortraitKeyParams struct {
@@ -67,7 +66,6 @@ func (q *Queries) SetCharacterPortraitKey(ctx context.Context, arg SetCharacterP
 		&i.ID,
 		&i.UserID,
 		&i.Name,
-		&i.PlayerName,
 		&i.Occupation,
 		&i.Age,
 		&i.Sex,

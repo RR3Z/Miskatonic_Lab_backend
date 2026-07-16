@@ -2,12 +2,11 @@
 UPDATE characters
 SET
     name = $3,
-    player_name = $4,
-    occupation = $5,
-    age = $6,
-    sex = $7,
-    residence = $8,
-    birthplace = $9,
+    occupation = $4,
+    age = $5,
+    sex = $6,
+    residence = $7,
+    birthplace = $8,
     updated_at = NOW()
 WHERE user_id = $1
   AND id = $2

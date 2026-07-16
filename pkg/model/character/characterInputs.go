@@ -14,7 +14,6 @@ type GetCharacterInput struct {
 type CreateCharacterInput struct {
 	UserID     string
 	Name       string
-	PlayerName *string
 	Occupation *string
 	Age        *int16
 	Sex        *string
@@ -26,7 +25,6 @@ type UpdateCharacterInput struct {
 	UserID     string
 	ID         pgtype.UUID
 	Name       string
-	PlayerName *string
 	Occupation *string
 	Age        *int16
 	Sex        *string
@@ -39,7 +37,6 @@ type PatchCharacterInput struct {
 	ID     pgtype.UUID
 
 	Name       PatchValue[string]
-	PlayerName PatchValue[string]
 	Occupation PatchValue[string]
 	Age        PatchValue[int16]
 	Sex        PatchValue[string]
@@ -49,7 +46,6 @@ type PatchCharacterInput struct {
 
 func (i PatchCharacterInput) HasChanges() bool {
 	return i.Name.Set ||
-		i.PlayerName.Set ||
 		i.Occupation.Set ||
 		i.Age.Set ||
 		i.Sex.Set ||

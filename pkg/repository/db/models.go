@@ -30,7 +30,6 @@ type Character struct {
 	ID          pgtype.UUID        `json:"id"`
 	UserID      string             `json:"user_id"`
 	Name        string             `json:"name"`
-	PlayerName  *string            `json:"player_name"`
 	Occupation  *string            `json:"occupation"`
 	Age         *int16             `json:"age"`
 	Sex         *string            `json:"sex"`

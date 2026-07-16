@@ -112,7 +112,6 @@ func uniqueCharacterIntegrationSuffix() string {
 }
 
 func testCreateCharacterParams(userID string) db.CreateCharacterParams {
-	playerName := "Roger"
 	occupation := "Antiquarian"
 	age := int16(37)
 	sex := "male"
@@ -121,7 +120,6 @@ func testCreateCharacterParams(userID string) db.CreateCharacterParams {
 	return db.CreateCharacterParams{
 		UserID:     userID,
 		Name:       "Dr. Henry Armitage",
-		PlayerName: &playerName,
 		Occupation: &occupation,
 		Age:        &age,
 		Sex:        &sex,
