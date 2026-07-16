@@ -26,7 +26,7 @@
 | `character.backstory_title_required` | 400 | Backstory item title is missing or blank. |
 | `character.backstory_title_too_long` | 400 | Backstory item title exceeds the maximum length. |
 | `character.backstory_text_required` | 400 | Backstory item text is missing or blank. |
-| `character.invalid_skill` | 400 | Skill values, category, or specialty are invalid. |
+| `character.invalid_skill` | 400 | Skill values or category are invalid. |
 | `character.skill_name_required` | 400 | Skill name is missing or blank. |
 | `character.skill_name_too_long` | 400 | Skill name exceeds the maximum length. |
 | `character.skill_value_negative` | 400 | Skill base value or current value is negative. |
