@@ -30,6 +30,7 @@
 | `character.skill_name_required` | 400 | Skill name is missing or blank. |
 | `character.skill_name_too_long` | 400 | Skill name exceeds the maximum length. |
 | `character.skill_value_negative` | 400 | Skill base value or current value is negative. |
+| `character.skill_protected` | 409 | Fixed skill cannot be renamed, rebased, or deleted; its value and improvement checkbox remain mutable. |
 | `character.skill_in_use` | 409 | Skill cannot be deleted because another character subresource references it. |
 | `character.invalid_finances` | 400 | Finances payload or credit-rating skill link is invalid. |
 | `character.finances_money_too_long` | 400 | Finances money text field exceeds the maximum length. |

@@ -35,6 +35,7 @@ var (
 	ErrSkillValueNegative = errors.New("skill values must be >= 0")
 	ErrInvalidSkill       = errors.New("invalid skill")
 	ErrSkillInUse         = errors.New("skill is referenced by another character resource")
+	ErrProtectedSkill     = errors.New("protected skill cannot be renamed, rebased, or deleted")
 
 	ErrFinancesMoneyTooLong = errors.New("finances money field exceeds max length")
 	ErrInvalidFinances      = errors.New("invalid finances")

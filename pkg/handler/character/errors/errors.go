@@ -63,6 +63,8 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 		return badRequestError("character.skill_name_too_long", "skill name exceeds max length", err)
 	case errors.Is(err, characterErrors.ErrSkillValueNegative):
 		return badRequestError("character.skill_value_negative", "skill values must be >= 0", err)
+	case errors.Is(err, characterErrors.ErrProtectedSkill):
+		return &myErrors.AppError{Status: http.StatusConflict, Code: "character.skill_protected", Message: "protected skill cannot be renamed, rebased, or deleted", Err: err}
 	case errors.Is(err, characterErrors.ErrFinancesMoneyTooLong):
 		return badRequestError("character.finances_money_too_long", "money field exceeds max length", err)
 	case errors.Is(err, characterErrors.ErrNoteTitleRequired):
