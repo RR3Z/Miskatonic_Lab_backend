@@ -45,6 +45,8 @@ func (s *CharacterService) CreateSkill(ctx context.Context, input skillsDTO.Crea
 		BaseValue:   input.BaseValue,
 		Value:       input.Value,
 		Checked:     input.Checked,
+		IsProtected: false,
+		BaseRule:    nil,
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
 	})

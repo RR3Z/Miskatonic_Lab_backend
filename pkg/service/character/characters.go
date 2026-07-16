@@ -197,6 +197,9 @@ func (s *CharacterService) CreateCharacter(ctx context.Context, input characterD
 	if err != nil {
 		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
 	}
+	if err := createDefaultCharacterSkills(ctx, queries, input.UserID, character.ID); err != nil {
+		return characterDTO.CharacterShortModel{}, characterErrors.MapCharacterConstraintError(err)
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return characterDTO.CharacterShortModel{}, err
 	}
