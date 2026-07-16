@@ -90,28 +90,12 @@ func testSkillRow() db.GetSkillsRow {
 		BaseValue:    20,
 		Value:        65,
 		Checked:      true,
-		Specialized:  false,
-		SpecialtyID:  invalidUUID(),
+		IsProtected:  true,
+		BaseRule:     strPtr("dodge"),
 		CreatedAt:    testTimestamptz("2026-06-07 12:00:00+03"),
 		UpdatedAt:    testTimestamptz("2026-06-07 13:00:00+03"),
 		CategoryName: "Investigation",
 	}
-}
-
-func testSpecializedSkillRow() db.GetSkillsRow {
-	base := int16(1)
-	row := testSkillRow()
-	row.ID = testUUID("66666666-6666-6666-6666-666666666666")
-	row.Name = "Science"
-	row.Specialized = true
-	row.SpecialtyPkID = testUUID("77777777-7777-7777-7777-777777777777")
-	row.SpecialtyName = strPtr("Astronomy")
-	row.SpecialtyDescription = strPtr("Study of celestial bodies.")
-	row.SpecialtyBaseValue = &base
-	row.SpecialtyCreatedAt = testTimestamptz("2026-06-07 14:00:00+03")
-	row.SpecialtyUpdatedAt = testTimestamptz("2026-06-07 15:00:00+03")
-
-	return row
 }
 
 func testFinance() db.Finance {
@@ -152,7 +136,8 @@ func requireSameSkill(t *testing.T, expected db.GetSkillsRow, actual skillsDTO.S
 	require.Equal(t, expected.Value, actual.Value)
 	require.Equal(t, expected.Checked, actual.Checked)
 	require.Equal(t, expected.CategoryName, actual.Category)
-	require.Equal(t, expected.Specialized, actual.Specialized)
+	require.Equal(t, expected.IsProtected, actual.IsProtected)
+	require.Equal(t, expected.BaseRule, actual.BaseRule)
 	require.Equal(t, expected.CreatedAt.Time, actual.CreatedAt.Time)
 	require.Equal(t, expected.UpdatedAt.Time, actual.UpdatedAt.Time)
 }

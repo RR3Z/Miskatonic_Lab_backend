@@ -24,7 +24,7 @@ func TestToFinancesModelCopiesFieldsWithoutCreditRating(t *testing.T) {
 
 func TestToFinancesModelAttachesCreditRatingSkill(t *testing.T) {
 	finance := testFinance()
-	creditRating := skillsDTO.ToSkillModel(testSpecializedSkillRow())
+	creditRating := skillsDTO.ToSkillModel(testSkillRow())
 
 	result := financesDTO.ToFinancesModel(finance, &creditRating)
 

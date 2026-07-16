@@ -15,7 +15,6 @@ import (
 func TestSkillsTableCreateListGetUpdateAndDeleteSkill(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	categoryID, categoryName := createSkillTestCategory(t, subject, "Investigation")
-	specialtyID, specialtyName := createSkillTestSpecialty(t, subject, "Library Use", "Research in archives.", 20)
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
 
@@ -27,8 +26,6 @@ func TestSkillsTableCreateListGetUpdateAndDeleteSkill(t *testing.T) {
 		BaseValue:   20,
 		Value:       45,
 		Checked:     true,
-		Specialized: true,
-		SpecialtyID: specialtyID,
 	})
 	require.NoError(t, err)
 
@@ -39,16 +36,9 @@ func TestSkillsTableCreateListGetUpdateAndDeleteSkill(t *testing.T) {
 	require.Equal(t, int16(20), createdSkill.BaseValue)
 	require.Equal(t, int16(45), createdSkill.Value)
 	require.True(t, createdSkill.Checked)
-	require.True(t, createdSkill.Specialized)
-	require.Equal(t, specialtyID, createdSkill.SpecialtyID)
+	require.False(t, createdSkill.IsProtected)
+	require.Nil(t, createdSkill.BaseRule)
 	require.Equal(t, categoryName, createdSkill.CategoryName)
-	require.Equal(t, specialtyID, createdSkill.SpecialtyPkID)
-	require.NotNil(t, createdSkill.SpecialtyName)
-	require.Equal(t, specialtyName, *createdSkill.SpecialtyName)
-	require.NotNil(t, createdSkill.SpecialtyDescription)
-	require.Equal(t, "Research in archives.", *createdSkill.SpecialtyDescription)
-	require.NotNil(t, createdSkill.SpecialtyBaseValue)
-	require.Equal(t, int16(20), *createdSkill.SpecialtyBaseValue)
 
 	fetchedSkill, err := subject.queries.GetCharacterSkill(context.Background(), db.GetCharacterSkillParams{
 		UserID:      testUser.ID,
@@ -69,8 +59,6 @@ func TestSkillsTableCreateListGetUpdateAndDeleteSkill(t *testing.T) {
 		BaseValue:   25,
 		Value:       60,
 		Checked:     false,
-		Specialized: false,
-		SpecialtyID: pgtype.UUID{},
 	})
 	require.NoError(t, err)
 
@@ -79,9 +67,8 @@ func TestSkillsTableCreateListGetUpdateAndDeleteSkill(t *testing.T) {
 	require.Equal(t, int16(25), updatedSkill.BaseValue)
 	require.Equal(t, int16(60), updatedSkill.Value)
 	require.False(t, updatedSkill.Checked)
-	require.False(t, updatedSkill.Specialized)
-	require.False(t, updatedSkill.SpecialtyID.Valid)
-	require.Nil(t, updatedSkill.SpecialtyName)
+	require.False(t, updatedSkill.IsProtected)
+	require.Nil(t, updatedSkill.BaseRule)
 	require.True(t, updatedSkill.UpdatedAt.Time.After(createdSkill.UpdatedAt.Time) || updatedSkill.UpdatedAt.Time.Equal(createdSkill.UpdatedAt.Time))
 
 	deletedSkill, err := subject.queries.DeleteCharacterSkill(context.Background(), db.DeleteCharacterSkillParams{
@@ -349,21 +336,13 @@ func TestSkillsTableRejectsNegativeValues(t *testing.T) {
 	}
 }
 
-func TestSkillsTableRejectsMissingCategoryOrSpecialty(t *testing.T) {
+func TestSkillsTableRejectsMissingCategory(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
-	categoryID, _ := createSkillTestCategory(t, subject, "FK Category")
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
 	missingCategoryID := characterTestUUID("12121212-1212-1212-1212-121212121212")
-	missingSpecialtyID := characterTestUUID("34343434-3434-3434-3434-343434343434")
 
 	_, err := subject.queries.CreateCharacterSkill(context.Background(), testCreateSkillParams(testUser.ID, character.ID, missingCategoryID, "Missing Category"))
-	requirePostgresErrorCode(t, err, "23503")
-
-	params := testCreateSkillParams(testUser.ID, character.ID, categoryID, "Missing Specialty")
-	params.Specialized = true
-	params.SpecialtyID = missingSpecialtyID
-	_, err = subject.queries.CreateCharacterSkill(context.Background(), params)
 	requirePostgresErrorCode(t, err, "23503")
 }
 
@@ -393,15 +372,6 @@ func TestSkillsTableRejectsInvalidUpdateValues(t *testing.T) {
 			params: func(userID string, characterID pgtype.UUID, skillID pgtype.UUID, categoryID pgtype.UUID) db.UpdateCharacterSkillParams {
 				params := testUpdateSkillParams(userID, characterID, skillID, categoryID, "Missing Category Update")
 				params.CategoryID = characterTestUUID("56565656-5656-5656-5656-565656565656")
-				return params
-			},
-		},
-		{
-			name: "missing specialty",
-			params: func(userID string, characterID pgtype.UUID, skillID pgtype.UUID, categoryID pgtype.UUID) db.UpdateCharacterSkillParams {
-				params := testUpdateSkillParams(userID, characterID, skillID, categoryID, "Missing Specialty Update")
-				params.Specialized = true
-				params.SpecialtyID = characterTestUUID("78787878-7878-7878-7878-787878787878")
 				return params
 			},
 		},
@@ -441,32 +411,6 @@ func TestSkillsTableRejectsNameLongerThanLimit(t *testing.T) {
 
 	_, err = subject.queries.UpdateCharacterSkill(context.Background(), testUpdateSkillParams(testUser.ID, character.ID, skill.ID, categoryID, longName))
 	requirePostgresErrorCode(t, err, "22001")
-}
-
-func TestSkillsTableAllowsSpecializedWithoutSpecialtyAndSpecialtyWhenNotSpecialized(t *testing.T) {
-	subject := newCharacterIntegrationSubject(t)
-	categoryID, _ := createSkillTestCategory(t, subject, "Specialization Flags")
-	specialtyID, _ := createSkillTestSpecialty(t, subject, "Flag Specialty", "Specialty flag edge cases.", 5)
-	testUser := createCharacterTestUser(t, subject)
-	character := createCharacterTestCharacter(t, subject, testUser.ID)
-
-	specializedWithoutSpecialtyParams := testCreateSkillParams(testUser.ID, character.ID, categoryID, "Specialized Without Specialty")
-	specializedWithoutSpecialtyParams.Specialized = true
-	specializedWithoutSpecialtyParams.SpecialtyID = pgtype.UUID{}
-	specializedWithoutSpecialty, err := subject.queries.CreateCharacterSkill(context.Background(), specializedWithoutSpecialtyParams)
-	require.NoError(t, err)
-	require.True(t, specializedWithoutSpecialty.Specialized)
-	require.False(t, specializedWithoutSpecialty.SpecialtyID.Valid)
-	require.Nil(t, specializedWithoutSpecialty.SpecialtyName)
-
-	specialtyWhenNotSpecializedParams := testCreateSkillParams(testUser.ID, character.ID, categoryID, "Specialty When Not Specialized")
-	specialtyWhenNotSpecializedParams.Specialized = false
-	specialtyWhenNotSpecializedParams.SpecialtyID = specialtyID
-	specialtyWhenNotSpecialized, err := subject.queries.CreateCharacterSkill(context.Background(), specialtyWhenNotSpecializedParams)
-	require.NoError(t, err)
-	require.False(t, specialtyWhenNotSpecialized.Specialized)
-	require.Equal(t, specialtyID, specialtyWhenNotSpecialized.SpecialtyID)
-	require.NotNil(t, specialtyWhenNotSpecialized.SpecialtyName)
 }
 
 func TestSkillsTableDeleteReturnsDeletedValuesAndAllowsRecreate(t *testing.T) {

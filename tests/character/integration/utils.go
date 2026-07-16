@@ -190,22 +190,6 @@ func createSkillTestCategory(t *testing.T, subject *characterIntegrationSubject,
 	return id, uniqueName
 }
 
-func createSkillTestSpecialty(t *testing.T, subject *characterIntegrationSubject, name string, description string, baseValue int16) (pgtype.UUID, string) {
-	t.Helper()
-
-	var id pgtype.UUID
-	uniqueName := name + " " + uniqueCharacterIntegrationSuffix()
-	err := subject.pool.QueryRow(context.Background(),
-		"INSERT INTO skills_specialties (name, description, base_value) VALUES ($1, $2, $3) RETURNING id",
-		uniqueName,
-		description,
-		baseValue,
-	).Scan(&id)
-	require.NoError(t, err)
-
-	return id, uniqueName
-}
-
 func testCreateSkillParams(userID string, characterID pgtype.UUID, categoryID pgtype.UUID, name string) db.CreateCharacterSkillParams {
 	return db.CreateCharacterSkillParams{
 		UserID:      userID,
@@ -215,8 +199,6 @@ func testCreateSkillParams(userID string, characterID pgtype.UUID, categoryID pg
 		BaseValue:   10,
 		Value:       35,
 		Checked:     false,
-		Specialized: false,
-		SpecialtyID: pgtype.UUID{},
 	}
 }
 
@@ -230,8 +212,6 @@ func testUpdateSkillParams(userID string, characterID pgtype.UUID, skillID pgtyp
 		BaseValue:   15,
 		Value:       45,
 		Checked:     true,
-		Specialized: false,
-		SpecialtyID: pgtype.UUID{},
 	}
 }
 
@@ -253,8 +233,6 @@ func createFinanceTestSkill(t *testing.T, subject *characterIntegrationSubject, 
 		BaseValue:   0,
 		Value:       35,
 		Checked:     false,
-		Specialized: false,
-		SpecialtyID: pgtype.UUID{},
 	})
 	require.NoError(t, err)
 

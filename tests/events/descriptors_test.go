@@ -43,7 +43,7 @@ func TestCharacterRoomMutationEventsAreDescribed(t *testing.T) {
 	registry := events.NewDescriptorRegistry(characterEvents.Descriptors())
 	mutations := characterEvents.RoomMutationEvents()
 
-	require.Len(t, mutations, 27)
+	require.Len(t, mutations, 25)
 	requireEventPrototype(t, mutations, characterEvents.CharacterPortraitReplaceSucceeded{})
 	requireEventPrototype(t, mutations, characterEvents.CharacterHealthUpsertSucceeded{})
 	requireEventPrototype(t, mutations, characterEvents.CharacterBackstoryItemDeleteSucceeded{})
