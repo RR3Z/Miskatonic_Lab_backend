@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -12,11 +11,6 @@ const (
 	dodgeBaseRule          = "dodge"
 	nativeLanguageBaseRule = "native_language"
 )
-
-var defaultSkillsCategoryID = pgtype.UUID{
-	Bytes: uuid.MustParse("1f81c838-4c15-4bdc-aabf-fc9699595cc8"),
-	Valid: true,
-}
 
 type defaultCharacterSkill struct {
 	name        string
@@ -80,7 +74,6 @@ func createDefaultCharacterSkills(ctx context.Context, queries *db.Queries, user
 			UserID:      userID,
 			CharacterID: characterID,
 			Name:        skill.name,
-			CategoryID:  defaultSkillsCategoryID,
 			BaseValue:   skill.baseValue,
 			Value:       0,
 			Checked:     false,

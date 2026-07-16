@@ -62,43 +62,25 @@ func (q *Queries) GetBackstoryItemsByBackstoryID(ctx context.Context, backstoryI
 }
 
 const getSkills = `-- name: GetSkills :many
-SELECT s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.created_at, s.updated_at, s.is_protected, s.base_rule,
-    sc.name as category_name
+SELECT s.id, s.character_id, s.name, s.base_value, s.value, s.checked, s.created_at, s.updated_at, s.is_protected, s.base_rule
 FROM skills s
-JOIN skills_categories sc ON s.category_id = sc.id
 WHERE s.character_id = $1
 ORDER BY s.name
 `
 
-type GetSkillsRow struct {
-	ID           pgtype.UUID        `json:"id"`
-	CharacterID  pgtype.UUID        `json:"character_id"`
-	Name         string             `json:"name"`
-	CategoryID   pgtype.UUID        `json:"category_id"`
-	BaseValue    int16              `json:"base_value"`
-	Value        int16              `json:"value"`
-	Checked      bool               `json:"checked"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	IsProtected  bool               `json:"is_protected"`
-	BaseRule     *string            `json:"base_rule"`
-	CategoryName string             `json:"category_name"`
-}
-
-func (q *Queries) GetSkills(ctx context.Context, characterID pgtype.UUID) ([]GetSkillsRow, error) {
+func (q *Queries) GetSkills(ctx context.Context, characterID pgtype.UUID) ([]Skill, error) {
 	rows, err := q.db.Query(ctx, getSkills, characterID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetSkillsRow{}
+	items := []Skill{}
 	for rows.Next() {
-		var i GetSkillsRow
+		var i Skill
 		if err := rows.Scan(
 			&i.ID,
 			&i.CharacterID,
 			&i.Name,
-			&i.CategoryID,
 			&i.BaseValue,
 			&i.Value,
 			&i.Checked,
@@ -106,7 +88,6 @@ func (q *Queries) GetSkills(ctx context.Context, characterID pgtype.UUID) ([]Get
 			&i.UpdatedAt,
 			&i.IsProtected,
 			&i.BaseRule,
-			&i.CategoryName,
 		); err != nil {
 			return nil, err
 		}

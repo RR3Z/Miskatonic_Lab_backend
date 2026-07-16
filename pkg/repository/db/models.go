@@ -171,7 +171,6 @@ type Skill struct {
 	ID          pgtype.UUID        `json:"id"`
 	CharacterID pgtype.UUID        `json:"character_id"`
 	Name        string             `json:"name"`
-	CategoryID  pgtype.UUID        `json:"category_id"`
 	BaseValue   int16              `json:"base_value"`
 	Value       int16              `json:"value"`
 	Checked     bool               `json:"checked"`
@@ -179,13 +178,6 @@ type Skill struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 	IsProtected bool               `json:"is_protected"`
 	BaseRule    *string            `json:"base_rule"`
-}
-
-type SkillsCategory struct {
-	ID        pgtype.UUID        `json:"id"`
-	Name      string             `json:"name"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type User struct {

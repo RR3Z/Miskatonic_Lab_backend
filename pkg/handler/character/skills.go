@@ -70,7 +70,6 @@ func (h *CharacterHandler) createSkill(w http.ResponseWriter, r *http.Request) *
 	}
 	input := skillsDTO.CreateSkillInput{
 		Name:        req.Name,
-		CategoryID:  req.CategoryID,
 		BaseValue:   req.BaseValue,
 		Value:       req.Value,
 		Checked:     req.Checked,
@@ -106,7 +105,6 @@ func (h *CharacterHandler) updateSkill(w http.ResponseWriter, r *http.Request) *
 	}
 	input := skillsDTO.UpdateSkillInput{
 		Name:        req.Name,
-		CategoryID:  req.CategoryID,
 		BaseValue:   req.BaseValue,
 		Value:       req.Value,
 		Checked:     req.Checked,

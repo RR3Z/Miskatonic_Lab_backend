@@ -12,11 +12,9 @@ import (
 )
 
 const getCharacterSkills = `-- name: GetCharacterSkills :many
-SELECT s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.created_at, s.updated_at, s.is_protected, s.base_rule,
-    sc.name as category_name
+SELECT s.id, s.character_id, s.name, s.base_value, s.value, s.checked, s.created_at, s.updated_at, s.is_protected, s.base_rule
 FROM skills s
 JOIN characters c ON c.id = s.character_id
-JOIN skills_categories sc ON s.category_id = sc.id
 WHERE c.user_id = $1
   AND s.character_id = $2
 ORDER BY s.name
@@ -27,35 +25,19 @@ type GetCharacterSkillsParams struct {
 	CharacterID pgtype.UUID `json:"character_id"`
 }
 
-type GetCharacterSkillsRow struct {
-	ID           pgtype.UUID        `json:"id"`
-	CharacterID  pgtype.UUID        `json:"character_id"`
-	Name         string             `json:"name"`
-	CategoryID   pgtype.UUID        `json:"category_id"`
-	BaseValue    int16              `json:"base_value"`
-	Value        int16              `json:"value"`
-	Checked      bool               `json:"checked"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	IsProtected  bool               `json:"is_protected"`
-	BaseRule     *string            `json:"base_rule"`
-	CategoryName string             `json:"category_name"`
-}
-
-func (q *Queries) GetCharacterSkills(ctx context.Context, arg GetCharacterSkillsParams) ([]GetCharacterSkillsRow, error) {
+func (q *Queries) GetCharacterSkills(ctx context.Context, arg GetCharacterSkillsParams) ([]Skill, error) {
 	rows, err := q.db.Query(ctx, getCharacterSkills, arg.UserID, arg.CharacterID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetCharacterSkillsRow{}
+	items := []Skill{}
 	for rows.Next() {
-		var i GetCharacterSkillsRow
+		var i Skill
 		if err := rows.Scan(
 			&i.ID,
 			&i.CharacterID,
 			&i.Name,
-			&i.CategoryID,
 			&i.BaseValue,
 			&i.Value,
 			&i.Checked,
@@ -63,7 +45,6 @@ func (q *Queries) GetCharacterSkills(ctx context.Context, arg GetCharacterSkills
 			&i.UpdatedAt,
 			&i.IsProtected,
 			&i.BaseRule,
-			&i.CategoryName,
 		); err != nil {
 			return nil, err
 		}

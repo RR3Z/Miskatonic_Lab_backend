@@ -16,7 +16,6 @@ WITH inserted AS (
     INSERT INTO skills (
         character_id,
         name,
-        category_id,
         base_value,
         value,
         checked,
@@ -30,22 +29,17 @@ WITH inserted AS (
         $3,
         $4,
         $5,
-        $6,
-        $7
+        $6
     FROM characters c
-    WHERE c.user_id = $8
-      AND c.id = $9
-    RETURNING id, character_id, name, category_id, base_value, value, checked, created_at, updated_at, is_protected, base_rule
+    WHERE c.user_id = $7
+      AND c.id = $8
+    RETURNING id, character_id, name, base_value, value, checked, created_at, updated_at, is_protected, base_rule
 )
-SELECT inserted.id, inserted.character_id, inserted.name, inserted.category_id, inserted.base_value, inserted.value, inserted.checked, inserted.created_at, inserted.updated_at, inserted.is_protected, inserted.base_rule,
-    sc.name as category_name
-FROM inserted
-JOIN skills_categories sc ON inserted.category_id = sc.id
+SELECT id, character_id, name, base_value, value, checked, created_at, updated_at, is_protected, base_rule FROM inserted
 `
 
 type CreateCharacterSkillParams struct {
 	Name        string      `json:"name"`
-	CategoryID  pgtype.UUID `json:"category_id"`
 	BaseValue   int16       `json:"base_value"`
 	Value       int16       `json:"value"`
 	Checked     bool        `json:"checked"`
@@ -56,24 +50,21 @@ type CreateCharacterSkillParams struct {
 }
 
 type CreateCharacterSkillRow struct {
-	ID           pgtype.UUID        `json:"id"`
-	CharacterID  pgtype.UUID        `json:"character_id"`
-	Name         string             `json:"name"`
-	CategoryID   pgtype.UUID        `json:"category_id"`
-	BaseValue    int16              `json:"base_value"`
-	Value        int16              `json:"value"`
-	Checked      bool               `json:"checked"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	IsProtected  bool               `json:"is_protected"`
-	BaseRule     *string            `json:"base_rule"`
-	CategoryName string             `json:"category_name"`
+	ID          pgtype.UUID        `json:"id"`
+	CharacterID pgtype.UUID        `json:"character_id"`
+	Name        string             `json:"name"`
+	BaseValue   int16              `json:"base_value"`
+	Value       int16              `json:"value"`
+	Checked     bool               `json:"checked"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	IsProtected bool               `json:"is_protected"`
+	BaseRule    *string            `json:"base_rule"`
 }
 
 func (q *Queries) CreateCharacterSkill(ctx context.Context, arg CreateCharacterSkillParams) (CreateCharacterSkillRow, error) {
 	row := q.db.QueryRow(ctx, createCharacterSkill,
 		arg.Name,
-		arg.CategoryID,
 		arg.BaseValue,
 		arg.Value,
 		arg.Checked,
@@ -87,7 +78,6 @@ func (q *Queries) CreateCharacterSkill(ctx context.Context, arg CreateCharacterS
 		&i.ID,
 		&i.CharacterID,
 		&i.Name,
-		&i.CategoryID,
 		&i.BaseValue,
 		&i.Value,
 		&i.Checked,
@@ -95,7 +85,6 @@ func (q *Queries) CreateCharacterSkill(ctx context.Context, arg CreateCharacterS
 		&i.UpdatedAt,
 		&i.IsProtected,
 		&i.BaseRule,
-		&i.CategoryName,
 	)
 	return i, err
 }

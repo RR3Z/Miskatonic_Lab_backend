@@ -41,7 +41,6 @@ func (s *CharacterService) CreateSkill(ctx context.Context, input skillsDTO.Crea
 
 	skill, err := s.repos.Queries.CreateCharacterSkill(ctx, db.CreateCharacterSkillParams{
 		Name:        input.Name,
-		CategoryID:  input.CategoryID,
 		BaseValue:   input.BaseValue,
 		Value:       input.Value,
 		Checked:     input.Checked,
@@ -62,9 +61,20 @@ func (s *CharacterService) UpdateSkill(ctx context.Context, input skillsDTO.Upda
 		return skillsDTO.SkillModel{}, err
 	}
 
+	existing, err := s.repos.Queries.GetCharacterSkill(ctx, db.GetCharacterSkillParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+		SkillID:     input.SkillID,
+	})
+	if err != nil {
+		return skillsDTO.SkillModel{}, err
+	}
+	if existing.IsProtected && (existing.Name != input.Name || existing.BaseValue != input.BaseValue) {
+		return skillsDTO.SkillModel{}, characterErrors.ErrProtectedSkill
+	}
+
 	skill, err := s.repos.Queries.UpdateCharacterSkill(ctx, db.UpdateCharacterSkillParams{
 		Name:        input.Name,
-		CategoryID:  input.CategoryID,
 		BaseValue:   input.BaseValue,
 		Value:       input.Value,
 		Checked:     input.Checked,
@@ -80,7 +90,19 @@ func (s *CharacterService) UpdateSkill(ctx context.Context, input skillsDTO.Upda
 }
 
 func (s *CharacterService) DeleteSkill(ctx context.Context, input skillsDTO.DeleteSkillInput) error {
-	_, err := s.repos.Queries.DeleteCharacterSkill(ctx, db.DeleteCharacterSkillParams{
+	existing, err := s.repos.Queries.GetCharacterSkill(ctx, db.GetCharacterSkillParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+		SkillID:     input.SkillID,
+	})
+	if err != nil {
+		return err
+	}
+	if existing.IsProtected {
+		return characterErrors.ErrProtectedSkill
+	}
+
+	_, err = s.repos.Queries.DeleteCharacterSkill(ctx, db.DeleteCharacterSkillParams{
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
 		SkillID:     input.SkillID,

@@ -16,27 +16,22 @@ WITH updated AS (
     UPDATE skills s
     SET
         name = $1,
-        category_id = $2,
-        base_value = $3,
-        value = $4,
-        checked = $5,
+        base_value = $2,
+        value = $3,
+        checked = $4,
         updated_at = NOW()
     FROM characters c
     WHERE c.id = s.character_id
-      AND c.user_id = $6
-      AND s.character_id = $7
-      AND s.id = $8
-    RETURNING s.id, s.character_id, s.name, s.category_id, s.base_value, s.value, s.checked, s.created_at, s.updated_at, s.is_protected, s.base_rule
+      AND c.user_id = $5
+      AND s.character_id = $6
+      AND s.id = $7
+    RETURNING s.id, s.character_id, s.name, s.base_value, s.value, s.checked, s.created_at, s.updated_at, s.is_protected, s.base_rule
 )
-SELECT updated.id, updated.character_id, updated.name, updated.category_id, updated.base_value, updated.value, updated.checked, updated.created_at, updated.updated_at, updated.is_protected, updated.base_rule,
-    sc.name as category_name
-FROM updated
-JOIN skills_categories sc ON updated.category_id = sc.id
+SELECT id, character_id, name, base_value, value, checked, created_at, updated_at, is_protected, base_rule FROM updated
 `
 
 type UpdateCharacterSkillParams struct {
 	Name        string      `json:"name"`
-	CategoryID  pgtype.UUID `json:"category_id"`
 	BaseValue   int16       `json:"base_value"`
 	Value       int16       `json:"value"`
 	Checked     bool        `json:"checked"`
@@ -46,24 +41,21 @@ type UpdateCharacterSkillParams struct {
 }
 
 type UpdateCharacterSkillRow struct {
-	ID           pgtype.UUID        `json:"id"`
-	CharacterID  pgtype.UUID        `json:"character_id"`
-	Name         string             `json:"name"`
-	CategoryID   pgtype.UUID        `json:"category_id"`
-	BaseValue    int16              `json:"base_value"`
-	Value        int16              `json:"value"`
-	Checked      bool               `json:"checked"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	IsProtected  bool               `json:"is_protected"`
-	BaseRule     *string            `json:"base_rule"`
-	CategoryName string             `json:"category_name"`
+	ID          pgtype.UUID        `json:"id"`
+	CharacterID pgtype.UUID        `json:"character_id"`
+	Name        string             `json:"name"`
+	BaseValue   int16              `json:"base_value"`
+	Value       int16              `json:"value"`
+	Checked     bool               `json:"checked"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	IsProtected bool               `json:"is_protected"`
+	BaseRule    *string            `json:"base_rule"`
 }
 
 func (q *Queries) UpdateCharacterSkill(ctx context.Context, arg UpdateCharacterSkillParams) (UpdateCharacterSkillRow, error) {
 	row := q.db.QueryRow(ctx, updateCharacterSkill,
 		arg.Name,
-		arg.CategoryID,
 		arg.BaseValue,
 		arg.Value,
 		arg.Checked,
@@ -76,7 +68,6 @@ func (q *Queries) UpdateCharacterSkill(ctx context.Context, arg UpdateCharacterS
 		&i.ID,
 		&i.CharacterID,
 		&i.Name,
-		&i.CategoryID,
 		&i.BaseValue,
 		&i.Value,
 		&i.Checked,
@@ -84,7 +75,6 @@ func (q *Queries) UpdateCharacterSkill(ctx context.Context, arg UpdateCharacterS
 		&i.UpdatedAt,
 		&i.IsProtected,
 		&i.BaseRule,
-		&i.CategoryName,
 	)
 	return i, err
 }

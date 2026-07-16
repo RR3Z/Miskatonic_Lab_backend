@@ -1,8 +1,6 @@
 -- name: GetSkills :many
-SELECT s.*,
-    sc.name as category_name
+SELECT s.*
 FROM skills s
-JOIN skills_categories sc ON s.category_id = sc.id
 WHERE s.character_id = $1
 ORDER BY s.name;
 

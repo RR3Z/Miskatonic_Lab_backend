@@ -3,7 +3,6 @@ WITH updated AS (
     UPDATE skills s
     SET
         name = sqlc.arg(name),
-        category_id = sqlc.arg(category_id),
         base_value = sqlc.arg(base_value),
         value = sqlc.arg(value),
         checked = sqlc.arg(checked),
@@ -15,7 +14,4 @@ WITH updated AS (
       AND s.id = sqlc.arg(skill_id)
     RETURNING s.*
 )
-SELECT updated.*,
-    sc.name as category_name
-FROM updated
-JOIN skills_categories sc ON updated.category_id = sc.id;
+SELECT * FROM updated;

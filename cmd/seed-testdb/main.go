@@ -39,9 +39,6 @@ VALUES (
     'New Hampshire'
 );
 
-INSERT INTO skills_categories (id, name)
-VALUES ('00000000-0000-0000-0000-000000000101', 'Investigation');
-
 `
 
 func main() {

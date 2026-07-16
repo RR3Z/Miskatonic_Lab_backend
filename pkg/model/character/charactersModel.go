@@ -23,7 +23,7 @@ type CharacterDBData struct {
 	MP              db.MagicState
 	Sanity          db.SanityState
 	Luck            db.LuckState
-	Skills          []db.GetSkillsRow
+	Skills          []db.Skill
 	Backstory       *db.Backstory
 	BackstoryItems  []db.BackstoryItem
 	Finances        *db.Finance

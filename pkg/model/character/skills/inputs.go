@@ -15,7 +15,6 @@ type GetSkillInput struct {
 
 type CreateSkillInput struct {
 	Name        string
-	CategoryID  pgtype.UUID
 	BaseValue   int16
 	Value       int16
 	Checked     bool
@@ -25,7 +24,6 @@ type CreateSkillInput struct {
 
 type UpdateSkillInput struct {
 	Name        string
-	CategoryID  pgtype.UUID
 	BaseValue   int16
 	Value       int16
 	Checked     bool
