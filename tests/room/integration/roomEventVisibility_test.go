@@ -63,7 +63,7 @@ func TestRoomServiceListRoomEventsFiltersCharacterChangedByRole(t *testing.T) {
 		CharacterID: secondCharacter.ID.String(),
 		Expression:  "1d20",
 		Result:      12,
-		Details:     []byte(`[]`),
+		Details:     []byte(`{}`),
 	})
 	require.NoError(t, err)
 

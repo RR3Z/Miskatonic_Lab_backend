@@ -82,7 +82,7 @@ func TestEventLoggerLogsDiceRoomIDAndOmitsDetails(t *testing.T) {
 		RollID:      "roll_1",
 		Expression:  "1d20",
 		Result:      13,
-		Details:     []byte(`[{"type":"dice"}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice"}]}`),
 		RoomID:      &roomID,
 	})
 

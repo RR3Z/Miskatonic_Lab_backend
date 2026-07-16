@@ -25,7 +25,7 @@ func TestDiceRollTableCreateAndGet(t *testing.T) {
 	require.Equal(t, input.Expression, created.Expression)
 	require.Equal(t, input.Result, created.Result)
 
-	var expectedDetails, actualDetails []map[string]any
+	var expectedDetails, actualDetails map[string]any
 	require.NoError(t, json.Unmarshal(input.Details, &expectedDetails))
 	require.NoError(t, json.Unmarshal(created.Details, &actualDetails))
 	require.Equal(t, expectedDetails, actualDetails)
@@ -54,7 +54,7 @@ func TestDiceRollTableCreateEnforcesOwnership(t *testing.T) {
 		CharacterID: character.ID,
 		Expression:  "1d20",
 		Result:      15,
-		Details:     []byte(`[{"type":"dice","sides":20,"rolls":[15]}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":20,"rolls":[15]}]}`),
 	})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
 }
@@ -68,7 +68,7 @@ func TestDiceRollTableCreateNonexistentCharacter(t *testing.T) {
 		CharacterID: diceTestUUID("00000000-0000-0000-0000-000000000000"),
 		Expression:  "1d20",
 		Result:      15,
-		Details:     []byte(`[{"type":"dice","sides":20,"rolls":[15]}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":20,"rolls":[15]}]}`),
 	})
 	require.ErrorIs(t, err, pgx.ErrNoRows)
 }
@@ -84,7 +84,7 @@ func TestDiceRollTableListReturnsRollsInReverseChronologicalOrder(t *testing.T) 
 			CharacterID: character.ID,
 			Expression:  "1d6",
 			Result:      int32(i),
-			Details:     []byte(`[{"type":"dice","sides":6,"rolls":[` + strconv.Itoa(i) + `]}]`),
+			Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[` + strconv.Itoa(i) + `]}]}`),
 		})
 		require.NoError(t, err)
 	}
@@ -162,7 +162,7 @@ func TestDiceRollTableListLimitsToFiftyRolls(t *testing.T) {
 			CharacterID: character.ID,
 			Expression:  "1d6",
 			Result:      int32(i),
-			Details:     []byte(`[{"type":"dice","sides":6,"rolls":[1]}]`),
+			Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[1]}]}`),
 		})
 		require.NoError(t, err)
 	}
@@ -257,7 +257,7 @@ func TestDiceRollTableCleanupKeepsLastFifty(t *testing.T) {
 			CharacterID: character.ID,
 			Expression:  "1d6",
 			Result:      int32(i),
-			Details:     []byte(`[{"type":"dice","sides":6,"rolls":[1]}]`),
+			Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[1]}]}`),
 		})
 		require.NoError(t, err)
 	}
@@ -315,7 +315,7 @@ func TestDiceRollTableCleanupEnforcesOwnership(t *testing.T) {
 			CharacterID: character.ID,
 			Expression:  "1d6",
 			Result:      int32(i),
-			Details:     []byte(`[{"type":"dice","sides":6,"rolls":[1]}]`),
+			Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[1]}]}`),
 		})
 		require.NoError(t, err)
 	}
@@ -365,17 +365,37 @@ func TestDiceRollTableDetailsStoresAndRetrievesJSON(t *testing.T) {
 		CharacterID: character.ID,
 		Expression:  "2d8+1d4",
 		Result:      14,
-		Details:     []byte(`[{"type":"dice","sides":8,"rolls":[5,7]},{"type":"dice","sides":4,"rolls":[2]}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":8,"rolls":[5,7]},{"type":"dice","sides":4,"rolls":[2]}]}`),
 	}
 
 	created, err := subject.queries.CreateDiceRoll(context.Background(), input)
 	require.NoError(t, err)
 
-	var details []map[string]any
+	var details struct {
+		Rolls []map[string]any `json:"rolls"`
+	}
 	require.NoError(t, json.Unmarshal(created.Details, &details))
-	require.Len(t, details, 2)
-	require.Equal(t, "dice", details[0]["type"])
-	require.Equal(t, float64(8), details[0]["sides"])
-	require.Equal(t, "dice", details[1]["type"])
-	require.Equal(t, float64(4), details[1]["sides"])
+	require.Len(t, details.Rolls, 2)
+	require.Equal(t, "dice", details.Rolls[0]["type"])
+	require.Equal(t, float64(8), details.Rolls[0]["sides"])
+	require.Equal(t, "dice", details.Rolls[1]["type"])
+	require.Equal(t, float64(4), details.Rolls[1]["sides"])
+}
+
+func TestDiceRollTableDetailsStoresAndRetrievesStructuredD100JSON(t *testing.T) {
+	subject := newDiceIntegrationSubject(t)
+	testUser := createDiceTestUser(t, subject)
+	character := createDiceTestCharacter(t, subject, testUser.ID)
+	detailsJSON := []byte(`{"mode":"bonus","units":4,"tens":[2,4],"candidates":[24,44],"selected":24}`)
+
+	created, err := subject.queries.CreateDiceRoll(context.Background(), db.CreateDiceRollParams{
+		UserID:      testUser.ID,
+		CharacterID: character.ID,
+		Expression:  "1d100",
+		Result:      24,
+		Details:     detailsJSON,
+	})
+	require.NoError(t, err)
+
+	require.JSONEq(t, string(detailsJSON), string(created.Details))
 }

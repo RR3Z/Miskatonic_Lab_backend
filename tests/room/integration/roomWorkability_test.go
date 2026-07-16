@@ -84,7 +84,7 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 		CharacterID: firstCharacter.ID.String(),
 		Expression:  "1d20",
 		Result:      13,
-		Details:     []byte(`[{"type":"dice","sides":20,"rolls":[13]}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":20,"rolls":[13]}]}`),
 	})
 	require.NoError(t, err)
 	time.Sleep(5 * time.Millisecond)

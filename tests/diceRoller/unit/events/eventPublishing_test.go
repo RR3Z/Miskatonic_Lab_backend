@@ -2,10 +2,12 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
 	diceEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/dice"
+	diceRollerDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/diceRoller"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +25,7 @@ func TestEventPublishingDiceRoller_MakeRoll_Success(t *testing.T) {
 		RollID:      diceTestCharacterID,
 		Expression:  "2d6+3",
 		Result:      10,
-		Details:     []byte(`[{"type":"dice","sides":6,"rolls":[3,4]},{"type":"modifier","value":3}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[3,4]},{"type":"modifier","value":3}]}`),
 	})
 }
 
@@ -40,8 +42,32 @@ func TestEventPublishingDiceRoller_MakeRoll_SuccessWithRoomID(t *testing.T) {
 		RollID:      diceTestCharacterID,
 		Expression:  "2d6+3",
 		Result:      10,
-		Details:     []byte(`[{"type":"dice","sides":6,"rolls":[3,4]},{"type":"modifier","value":3}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[3,4]},{"type":"modifier","value":3}]}`),
 		RoomID:      &roomID,
+	})
+}
+
+func TestEventPublishingDiceRoller_MakeRoll_ForwardsStructuredDetails(t *testing.T) {
+	next, publisher, svc := newEventPublishingTestSubject()
+	next.Roll = diceRollerDTO.DiceRollModel{
+		ID:          diceTestUUID(diceTestCharacterID),
+		CharacterID: diceTestUUID(diceTestCharacterID),
+		UserID:      diceTestUserID,
+		Expression:  "1d100",
+		Result:      24,
+		Details:     json.RawMessage(`{"mode":"bonus","units":4,"tens":[2,4],"candidates":[24,44],"selected":24}`),
+	}
+
+	_, err := svc.MakeRoll(context.Background(), diceTestMakeRollInput())
+	require.NoError(t, err)
+
+	requirePublishedEvent(t, publisher, diceEvents.DiceRollMakeSucceeded{
+		UserID:      diceTestUserID,
+		CharacterID: diceTestCharacterID,
+		RollID:      diceTestCharacterID,
+		Expression:  "1d100",
+		Result:      24,
+		Details:     next.Roll.Details,
 	})
 }
 

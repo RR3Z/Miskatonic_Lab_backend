@@ -29,7 +29,7 @@ func testDiceRollModel() diceRollerDTO.DiceRollModel {
 		UserID:      diceTestUserID,
 		Expression:  "2d6+3",
 		Result:      10,
-		Details:     []byte(`[{"type":"dice","sides":6,"rolls":[3,4]},{"type":"modifier","value":3}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[3,4]},{"type":"modifier","value":3}]}`),
 	}
 }
 

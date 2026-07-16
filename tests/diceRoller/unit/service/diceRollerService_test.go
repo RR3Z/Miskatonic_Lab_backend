@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -31,7 +32,7 @@ func dbDiceRoll(id, characterID string) db.DiceRoll {
 		UserID:      "user_1",
 		Expression:  "1d20",
 		Result:      15,
-		Details:     []byte(`[{"is_dice":true,"sides":20,"count":1,"result":15}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":20,"rolls":[15]}]}`),
 	}
 }
 
@@ -72,6 +73,17 @@ func TestMakeRoll_CallsCreateDiceRollAndReturnsModel(t *testing.T) {
 	require.Equal(t, roll.UserID, result.UserID)
 	require.Equal(t, roll.Expression, result.Expression)
 	require.Equal(t, roll.Result, result.Result)
+	require.JSONEq(t, `{"rolls":[{"type":"dice","sides":20,"rolls":[15]}]}`, string(result.Details))
+
+	detailsJSON, ok := fake.LastQueryRowArgs[2].([]byte)
+	require.True(t, ok)
+	var details struct {
+		Rolls []map[string]any `json:"rolls"`
+	}
+	require.NoError(t, json.Unmarshal(detailsJSON, &details))
+	require.Len(t, details.Rolls, 1)
+	require.Equal(t, "dice", details.Rolls[0]["type"])
+	require.Equal(t, float64(20), details.Rolls[0]["sides"])
 }
 
 func TestMakeRoll_RoomIDDoesNotChangeCorePersistence(t *testing.T) {
@@ -103,6 +115,93 @@ func TestMakeRoll_RoomIDDoesNotChangeCorePersistence(t *testing.T) {
 	require.Equal(t, 1, fake.QueryRowCalls)
 	require.Equal(t, 1, fake.ExecCalls)
 	require.Equal(t, roll.ID.String(), result.ID.String())
+}
+
+func TestMakeRoll_D100ModesStoreStructuredDetails(t *testing.T) {
+	charID := diceRollServiceTestUUID("11111111-1111-1111-1111-111111111111")
+
+	for _, mode := range []diceRollerDTO.D100Mode{
+		diceRollerDTO.D100ModeNormal,
+		diceRollerDTO.D100ModeBonus,
+		diceRollerDTO.D100ModePenalty,
+	} {
+		t.Run(string(mode), func(t *testing.T) {
+			roll := dbDiceRoll("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "11111111-1111-1111-1111-111111111111")
+			fake := &FakeDiceRollerDBTX{
+				QueryRowData: []any{
+					roll.ID,
+					roll.CharacterID,
+					roll.UserID,
+					roll.Expression,
+					roll.Result,
+					roll.Details,
+					roll.CreatedAt,
+				},
+			}
+			service := newServiceWithFakeDBTX(fake)
+
+			_, err := service.MakeRoll(context.Background(), diceRollerDTO.MakeRollInput{
+				UserID:      "user_1",
+				CharacterID: charID,
+				Formula:     "1d100",
+				D100Mode:    &mode,
+			})
+			require.NoError(t, err)
+			require.Len(t, fake.LastQueryRowArgs, 5)
+
+			detailsJSON, ok := fake.LastQueryRowArgs[2].([]byte)
+			require.True(t, ok)
+
+			var details struct {
+				Mode       diceRollerDTO.D100Mode `json:"mode"`
+				Tens       []int                  `json:"tens"`
+				Candidates []int                  `json:"candidates"`
+				Selected   int                    `json:"selected"`
+			}
+			require.NoError(t, json.Unmarshal(detailsJSON, &details))
+			require.Equal(t, mode, details.Mode)
+			require.Len(t, details.Tens, map[diceRollerDTO.D100Mode]int{
+				diceRollerDTO.D100ModeNormal:  1,
+				diceRollerDTO.D100ModeBonus:   2,
+				diceRollerDTO.D100ModePenalty: 2,
+			}[mode])
+			require.Equal(t, details.Selected, int(fake.LastQueryRowArgs[1].(int32)))
+			require.Contains(t, details.Candidates, details.Selected)
+		})
+	}
+}
+
+func TestMakeRoll_D100ModeRejectsOtherExpressionsAndUnknownModes(t *testing.T) {
+	charID := diceRollServiceTestUUID("11111111-1111-1111-1111-111111111111")
+	unknown := diceRollerDTO.D100Mode("advantage")
+
+	for _, input := range []diceRollerDTO.MakeRollInput{
+		{UserID: "user_1", CharacterID: charID, Formula: "1d6", D100Mode: d100ModePtr(diceRollerDTO.D100ModeBonus)},
+		{UserID: "user_1", CharacterID: charID, Formula: "1d100", D100Mode: &unknown},
+	} {
+		fake := &FakeDiceRollerDBTX{}
+		service := newServiceWithFakeDBTX(fake)
+
+		_, err := service.MakeRoll(context.Background(), input)
+
+		require.ErrorIs(t, err, diceRollerServices.ErrInvalidExpression)
+		require.Zero(t, fake.QueryRowCalls)
+	}
+}
+
+func TestToDiceRollModelExposesPersistedStructuredDetails(t *testing.T) {
+	roll := dbDiceRoll("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "11111111-1111-1111-1111-111111111111")
+	roll.Expression = "1d100"
+	roll.Result = 24
+	roll.Details = []byte(`{"mode":"bonus","units":4,"tens":[2,4],"candidates":[24,44],"selected":24}`)
+
+	model := diceRollerDTO.ToDiceRollModel(roll)
+
+	require.JSONEq(t, `{"mode":"bonus","units":4,"tens":[2,4],"candidates":[24,44],"selected":24}`, string(model.Details))
+}
+
+func d100ModePtr(mode diceRollerDTO.D100Mode) *diceRollerDTO.D100Mode {
+	return &mode
 }
 
 func TestMakeRoll_CreateDiceRollErrNoRowsMapsToErrCharacterNotFound(t *testing.T) {

@@ -57,7 +57,7 @@ func TestDiceRollerRoomListener_Success_CreatesRoomEventAndBroadcasts(t *testing
 		RollID:      "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 		Expression:  "2d6+1",
 		Result:      8,
-		Details:     []byte(`[{"type":"dice","sides":6,"rolls":[5,3]},{"type":"modifier","value":1}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[5,3]},{"type":"modifier","value":1}]}`),
 		RoomID:      &roomIDStr,
 	})
 
@@ -73,6 +73,26 @@ func TestDiceRollerRoomListener_Success_CreatesRoomEventAndBroadcasts(t *testing
 	case <-time.After(time.Second):
 		t.Fatal("timeout waiting for broadcast")
 	}
+}
+
+func TestDiceRollerRoomListener_ForwardsStructuredDetails(t *testing.T) {
+	svc := &fakeListenerRoomService{}
+	listener := roomListeners.NewDiceRollerRoomListener(svc, ws.NewRoomHub())
+	roomID := "22222222-2222-2222-2222-222222222222"
+	details := []byte(`{"mode":"penalty","units":4,"tens":[2,4],"candidates":[24,44],"selected":44}`)
+
+	listener.Handle(context.Background(), diceEvents.DiceRollMakeSucceeded{
+		UserID:      "user_1",
+		CharacterID: "11111111-1111-1111-1111-111111111111",
+		RollID:      "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		Expression:  "1d100",
+		Result:      44,
+		Details:     details,
+		RoomID:      &roomID,
+	})
+
+	require.Equal(t, 1, svc.diceCalls)
+	require.JSONEq(t, string(details), string(svc.diceInput.Details))
 }
 
 func TestDiceRollerRoomListener_MembershipError_LogsAndNoBroadcast(t *testing.T) {

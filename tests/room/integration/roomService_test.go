@@ -479,7 +479,7 @@ func TestRoomServiceCreateDiceRollRoomEventMembershipPayloadAndActivity(t *testi
 		CharacterID: "character-outsider",
 		Expression:  "1d20",
 		Result:      1,
-		Details:     []byte(`[]`),
+		Details:     []byte(`{}`),
 	})
 	require.ErrorIs(t, err, roomService.ErrNotMember)
 
@@ -492,7 +492,7 @@ func TestRoomServiceCreateDiceRollRoomEventMembershipPayloadAndActivity(t *testi
 		CharacterID: "character-member",
 		Expression:  "2d6+1",
 		Result:      9,
-		Details:     []byte(`[{"type":"dice","sides":6,"rolls":[4,4]},{"type":"modifier","value":1}]`),
+		Details:     []byte(`{"rolls":[{"type":"dice","sides":6,"rolls":[4,4]},{"type":"modifier","value":1}]}`),
 	})
 	require.NoError(t, err)
 	require.Equal(t, string(model.EventDiceRoll), event.Type)

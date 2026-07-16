@@ -1,10 +1,12 @@
 package tests
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"testing"
 
+	diceRollerDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/diceRoller"
 	diceRollerServices "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/diceRoller"
 	"github.com/stretchr/testify/require"
 )
@@ -18,6 +20,27 @@ func TestDiceRollerRoutesAreMounted(t *testing.T) {
 		`{"expression":"1d20"}`)
 	require.Equal(t, http.StatusCreated, rec.Code)
 	require.Equal(t, 1, svc.makeCalls)
+}
+
+func TestDiceRollerReturnsDetailsAsJSONObject(t *testing.T) {
+	svc := &fakeDiceRollerHandlerService{
+		roll: diceRollerDTO.DiceRollModel{
+			Expression: "1d100",
+			Result:     24,
+			Details:    json.RawMessage(`{"mode":"bonus","units":4,"tens":[2,4],"candidates":[24,44],"selected":24}`),
+		},
+	}
+	router := newDiceRollerTestRouter(svc)
+
+	rec := performDiceRollerRequest(router, http.MethodPost,
+		"/api/dice-roll/11111111-1111-1111-1111-111111111111/",
+		`{"expression":"1d100","d100_mode":"bonus"}`)
+
+	require.Equal(t, http.StatusCreated, rec.Code)
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &response))
+	require.NotContains(t, response, "d100")
+	require.Equal(t, "bonus", response["details"].(map[string]any)["mode"])
 }
 
 func TestDiceRollerRejectsInvalidCharacterID(t *testing.T) {
@@ -57,6 +80,19 @@ func TestDiceRollerPassesDTOToService(t *testing.T) {
 	require.Equal(t, "2d6+1d4", svc.makeInput.Formula)
 	require.True(t, svc.makeInput.CharacterID.Valid)
 	require.Nil(t, svc.makeInput.RoomID)
+}
+
+func TestDiceRollerPassesD100ModeToService(t *testing.T) {
+	svc := &fakeDiceRollerHandlerService{}
+	router := newDiceRollerTestRouter(svc)
+
+	rec := performDiceRollerRequest(router, http.MethodPost,
+		"/api/dice-roll/11111111-1111-1111-1111-111111111111/",
+		`{"expression":"1d100","d100_mode":"bonus"}`)
+
+	require.Equal(t, http.StatusCreated, rec.Code)
+	require.NotNil(t, svc.makeInput.D100Mode)
+	require.Equal(t, "bonus", string(*svc.makeInput.D100Mode))
 }
 
 func TestDiceRollerPassesRoomIDToService(t *testing.T) {
