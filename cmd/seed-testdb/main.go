@@ -42,13 +42,6 @@ VALUES (
 INSERT INTO skills_categories (id, name)
 VALUES ('00000000-0000-0000-0000-000000000101', 'Investigation');
 
-INSERT INTO skills_specialties (id, name, description, base_value)
-VALUES (
-    '00000000-0000-0000-0000-000000000201',
-    'History',
-    'Seed specialty for database tests',
-    5
-);
 `
 
 func main() {
