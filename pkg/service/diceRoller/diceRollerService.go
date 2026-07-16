@@ -34,7 +34,7 @@ func (s *DiceRollerService) GetLastDiceRolls(ctx context.Context, input diceRoll
 }
 
 func (s *DiceRollerService) MakeRoll(ctx context.Context, input diceRollerDTO.MakeRollInput) (diceRollerDTO.DiceRollModel, error) {
-	prepared, err := prepareDiceRoll(input.Formula)
+	prepared, err := prepareDiceRoll(input.Formula, input.D100Mode)
 	if err != nil {
 		return diceRollerDTO.DiceRollModel{}, err
 	}

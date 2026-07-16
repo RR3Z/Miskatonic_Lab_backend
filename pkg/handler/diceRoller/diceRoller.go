@@ -36,6 +36,7 @@ func (h *DiceRollerHandler) makeRoll(w http.ResponseWriter, r *http.Request) *my
 		UserID:      userID,
 		CharacterID: characterID,
 		Formula:     req.Expression,
+		D100Mode:    req.D100Mode,
 		RoomID:      req.RoomID,
 	})
 	if err != nil {
