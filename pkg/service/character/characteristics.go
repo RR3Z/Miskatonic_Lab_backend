@@ -41,6 +41,9 @@ func (s *CharacterService) UpsertCharacteristics(ctx context.Context, input char
 	if err != nil {
 		return db.Characteristic{}, err
 	}
+	if err := s.syncDynamicSkillBases(ctx, input.UserID, input.CharacterID, characteristics.Dexterity, characteristics.Education); err != nil {
+		return db.Characteristic{}, err
+	}
 
 	s.recalculateDerivedStats(ctx, input.UserID, input.CharacterID, characteristics, "characteristics_upsert")
 
@@ -52,6 +55,9 @@ func (s *CharacterService) DeleteCharacteristics(ctx context.Context, input char
 		UserID:      input.UserID,
 		CharacterID: input.CharacterID,
 	}); err != nil {
+		return err
+	}
+	if err := s.syncDynamicSkillBases(ctx, input.UserID, input.CharacterID, nil, nil); err != nil {
 		return err
 	}
 
