@@ -16,15 +16,12 @@ func TestFinancesTableUpsertCreatesGetsAndPartiallyUpdatesFinances(t *testing.T)
 	subject := newCharacterIntegrationSubject(t)
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
-	creditRatingSkill := createFinanceTestCreditRatingSkill(t, subject, testUser.ID, character.ID)
-
 	createdFinances, err := subject.queries.UpsertFinances(context.Background(), db.UpsertFinancesParams{
-		UserID:              testUser.ID,
-		CharacterID:         character.ID,
-		SpendingLimit:       financeString("$50"),
-		Cash:                financeString("$120"),
-		Assets:              financeString("A battered motorcar"),
-		CreditRatingSkillID: creditRatingSkill.ID,
+		UserID:        testUser.ID,
+		CharacterID:   character.ID,
+		SpendingLimit: financeString("$50"),
+		Cash:          financeString("$120"),
+		Assets:        financeString("A battered motorcar"),
 	})
 	require.NoError(t, err)
 
@@ -33,7 +30,6 @@ func TestFinancesTableUpsertCreatesGetsAndPartiallyUpdatesFinances(t *testing.T)
 	requireFinanceString(t, createdFinances.SpendingLimit, "$50")
 	requireFinanceString(t, createdFinances.Cash, "$120")
 	requireFinanceString(t, createdFinances.Assets, "A battered motorcar")
-	require.Equal(t, creditRatingSkill.ID, createdFinances.CreditRatingSkillID)
 	require.True(t, createdFinances.CreatedAt.Valid)
 	require.True(t, createdFinances.UpdatedAt.Valid)
 
@@ -58,7 +54,6 @@ func TestFinancesTableUpsertCreatesGetsAndPartiallyUpdatesFinances(t *testing.T)
 	requireFinanceString(t, updatedFinances.SpendingLimit, "$75")
 	requireFinanceString(t, updatedFinances.Cash, "$200")
 	requireFinanceString(t, updatedFinances.Assets, "A battered motorcar")
-	require.Equal(t, creditRatingSkill.ID, updatedFinances.CreditRatingSkillID)
 	require.True(t, updatedFinances.UpdatedAt.Time.After(createdFinances.UpdatedAt.Time) || updatedFinances.UpdatedAt.Time.Equal(createdFinances.UpdatedAt.Time))
 }
 
@@ -78,22 +73,18 @@ func TestFinancesTableUpsertAllowsAllNilValuesOnInsert(t *testing.T) {
 	require.Nil(t, finances.SpendingLimit)
 	require.Nil(t, finances.Cash)
 	require.Nil(t, finances.Assets)
-	require.False(t, finances.CreditRatingSkillID.Valid)
 }
 
 func TestFinancesTableNilUpdateDoesNotOverwriteExistingValues(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
-	creditRatingSkill := createFinanceTestCreditRatingSkill(t, subject, testUser.ID, character.ID)
-
 	createdFinances, err := subject.queries.UpsertFinances(context.Background(), db.UpsertFinancesParams{
-		UserID:              testUser.ID,
-		CharacterID:         character.ID,
-		SpendingLimit:       financeString("$50"),
-		Cash:                financeString("$120"),
-		Assets:              financeString("A battered motorcar"),
-		CreditRatingSkillID: creditRatingSkill.ID,
+		UserID:        testUser.ID,
+		CharacterID:   character.ID,
+		SpendingLimit: financeString("$50"),
+		Cash:          financeString("$120"),
+		Assets:        financeString("A battered motorcar"),
 	})
 	require.NoError(t, err)
 
@@ -107,7 +98,6 @@ func TestFinancesTableNilUpdateDoesNotOverwriteExistingValues(t *testing.T) {
 	requireFinanceString(t, updatedFinances.SpendingLimit, "$50")
 	requireFinanceString(t, updatedFinances.Cash, "$120")
 	requireFinanceString(t, updatedFinances.Assets, "A battered motorcar")
-	require.Equal(t, creditRatingSkill.ID, updatedFinances.CreditRatingSkillID)
 }
 
 func TestFinancesTablePartialUpdateAfterNilInsertOnlySetsProvidedValues(t *testing.T) {
@@ -132,7 +122,6 @@ func TestFinancesTablePartialUpdateAfterNilInsertOnlySetsProvidedValues(t *testi
 	requireFinanceString(t, updatedFinances.SpendingLimit, "$75")
 	require.Nil(t, updatedFinances.Cash)
 	require.Nil(t, updatedFinances.Assets)
-	require.False(t, updatedFinances.CreditRatingSkillID.Valid)
 }
 
 func TestFinancesTableAllowsEmptyStrings(t *testing.T) {
@@ -375,85 +364,23 @@ func TestFinancesTableTruncatesTooLongMoneyFields(t *testing.T) {
 	}
 }
 
-func TestFinancesTableRequiresCreditRatingSkillOnSameCharacter(t *testing.T) {
+func TestFinancesTableAllowsDeletingUnrelatedSkill(t *testing.T) {
 	subject := newCharacterIntegrationSubject(t)
 	testUser := createCharacterTestUser(t, subject)
 	character := createCharacterTestCharacter(t, subject, testUser.ID)
-	otherCharacter := createCharacterTestCharacter(t, subject, testUser.ID)
-	otherCharacterSkill := createFinanceTestCreditRatingSkill(t, subject, testUser.ID, otherCharacter.ID)
-	missingSkillID := characterTestUUID("90909090-9090-9090-9090-909090909090")
+	skill := createFinanceTestSkill(t, subject, testUser.ID, character.ID, "Средства")
 
 	_, err := subject.queries.UpsertFinances(context.Background(), db.UpsertFinancesParams{
-		UserID:              testUser.ID,
-		CharacterID:         character.ID,
-		CreditRatingSkillID: missingSkillID,
-	})
-	requirePostgresErrorCode(t, err, "23503")
-
-	_, err = subject.queries.UpsertFinances(context.Background(), db.UpsertFinancesParams{
-		UserID:              testUser.ID,
-		CharacterID:         character.ID,
-		CreditRatingSkillID: otherCharacterSkill.ID,
-	})
-	requirePostgresErrorCode(t, err, "23503")
-}
-
-func TestFinancesTableAllowsChangingCreditRatingSkillForSameCharacter(t *testing.T) {
-	subject := newCharacterIntegrationSubject(t)
-	testUser := createCharacterTestUser(t, subject)
-	character := createCharacterTestCharacter(t, subject, testUser.ID)
-	firstSkill := createFinanceTestSkill(t, subject, testUser.ID, character.ID, "Credit Rating")
-	secondSkill := createFinanceTestSkill(t, subject, testUser.ID, character.ID, "Credit Rating Improved")
-
-	createdFinances, err := subject.queries.UpsertFinances(context.Background(), db.UpsertFinancesParams{
-		UserID:              testUser.ID,
-		CharacterID:         character.ID,
-		CreditRatingSkillID: firstSkill.ID,
-	})
-	require.NoError(t, err)
-	require.Equal(t, firstSkill.ID, createdFinances.CreditRatingSkillID)
-
-	updatedFinances, err := subject.queries.UpsertFinances(context.Background(), db.UpsertFinancesParams{
-		UserID:              testUser.ID,
-		CharacterID:         character.ID,
-		CreditRatingSkillID: secondSkill.ID,
-	})
-	require.NoError(t, err)
-
-	require.Equal(t, createdFinances.ID, updatedFinances.ID)
-	require.Equal(t, secondSkill.ID, updatedFinances.CreditRatingSkillID)
-}
-
-func TestFinancesTableRestrictsDeletingReferencedCreditRatingSkill(t *testing.T) {
-	subject := newCharacterIntegrationSubject(t)
-	testUser := createCharacterTestUser(t, subject)
-	character := createCharacterTestCharacter(t, subject, testUser.ID)
-	creditRatingSkill := createFinanceTestCreditRatingSkill(t, subject, testUser.ID, character.ID)
-
-	_, err := subject.queries.UpsertFinances(context.Background(), db.UpsertFinancesParams{
-		UserID:              testUser.ID,
-		CharacterID:         character.ID,
-		CreditRatingSkillID: creditRatingSkill.ID,
+		UserID:        testUser.ID,
+		CharacterID:   character.ID,
+		SpendingLimit: financeString("$50"),
 	})
 	require.NoError(t, err)
 
 	_, err = subject.queries.DeleteCharacterSkill(context.Background(), db.DeleteCharacterSkillParams{
 		UserID:      testUser.ID,
 		CharacterID: character.ID,
-		SkillID:     creditRatingSkill.ID,
-	})
-	requirePostgresErrorCode(t, err, "23503")
-
-	_, err = subject.queries.DeleteFinances(context.Background(), db.DeleteFinancesParams{
-		UserID:      testUser.ID,
-		CharacterID: character.ID,
-	})
-	require.NoError(t, err)
-
-	_, err = subject.queries.DeleteCharacterSkill(context.Background(), db.DeleteCharacterSkillParams{
-		UserID:      testUser.ID,
-		CharacterID: character.ID,
-		SkillID:     creditRatingSkill.ID,
+		SkillID:     skill.ID,
 	})
 	require.NoError(t, err)
 }

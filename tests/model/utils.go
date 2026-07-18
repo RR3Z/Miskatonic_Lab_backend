@@ -98,14 +98,13 @@ func testSkillRow() db.Skill {
 
 func testFinance() db.Finance {
 	return db.Finance{
-		ID:                  testUUID("88888888-8888-8888-8888-888888888888"),
-		CharacterID:         testUUID("11111111-1111-1111-1111-111111111111"),
-		SpendingLimit:       strPtr("$50"),
-		Cash:                strPtr("$120"),
-		Assets:              strPtr("Books and a battered Ford."),
-		CreditRatingSkillID: invalidUUID(),
-		CreatedAt:           testTimestamptz("2026-06-07 12:00:00+03"),
-		UpdatedAt:           testTimestamptz("2026-06-07 13:00:00+03"),
+		ID:            testUUID("88888888-8888-8888-8888-888888888888"),
+		CharacterID:   testUUID("11111111-1111-1111-1111-111111111111"),
+		SpendingLimit: strPtr("$50"),
+		Cash:          strPtr("$120"),
+		Assets:        strPtr("Books and a battered Ford."),
+		CreatedAt:     testTimestamptz("2026-06-07 12:00:00+03"),
+		UpdatedAt:     testTimestamptz("2026-06-07 13:00:00+03"),
 	}
 }
 

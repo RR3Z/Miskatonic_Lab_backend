@@ -65,14 +65,6 @@ func TestCharacterServiceErrorsMapToJSON(t *testing.T) {
 			wantCode:   "character.state_current_exceeds_max",
 		},
 		{
-			name:       "skill in use",
-			method:     http.MethodDelete,
-			path:       "/api/characters/" + testCharacterID + "/skills/" + testSkillID + "/",
-			err:        characterErrors.ErrSkillInUse,
-			wantStatus: http.StatusConflict,
-			wantCode:   "character.skill_in_use",
-		},
-		{
 			name:       "fallback internal error",
 			method:     http.MethodGet,
 			path:       "/api/characters/",

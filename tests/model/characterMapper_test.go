@@ -110,15 +110,9 @@ func TestToFullCharacterModelLeavesOptionalSectionsEmptyWhenIDsAreInvalid(t *tes
 func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 	character := testCharacter()
 	skill := testSkillRow()
-	creditSkill := testSkillRow()
-	creditSkill.ID = testUUID("66666666-6666-6666-6666-666666666666")
-	creditSkill.Name = "Credit Rating"
-	creditSkill.IsProtected = false
-	creditSkill.BaseRule = nil
 	backstory := testBackstory()
 	item := testBackstoryItem()
 	finance := testFinance()
-	finance.CreditRatingSkillID = creditSkill.ID
 	note := db.Note{
 		ID:          testUUID("99999999-9999-9999-9999-999999999999"),
 		CharacterID: character.ID,
@@ -142,7 +136,7 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 		MP:              mp,
 		Sanity:          sanity,
 		Luck:            luck,
-		Skills:          []db.Skill{skill, creditSkill},
+		Skills:          []db.Skill{skill},
 		Backstory:       &backstory,
 		BackstoryItems:  []db.BackstoryItem{item},
 		Finances:        &finance,
@@ -156,30 +150,13 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 	requireEqualMagic(t, mp, result.MP)
 	requireEqualSanity(t, sanity, result.Sanity)
 	requireEqualLuck(t, luck, result.Luck)
-	require.Len(t, result.Skills, 2)
+	require.Len(t, result.Skills, 1)
 	requireSameSkill(t, skill, result.Skills[0])
-	requireSameSkill(t, creditSkill, result.Skills[1])
 	require.Equal(t, backstory.ID, result.Backstory.ID)
 	require.Len(t, result.Backstory.Items, 1)
 	require.Equal(t, item.ID, result.Backstory.Items[0].ID)
 	require.Equal(t, finance.ID, result.Finances.ID)
-	require.NotNil(t, result.Finances.CreditRating)
-	require.Equal(t, creditSkill.ID, result.Finances.CreditRating.ID)
 	requireEqualNotes(t, []db.Note{note}, result.Notes)
-}
-
-func TestToFullCharacterModelLeavesCreditRatingNilWhenFinanceSkillDoesNotMatch(t *testing.T) {
-	finance := testFinance()
-	finance.CreditRatingSkillID = testUUID("abababab-abab-abab-abab-abababababab")
-
-	result := characterDTO.ToCharacterModel(characterDTO.CharacterDBData{
-		Character: testCharacter(),
-		Skills:    []db.Skill{testSkillRow()},
-		Finances:  &finance,
-	})
-
-	require.Equal(t, finance.ID, result.Finances.ID)
-	require.Nil(t, result.Finances.CreditRating)
 }
 
 func requireEqualCharacteristic(t *testing.T, expected db.Characteristic, actual characteristicsDTO.CharacteristicsModel) {

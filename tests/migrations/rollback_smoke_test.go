@@ -85,6 +85,86 @@ func TestRemoveCharacterPlayerNameMigrationDropsDataAndRollsBackSchema(t *testin
 	runMigrate(t, root, migratePath, databaseURL, "up", "1")
 }
 
+func TestRemoveFinanceCreditRatingSkillMigrationDropsDataAndRollsBackSchema(t *testing.T) {
+	loadMigrationTestEnv(t)
+
+	if !migrationSmokeEnabled() {
+		t.Skip("set MIGRATION_SMOKE_TESTS=1 to run migration rollback smoke")
+	}
+
+	databaseURL := strings.TrimSpace(os.Getenv("MIGRATION_SMOKE_DATABASE_URL"))
+	require.NotEmpty(t, databaseURL, "MIGRATION_SMOKE_DATABASE_URL must point to a dedicated disposable database")
+	migratePath, err := exec.LookPath("migrate")
+	require.NoError(t, err, "migrate CLI must be available in PATH")
+	root := migrationRepoRoot(t)
+	ensureLatestMigrationOnCleanup(t, root, migratePath, databaseURL)
+
+	runMigrate(t, root, migratePath, databaseURL, "up")
+	runMigrate(t, root, migratePath, databaseURL, "down", "1")
+
+	connection, err := pgx.Connect(context.Background(), databaseURL)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = connection.Close(context.Background()) })
+	requireFinanceCreditRatingColumn(t, connection, true)
+
+	suffix := strconv.FormatInt(time.Now().UnixNano(), 10)
+	userID := "finance_migration_user_" + suffix
+	_, err = connection.Exec(context.Background(), `
+		INSERT INTO users (id, username, email)
+		VALUES ($1, $2, $3)
+	`, userID, "finance_migration_"+suffix, "finance.migration+"+suffix+"@example.com")
+	require.NoError(t, err)
+
+	characterID := "33333333-3333-3333-3333-" + suffix[len(suffix)-12:]
+	_, err = connection.Exec(context.Background(), `
+		INSERT INTO characters (id, user_id, name)
+		VALUES ($1, $2, 'Legacy Finance Investigator')
+	`, characterID, userID)
+	require.NoError(t, err)
+
+	var skillID string
+	require.NoError(t, connection.QueryRow(context.Background(), `
+		INSERT INTO skills (character_id, name, base_value, value, is_protected)
+		VALUES ($1, 'Legacy Credit Rating', 0, 50, false)
+		RETURNING id
+	`, characterID).Scan(&skillID))
+	_, err = connection.Exec(context.Background(), `
+		INSERT INTO finances (character_id, credit_rating_skill_id)
+		VALUES ($1, $2)
+	`, characterID, skillID)
+	require.NoError(t, err)
+
+	runMigrate(t, root, migratePath, databaseURL, "up", "1")
+	requireFinanceCreditRatingColumn(t, connection, false)
+
+	runMigrate(t, root, migratePath, databaseURL, "down", "1")
+	requireFinanceCreditRatingColumn(t, connection, true)
+	var creditRatingSkillID *string
+	require.NoError(t, connection.QueryRow(context.Background(), `
+		SELECT credit_rating_skill_id FROM finances WHERE character_id = $1
+	`, characterID).Scan(&creditRatingSkillID))
+	require.Nil(t, creditRatingSkillID)
+
+	runMigrate(t, root, migratePath, databaseURL, "up", "1")
+}
+
+func requireFinanceCreditRatingColumn(t *testing.T, connection *pgx.Conn, expected bool) {
+	t.Helper()
+
+	var exists bool
+	err := connection.QueryRow(context.Background(), `
+		SELECT EXISTS (
+			SELECT 1
+			FROM information_schema.columns
+			WHERE table_schema = 'public'
+			  AND table_name = 'finances'
+			  AND column_name = 'credit_rating_skill_id'
+		)
+	`).Scan(&exists)
+	require.NoError(t, err)
+	require.Equal(t, expected, exists)
+}
+
 func loadMigrationTestEnv(t *testing.T) {
 	t.Helper()
 	require.NoError(t, testdb.LoadEnv())

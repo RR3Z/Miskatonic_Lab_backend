@@ -199,12 +199,6 @@ func testUpdateSkillParams(userID string, characterID pgtype.UUID, skillID pgtyp
 	}
 }
 
-func createFinanceTestCreditRatingSkill(t *testing.T, subject *characterIntegrationSubject, userID string, characterID pgtype.UUID) db.CreateCharacterSkillRow {
-	t.Helper()
-
-	return createFinanceTestSkill(t, subject, userID, characterID, "Credit Rating")
-}
-
 func createFinanceTestSkill(t *testing.T, subject *characterIntegrationSubject, userID string, characterID pgtype.UUID, name string) db.CreateCharacterSkillRow {
 	t.Helper()
 

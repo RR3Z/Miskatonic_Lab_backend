@@ -62,6 +62,7 @@ func defaultSkillDefinitions() map[string]defaultSkillDefinition {
 		"Работа в библиотеке":    {20, true, ""},
 		"Скрытность":             {20, true, ""},
 		"Слух":                   {20, true, ""},
+		"Средства":               {0, true, ""},
 		"Стрельба (винт./дроб.)": {25, true, ""},
 		"Стрельба (пистолет)":    {20, true, ""},
 		"Убеждение":              {10, true, ""},
