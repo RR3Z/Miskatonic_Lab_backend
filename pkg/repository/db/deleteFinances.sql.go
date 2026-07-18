@@ -17,7 +17,7 @@ USING characters c
 WHERE c.id = f.character_id
   AND c.user_id = $1
   AND f.character_id = $2
-RETURNING f.id, f.character_id, f.spending_limit, f.cash, f.assets, f.credit_rating_skill_id, f.created_at, f.updated_at
+RETURNING f.id, f.character_id, f.spending_limit, f.cash, f.assets, f.created_at, f.updated_at
 `
 
 type DeleteFinancesParams struct {
@@ -34,7 +34,6 @@ func (q *Queries) DeleteFinances(ctx context.Context, arg DeleteFinancesParams) 
 		&i.SpendingLimit,
 		&i.Cash,
 		&i.Assets,
-		&i.CreditRatingSkillID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

@@ -107,5 +107,5 @@ func (s *CharacterService) DeleteSkill(ctx context.Context, input skillsDTO.Dele
 		CharacterID: input.CharacterID,
 		SkillID:     input.SkillID,
 	})
-	return characterErrors.MapDeleteSkillError(err)
+	return err
 }

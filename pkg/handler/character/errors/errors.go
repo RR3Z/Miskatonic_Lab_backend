@@ -81,21 +81,12 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 		return badRequestError("character.state_current_exceeds_max", "current_sanity value cannot exceed max_sanity value", err)
 	case isLuckStateValidationError(err):
 		return badRequestError("character.state_current_exceeds_max", "current_luck value cannot exceed starting_luck value", err)
-	case isFinancesValidationError(err):
-		return badRequestError("character.invalid_finances", "credit_rating_skill_id must reference a skill from this character", err)
 	case isDerivedStatsValidationError(err):
 		return badRequestError("character.invalid_derived_stats", "derived stats payload is invalid", err)
 	case isBackstoryItemValidationError(err):
 		return badRequestError("character.invalid_backstory_section", "backstory item section is invalid", err)
 	case isSkillValidationError(err):
 		return badRequestError("character.invalid_skill", "skill payload is invalid", err)
-	case isSkillReferencedError(err):
-		return &myErrors.AppError{
-			Status:  http.StatusConflict,
-			Code:    "character.skill_in_use",
-			Message: "skill is referenced by character finances",
-			Err:     err,
-		}
 	default:
 		return &myErrors.AppError{
 			Status:  http.StatusInternalServerError,
@@ -181,10 +172,6 @@ func isLuckStateValidationError(err error) bool {
 	return errors.Is(err, myErrors.ErrCurrentLuckExceedsStarting)
 }
 
-func isFinancesValidationError(err error) bool {
-	return errors.Is(err, characterErrors.ErrInvalidFinances)
-}
-
 func isDerivedStatsValidationError(err error) bool {
 	return errors.Is(err, characterErrors.ErrInvalidDerivedStats)
 }
@@ -195,8 +182,4 @@ func isBackstoryItemValidationError(err error) bool {
 
 func isSkillValidationError(err error) bool {
 	return errors.Is(err, characterErrors.ErrInvalidSkill)
-}
-
-func isSkillReferencedError(err error) bool {
-	return errors.Is(err, characterErrors.ErrSkillInUse)
 }

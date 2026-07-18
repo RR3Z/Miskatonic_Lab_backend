@@ -77,14 +77,13 @@ type DiceRoll struct {
 }
 
 type Finance struct {
-	ID                  pgtype.UUID        `json:"id"`
-	CharacterID         pgtype.UUID        `json:"character_id"`
-	SpendingLimit       *string            `json:"spending_limit"`
-	Cash                *string            `json:"cash"`
-	Assets              *string            `json:"assets"`
-	CreditRatingSkillID pgtype.UUID        `json:"credit_rating_skill_id"`
-	CreatedAt           pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	ID            pgtype.UUID        `json:"id"`
+	CharacterID   pgtype.UUID        `json:"character_id"`
+	SpendingLimit *string            `json:"spending_limit"`
+	Cash          *string            `json:"cash"`
+	Assets        *string            `json:"assets"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
 }
 
 type HealthState struct {

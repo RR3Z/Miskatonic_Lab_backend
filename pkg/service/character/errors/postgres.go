@@ -28,8 +28,6 @@ func MapCharacterConstraintError(err error) error {
 		return myErrors.ErrCurrentSanityExceedsMax
 	case "chk_luck_states_current_lte_starting":
 		return myErrors.ErrCurrentLuckExceedsStarting
-	case "fk_finances_credit_rating_skill":
-		return ErrInvalidFinances
 	case "chk_backstory_items_section":
 		return ErrInvalidBackstorySection
 	case "derived_stats_speed_check",
@@ -44,17 +42,4 @@ func MapCharacterConstraintError(err error) error {
 	default:
 		return err
 	}
-}
-
-func MapDeleteSkillError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.ConstraintName == "fk_finances_credit_rating_skill" {
-		return ErrSkillInUse
-	}
-
-	return err
 }

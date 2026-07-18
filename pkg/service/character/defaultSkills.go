@@ -56,6 +56,7 @@ var defaultCharacterSkills = []defaultCharacterSkill{
 	{name: "Работа в библиотеке", baseValue: 20, isProtected: true},
 	{name: "Скрытность", baseValue: 20, isProtected: true},
 	{name: "Слух", baseValue: 20, isProtected: true},
+	{name: "Средства", baseValue: 0, isProtected: true},
 	{name: "Стрельба (винт./дроб.)", baseValue: 25, isProtected: true},
 	{name: "Стрельба (пистолет)", baseValue: 20, isProtected: true},
 	{name: "Убеждение", baseValue: 10, isProtected: true},

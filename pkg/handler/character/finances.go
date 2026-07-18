@@ -43,12 +43,11 @@ func (h *CharacterHandler) upsertFinances(w http.ResponseWriter, r *http.Request
 		return appErr
 	}
 	input := financesDTO.UpsertFinancesInput{
-		UserID:              userID,
-		CharacterID:         characterID,
-		SpendingLimit:       req.SpendingLimit,
-		Cash:                req.Cash,
-		Assets:              req.Assets,
-		CreditRatingSkillID: req.CreditRatingSkillID,
+		UserID:        userID,
+		CharacterID:   characterID,
+		SpendingLimit: req.SpendingLimit,
+		Cash:          req.Cash,
+		Assets:        req.Assets,
 	}
 
 	finances, err := h.service.UpsertFinances(r.Context(), input)

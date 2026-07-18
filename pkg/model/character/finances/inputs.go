@@ -8,12 +8,11 @@ type GetFinancesInput struct {
 }
 
 type UpsertFinancesInput struct {
-	UserID              string
-	CharacterID         pgtype.UUID
-	SpendingLimit       *string
-	Cash                *string
-	Assets              *string
-	CreditRatingSkillID pgtype.UUID
+	UserID        string
+	CharacterID   pgtype.UUID
+	SpendingLimit *string
+	Cash          *string
+	Assets        *string
 }
 
 type DeleteFinancesInput struct {

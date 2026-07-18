@@ -166,16 +166,7 @@ func ToCharacterModel(d CharacterDBData) CharacterModel {
 	}
 
 	if d.Finances != nil {
-		var creditRating *skillsDTO.SkillModel
-		if d.Finances.CreditRatingSkillID.Valid {
-			for _, skill := range m.Skills {
-				if skill.ID == d.Finances.CreditRatingSkillID {
-					creditRating = &skill
-					break
-				}
-			}
-		}
-		m.Finances = financesDTO.ToFinancesModel(*d.Finances, creditRating)
+		m.Finances = financesDTO.ToFinancesModel(*d.Finances)
 	}
 
 	return m

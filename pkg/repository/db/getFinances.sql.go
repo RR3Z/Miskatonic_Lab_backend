@@ -12,7 +12,7 @@ import (
 )
 
 const getFinances = `-- name: GetFinances :one
-SELECT f.id, f.character_id, f.spending_limit, f.cash, f.assets, f.credit_rating_skill_id, f.created_at, f.updated_at FROM finances f
+SELECT f.id, f.character_id, f.spending_limit, f.cash, f.assets, f.created_at, f.updated_at FROM finances f
 JOIN characters c ON c.id = f.character_id
 WHERE c.user_id = $1
   AND f.character_id = $2
@@ -32,7 +32,6 @@ func (q *Queries) GetFinances(ctx context.Context, arg GetFinancesParams) (Finan
 		&i.SpendingLimit,
 		&i.Cash,
 		&i.Assets,
-		&i.CreditRatingSkillID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

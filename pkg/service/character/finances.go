@@ -34,12 +34,11 @@ func (s *CharacterService) UpsertFinances(ctx context.Context, input financesDTO
 	}
 
 	finances, err := s.repos.Queries.UpsertFinances(ctx, db.UpsertFinancesParams{
-		UserID:              input.UserID,
-		CharacterID:         input.CharacterID,
-		SpendingLimit:       input.SpendingLimit,
-		Cash:                input.Cash,
-		Assets:              input.Assets,
-		CreditRatingSkillID: input.CreditRatingSkillID,
+		UserID:        input.UserID,
+		CharacterID:   input.CharacterID,
+		SpendingLimit: input.SpendingLimit,
+		Cash:          input.Cash,
+		Assets:        input.Assets,
 	})
 	if err != nil {
 		return db.Finance{}, characterErrors.MapCharacterConstraintError(err)
