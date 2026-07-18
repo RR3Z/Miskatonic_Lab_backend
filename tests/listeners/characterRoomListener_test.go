@@ -50,6 +50,26 @@ func TestCharacterRoomListener_SkillUpdate_CreatesCharacterChangedRoomEvent(t *t
 	require.Equal(t, "character.skill.update_succeeded", *svc.characterInput.Change.SourceEvent)
 }
 
+func TestCharacterRoomListener_InventoryItemUpdate_CreatesCharacterChangedRoomEvent(t *testing.T) {
+	svc := &fakeListenerRoomService{}
+	listener := roomListeners.NewCharacterRoomListener(svc, ws.NewRoomHub())
+
+	listener.Handle(context.Background(), characterEvents.CharacterInventoryItemUpdateSucceeded{
+		UserID:      "user_1",
+		CharacterID: "11111111-1111-1111-1111-111111111111",
+		InventoryID: "22222222-2222-2222-2222-222222222222",
+		Name:        "Pocket Flashlight",
+	})
+
+	require.Equal(t, 1, svc.characterCalls)
+	require.Equal(t, "inventory_item", svc.characterInput.Change.Resource)
+	require.Equal(t, "update", svc.characterInput.Change.Action)
+	require.NotNil(t, svc.characterInput.Change.ResourceID)
+	require.Equal(t, "22222222-2222-2222-2222-222222222222", *svc.characterInput.Change.ResourceID)
+	require.NotNil(t, svc.characterInput.Change.SourceEvent)
+	require.Equal(t, "character.inventory_item.update_succeeded", *svc.characterInput.Change.SourceEvent)
+}
+
 func TestCharacterRoomListener_PortraitReplace_CreatesCharacterChangedRoomEvent(t *testing.T) {
 	svc := &fakeListenerRoomService{}
 	listener := roomListeners.NewCharacterRoomListener(svc, ws.NewRoomHub())

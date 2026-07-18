@@ -49,7 +49,7 @@ Reserved event constants:
 
 ## Character Visibility
 
-Selected character reads use `room_members.character_id`; character sheets are loaded from current character tables, not copied into room state.
+Selected character reads use `room_members.character_id`; character sheets, including inventory, are loaded from current character tables and are not copied into room state. GM sees every selected character; a player sees only their own selected character.
 
 - GM members see all selected member characters.
 - Player members see only their own selected character.
@@ -70,7 +70,7 @@ Selected character reads use `room_members.character_id`; character sheets are l
 }
 ```
 
-Successful canonical character mutations publish character domain events. `pkg/listeners/room.CharacterRoomListener` maps mutation success events to `character.changed`, finds rooms where the character is currently selected, persists one room event per affected room, and touches room activity. Read/list events and full character delete are ignored in the first version.
+Successful canonical character mutations, including inventory item create/update/delete, publish character domain events. `pkg/listeners/room.CharacterRoomListener` maps mutation success events to `character.changed`, finds rooms where the character is currently selected, persists one room event per affected room, and touches room activity. Read/list events and full character delete are ignored in the first version.
 
 The listener is registered from descriptor-owned event prototypes (`character.RoomMutationEvents()`), not from a local ad-hoc event list.
 

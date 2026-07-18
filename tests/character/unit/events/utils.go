@@ -42,6 +42,8 @@ func newFakeCharacterService() *FakeCharacterService {
 		Skill:           testSkillModel(),
 		Notes:           []db.Note{testNote(), {ID: testUUID("88888888-8888-8888-8888-888888888888"), Title: "Second Note"}},
 		Note:            testNote(),
+		InventoryItems:  []db.CharacterInventoryItem{testInventoryItem()},
+		InventoryItem:   testInventoryItem(),
 		Health:          db.HealthState{ID: testUUID(testItemID), CharacterID: testUUID(testCharacterID)},
 		Sanity:          db.SanityState{ID: testUUID(testItemID), CharacterID: testUUID(testCharacterID)},
 		Magic:           db.MagicState{ID: testUUID(testItemID), CharacterID: testUUID(testCharacterID)},
@@ -105,6 +107,14 @@ func testNote() db.Note {
 		CharacterID: testUUID(testCharacterID),
 		Title:       "Session Note",
 		Body:        "Found the hidden index.",
+	}
+}
+
+func testInventoryItem() db.CharacterInventoryItem {
+	return db.CharacterInventoryItem{
+		ID:          testUUID(testItemID),
+		CharacterID: testUUID(testCharacterID),
+		Name:        "Pocket Flashlight",
 	}
 }
 

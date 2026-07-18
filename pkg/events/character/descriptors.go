@@ -104,6 +104,17 @@ var descriptors = []events.EventDescriptor{
 	descriptor(CharacterNoteUpdateFailed{}, "note", "update", events.OutcomeFailed),
 	descriptor(CharacterNoteDeleteSucceeded{}, "note", "delete", events.OutcomeSucceeded),
 	descriptor(CharacterNoteDeleteFailed{}, "note", "delete", events.OutcomeFailed),
+
+	descriptor(CharacterInventoryItemsListSucceeded{}, "inventory_items", "list", events.OutcomeSucceeded),
+	descriptor(CharacterInventoryItemsListFailed{}, "inventory_items", "list", events.OutcomeFailed),
+	descriptor(CharacterInventoryItemGetSucceeded{}, "inventory_item", "get", events.OutcomeSucceeded),
+	descriptor(CharacterInventoryItemGetFailed{}, "inventory_item", "get", events.OutcomeFailed),
+	descriptor(CharacterInventoryItemCreateSucceeded{}, "inventory_item", "create", events.OutcomeSucceeded),
+	descriptor(CharacterInventoryItemCreateFailed{}, "inventory_item", "create", events.OutcomeFailed),
+	descriptor(CharacterInventoryItemUpdateSucceeded{}, "inventory_item", "update", events.OutcomeSucceeded),
+	descriptor(CharacterInventoryItemUpdateFailed{}, "inventory_item", "update", events.OutcomeFailed),
+	descriptor(CharacterInventoryItemDeleteSucceeded{}, "inventory_item", "delete", events.OutcomeSucceeded),
+	descriptor(CharacterInventoryItemDeleteFailed{}, "inventory_item", "delete", events.OutcomeFailed),
 }
 
 var roomMutationDescriptors = []events.EventDescriptor{
@@ -129,6 +140,9 @@ var roomMutationDescriptors = []events.EventDescriptor{
 	descriptor(CharacterNoteCreateSucceeded{}, "note", "create", events.OutcomeSucceeded),
 	descriptor(CharacterNoteUpdateSucceeded{}, "note", "update", events.OutcomeSucceeded),
 	descriptor(CharacterNoteDeleteSucceeded{}, "note", "delete", events.OutcomeSucceeded),
+	descriptor(CharacterInventoryItemCreateSucceeded{}, "inventory_item", "create", events.OutcomeSucceeded),
+	descriptor(CharacterInventoryItemUpdateSucceeded{}, "inventory_item", "update", events.OutcomeSucceeded),
+	descriptor(CharacterInventoryItemDeleteSucceeded{}, "inventory_item", "delete", events.OutcomeSucceeded),
 	descriptor(CharacterBackstoryItemCreateSucceeded{}, "backstory_item", "create", events.OutcomeSucceeded),
 	descriptor(CharacterBackstoryItemUpdateSucceeded{}, "backstory_item", "update", events.OutcomeSucceeded),
 	descriptor(CharacterBackstoryItemDeleteSucceeded{}, "backstory_item", "delete", events.OutcomeSucceeded),

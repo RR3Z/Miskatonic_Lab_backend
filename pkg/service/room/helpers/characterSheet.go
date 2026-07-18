@@ -91,6 +91,15 @@ func LoadCharacterSheet(ctx context.Context, queries *db.Queries, userID string,
 	}
 	rawData.Notes = notes
 
+	inventoryItems, err := queries.GetInventoryItems(ctx, db.GetInventoryItemsParams{
+		UserID:      userID,
+		CharacterID: characterID,
+	})
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return characterDTO.CharacterModel{}, err
+	}
+	rawData.InventoryItems = inventoryItems
+
 	backstory, err := queries.GetBackstory(ctx, character.ID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {

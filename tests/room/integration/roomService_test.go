@@ -560,6 +560,14 @@ func TestRoomServiceListSelectedCharactersAppliesRoleVisibility(t *testing.T) {
 		CurrentHp:   &currentHP,
 	})
 	require.NoError(t, err)
+	quantity := int32(2)
+	inventoryItem, err := subject.queries.CreateInventoryItem(context.Background(), db.CreateInventoryItemParams{
+		CharacterID: firstPlayerCharacter.ID,
+		Name:        "Pocket Flashlight",
+		Quantity:    &quantity,
+		UserID:      firstPlayer.ID,
+	})
+	require.NoError(t, err)
 
 	playerCharacters, err := service.ListSelectedCharacters(context.Background(), model.ListSelectedCharactersInput{
 		RoomID: room.ID,
@@ -573,6 +581,9 @@ func TestRoomServiceListSelectedCharactersAppliesRoleVisibility(t *testing.T) {
 	require.Equal(t, "Current DB Investigator", playerCharacters[0].Character.Name)
 	require.Equal(t, int16(10), playerCharacters[0].Character.HP.MaxHp)
 	require.Equal(t, int16(7), playerCharacters[0].Character.HP.CurrentHp)
+	require.Len(t, playerCharacters[0].Character.Inventory, 1)
+	require.Equal(t, inventoryItem.ID, playerCharacters[0].Character.Inventory[0].ID)
+	require.Equal(t, "Pocket Flashlight", playerCharacters[0].Character.Inventory[0].Name)
 
 	gmCharacters, err := service.ListSelectedCharacters(context.Background(), model.ListSelectedCharactersInput{
 		RoomID: room.ID,
@@ -582,6 +593,13 @@ func TestRoomServiceListSelectedCharactersAppliesRoleVisibility(t *testing.T) {
 	require.Len(t, gmCharacters, 3)
 	requireSelectedCharacterUsers(t, gmCharacters, gm.ID, firstPlayer.ID, secondPlayer.ID)
 	require.NotContains(t, selectedCharacterUsers(gmCharacters), noCharacterPlayer.ID)
+	for _, selectedCharacter := range gmCharacters {
+		if selectedCharacter.UserID != firstPlayer.ID {
+			continue
+		}
+		require.Len(t, selectedCharacter.Character.Inventory, 1)
+		require.Equal(t, inventoryItem.ID, selectedCharacter.Character.Inventory[0].ID)
+	}
 
 	_, err = service.ListSelectedCharacters(context.Background(), model.ListSelectedCharactersInput{
 		RoomID: room.ID,

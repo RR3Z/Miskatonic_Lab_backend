@@ -54,6 +54,12 @@ func CharacterChangedRoomEventInput(event events.Event) (string, string, model.C
 		return e.UserID, e.CharacterID, change("note", "update", &e.NoteID, &sourceEvent), true
 	case characterEvents.CharacterNoteDeleteSucceeded:
 		return e.UserID, e.CharacterID, change("note", "delete", &e.NoteID, &sourceEvent), true
+	case characterEvents.CharacterInventoryItemCreateSucceeded:
+		return e.UserID, e.CharacterID, change("inventory_item", "create", &e.InventoryID, &sourceEvent), true
+	case characterEvents.CharacterInventoryItemUpdateSucceeded:
+		return e.UserID, e.CharacterID, change("inventory_item", "update", &e.InventoryID, &sourceEvent), true
+	case characterEvents.CharacterInventoryItemDeleteSucceeded:
+		return e.UserID, e.CharacterID, change("inventory_item", "delete", &e.InventoryID, &sourceEvent), true
 	case characterEvents.CharacterBackstoryItemCreateSucceeded:
 		return e.UserID, e.CharacterID, change("backstory_item", "create", &e.BackstoryItemID, &sourceEvent), true
 	case characterEvents.CharacterBackstoryItemUpdateSucceeded:
