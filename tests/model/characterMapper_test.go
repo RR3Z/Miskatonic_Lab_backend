@@ -7,6 +7,7 @@ import (
 	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
 	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	inventoryDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/inventory"
 	luckDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
 	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
 	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
@@ -103,6 +104,7 @@ func TestToFullCharacterModelLeavesOptionalSectionsEmptyWhenIDsAreInvalid(t *tes
 	require.False(t, result.Luck.ID.Valid)
 	require.Empty(t, result.Skills)
 	require.Empty(t, result.Notes)
+	require.Empty(t, result.Inventory)
 	require.False(t, result.Backstory.ID.Valid)
 	require.False(t, result.Finances.ID.Valid)
 }
@@ -118,6 +120,16 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 		CharacterID: character.ID,
 		Title:       "Session note",
 		Body:        "Found a hidden index.",
+		CreatedAt:   testTimestamptz("2026-06-07 12:00:00+03"),
+		UpdatedAt:   testTimestamptz("2026-06-07 13:00:00+03"),
+	}
+	inventoryItem := db.CharacterInventoryItem{
+		ID:          testUUID("12121212-1212-1212-1212-121212121212"),
+		CharacterID: character.ID,
+		Name:        "Flashlight",
+		Quantity:    int32Ptr(2),
+		Category:    strPtr("Tools"),
+		Description: strPtr("Fresh batteries."),
 		CreatedAt:   testTimestamptz("2026-06-07 12:00:00+03"),
 		UpdatedAt:   testTimestamptz("2026-06-07 13:00:00+03"),
 	}
@@ -141,6 +153,7 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 		BackstoryItems:  []db.BackstoryItem{item},
 		Finances:        &finance,
 		Notes:           []db.Note{note},
+		InventoryItems:  []db.CharacterInventoryItem{inventoryItem},
 	})
 
 	requireSameShortCharacter(t, character, result.CharacterShortModel)
@@ -157,6 +170,7 @@ func TestToFullCharacterModelMapsAllPresentSections(t *testing.T) {
 	require.Equal(t, item.ID, result.Backstory.Items[0].ID)
 	require.Equal(t, finance.ID, result.Finances.ID)
 	requireEqualNotes(t, []db.Note{note}, result.Notes)
+	requireEqualInventoryItems(t, []db.CharacterInventoryItem{inventoryItem}, result.Inventory)
 }
 
 func requireEqualCharacteristic(t *testing.T, expected db.Characteristic, actual characteristicsDTO.CharacteristicsModel) {
@@ -243,5 +257,20 @@ func requireEqualNotes(t *testing.T, expected []db.Note, actual []notesDTO.NoteM
 		require.Equal(t, e.Body, actual[i].Body)
 		require.Equal(t, e.CreatedAt, actual[i].CreatedAt)
 		require.Equal(t, e.UpdatedAt, actual[i].UpdatedAt)
+	}
+}
+
+func requireEqualInventoryItems(t *testing.T, expected []db.CharacterInventoryItem, actual []inventoryDTO.InventoryItemModel) {
+	t.Helper()
+	require.Len(t, actual, len(expected))
+	for i, item := range expected {
+		require.Equal(t, item.ID, actual[i].ID)
+		require.Equal(t, item.CharacterID, actual[i].CharacterID)
+		require.Equal(t, item.Name, actual[i].Name)
+		require.Equal(t, item.Quantity, actual[i].Quantity)
+		require.Equal(t, item.Category, actual[i].Category)
+		require.Equal(t, item.Description, actual[i].Description)
+		require.Equal(t, item.CreatedAt, actual[i].CreatedAt)
+		require.Equal(t, item.UpdatedAt, actual[i].UpdatedAt)
 	}
 }

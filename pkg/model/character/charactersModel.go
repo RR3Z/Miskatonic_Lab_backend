@@ -6,6 +6,7 @@ import (
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/inventory"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
@@ -27,6 +28,7 @@ type CharacterDBData struct {
 	Backstory       *db.Backstory
 	BackstoryItems  []db.BackstoryItem
 	Finances        *db.Finance
+	InventoryItems  []db.CharacterInventoryItem
 	Notes           []db.Note
 }
 
@@ -89,6 +91,7 @@ type CharacterModel struct {
 	Luck            luckDTO.LuckModel                       `json:"luck"`
 	Backstory       backstoriesDTO.BackstoryModel           `json:"backstory"`
 	Finances        financesDTO.FinancesModel               `json:"finances"`
+	Inventory       []inventoryDTO.InventoryItemModel       `json:"inventory"`
 	Notes           []notesDTO.NoteModel                    `json:"notes"`
 }
 
@@ -152,6 +155,7 @@ func ToCharacterModel(d CharacterDBData) CharacterModel {
 	}
 
 	m.Notes = notesDTO.ToNoteModels(d.Notes)
+	m.Inventory = inventoryDTO.ToInventoryItemModels(d.InventoryItems)
 
 	if len(d.Skills) > 0 {
 		skillModels := make([]skillsDTO.SkillModel, len(d.Skills))

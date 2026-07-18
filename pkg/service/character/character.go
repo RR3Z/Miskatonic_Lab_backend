@@ -9,6 +9,7 @@ import (
 	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
 	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	inventoryDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/inventory"
 	luckDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
 	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
 	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
@@ -45,6 +46,12 @@ type ICharacter interface {
 	GetFinances(ctx context.Context, input financesDTO.GetFinancesInput) (db.Finance, error)
 	UpsertFinances(ctx context.Context, input financesDTO.UpsertFinancesInput) (db.Finance, error)
 	DeleteFinances(ctx context.Context, input financesDTO.DeleteFinancesInput) error
+
+	GetInventoryItems(ctx context.Context, input inventoryDTO.GetInventoryItemsInput) ([]db.CharacterInventoryItem, error)
+	GetInventoryItem(ctx context.Context, input inventoryDTO.GetInventoryItemInput) (db.CharacterInventoryItem, error)
+	CreateInventoryItem(ctx context.Context, input inventoryDTO.CreateInventoryItemInput) (db.CharacterInventoryItem, error)
+	UpdateInventoryItem(ctx context.Context, input inventoryDTO.UpdateInventoryItemInput) (db.CharacterInventoryItem, error)
+	DeleteInventoryItem(ctx context.Context, input inventoryDTO.DeleteInventoryItemInput) error
 
 	GetBackstory(ctx context.Context, input backstoriesDTO.GetBackstoryInput) (backstoriesDTO.BackstoryModel, error)
 	UpsertBackstory(ctx context.Context, input backstoriesDTO.UpsertBackstoryInput) (backstoriesDTO.BackstoryModel, error)

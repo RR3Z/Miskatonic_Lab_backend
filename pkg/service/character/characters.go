@@ -125,6 +125,15 @@ func (s *CharacterService) GetCharacter(ctx context.Context, input characterDTO.
 	}
 	rawData.Notes = notes
 
+	inventoryItems, err := s.repos.Queries.GetInventoryItems(ctx, db.GetInventoryItemsParams{
+		UserID:      input.UserID,
+		CharacterID: input.CharacterID,
+	})
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return characterDTO.CharacterModel{}, err
+	}
+	rawData.InventoryItems = inventoryItems
+
 	backstory, err := s.repos.Queries.GetBackstory(ctx, characterGeneralData.ID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {

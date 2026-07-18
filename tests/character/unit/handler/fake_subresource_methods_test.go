@@ -4,6 +4,7 @@ import (
 	"context"
 
 	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
+	inventoryDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/inventory"
 	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
 	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
@@ -88,5 +89,29 @@ func (f *fakeCharacterHandlerService) UpdateNote(_ context.Context, _ notesDTO.U
 func (f *fakeCharacterHandlerService) DeleteNote(_ context.Context, input notesDTO.DeleteNoteInput) error {
 	f.deleteNoteCalls++
 	f.deleteNoteInput = input
+	return f.err
+}
+
+func (f *fakeCharacterHandlerService) GetInventoryItems(_ context.Context, _ inventoryDTO.GetInventoryItemsInput) ([]db.CharacterInventoryItem, error) {
+	return nil, f.err
+}
+
+func (f *fakeCharacterHandlerService) GetInventoryItem(_ context.Context, _ inventoryDTO.GetInventoryItemInput) (db.CharacterInventoryItem, error) {
+	return db.CharacterInventoryItem{}, f.err
+}
+
+func (f *fakeCharacterHandlerService) CreateInventoryItem(_ context.Context, input inventoryDTO.CreateInventoryItemInput) (db.CharacterInventoryItem, error) {
+	f.createInventoryItemCalls++
+	f.createInventoryItemInput = input
+	return db.CharacterInventoryItem{}, f.err
+}
+
+func (f *fakeCharacterHandlerService) UpdateInventoryItem(_ context.Context, _ inventoryDTO.UpdateInventoryItemInput) (db.CharacterInventoryItem, error) {
+	return db.CharacterInventoryItem{}, f.err
+}
+
+func (f *fakeCharacterHandlerService) DeleteInventoryItem(_ context.Context, input inventoryDTO.DeleteInventoryItemInput) error {
+	f.deleteInventoryItemCalls++
+	f.deleteInventoryItemInput = input
 	return f.err
 }

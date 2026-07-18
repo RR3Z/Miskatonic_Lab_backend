@@ -5,6 +5,7 @@ import (
 	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
 	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	inventoryDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/inventory"
 	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
 	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 )
@@ -67,6 +68,11 @@ type fakeCharacterHandlerService struct {
 
 	deleteNoteCalls int
 	deleteNoteInput notesDTO.DeleteNoteInput
+
+	createInventoryItemCalls int
+	createInventoryItemInput inventoryDTO.CreateInventoryItemInput
+	deleteInventoryItemCalls int
+	deleteInventoryItemInput inventoryDTO.DeleteInventoryItemInput
 }
 
 func (f *fakeCharacterHandlerService) totalCalls() int {
@@ -74,5 +80,6 @@ func (f *fakeCharacterHandlerService) totalCalls() int {
 		f.getHealthCalls + f.upsertHealthCalls + f.deleteHealthCalls +
 		f.getCharacteristicsCalls + f.upsertCharacteristicsCalls + f.deleteCharacteristicsCalls +
 		f.getBackstoryItemCalls + f.createBackstoryItemCalls + f.deleteSkillCalls +
-		f.createNoteCalls + f.deleteNoteCalls
+		f.createNoteCalls + f.deleteNoteCalls +
+		f.createInventoryItemCalls + f.deleteInventoryItemCalls
 }

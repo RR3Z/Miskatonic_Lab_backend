@@ -25,6 +25,10 @@ func GetNoteIDFromRequest(r *http.Request) (pgtype.UUID, error) {
 	return getUUIDFromRequest(r, "noteID")
 }
 
+func GetInventoryItemIDFromRequest(r *http.Request) (pgtype.UUID, error) {
+	return getUUIDFromRequest(r, "itemID")
+}
+
 func GetBackstoryItemIDFromRequest(r *http.Request) (pgtype.UUID, error) {
 	return getUUIDFromRequest(r, "itemID")
 }

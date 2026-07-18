@@ -74,6 +74,35 @@ func validateNoteInput(title, body string) error {
 	return nil
 }
 
+func normalizeOptionalString(value *string) *string {
+	if value == nil {
+		return nil
+	}
+
+	normalized := strings.TrimSpace(*value)
+	if normalized == "" {
+		return nil
+	}
+	return &normalized
+}
+
+func normalizeInventoryItemInput(name string, quantity *int32, category, description *string) (string, *int32, *string, *string, error) {
+	normalizedName := strings.TrimSpace(name)
+	if err := validateRequiredString(normalizedName, 120, characterErrors.ErrInventoryItemNameRequired, characterErrors.ErrInventoryItemNameTooLong); err != nil {
+		return "", nil, nil, nil, err
+	}
+	if quantity != nil && *quantity < 1 {
+		return "", nil, nil, nil, characterErrors.ErrInventoryItemQuantityInvalid
+	}
+
+	normalizedCategory := normalizeOptionalString(category)
+	if normalizedCategory != nil && len(*normalizedCategory) > 80 {
+		return "", nil, nil, nil, characterErrors.ErrInventoryItemCategoryTooLong
+	}
+
+	return normalizedName, quantity, normalizedCategory, normalizeOptionalString(description), nil
+}
+
 type stateFieldFetcher func(ctx context.Context) (max int16, current int16, err error)
 
 func (s *CharacterService) validateStateMax(

@@ -12,6 +12,7 @@ sql:
       - 'pkg/repository/queries/magicState'
       - 'pkg/repository/queries/luckState'
       - 'pkg/repository/queries/finances'
+      - 'pkg/repository/queries/inventory'
       - 'pkg/repository/queries/backstory'
       - 'pkg/repository/queries/skills'
       - 'pkg/repository/queries/derivedStats'

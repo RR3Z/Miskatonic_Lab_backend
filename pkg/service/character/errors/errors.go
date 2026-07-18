@@ -41,4 +41,9 @@ var (
 	ErrNoteTitleRequired = errors.New("note title is required")
 	ErrNoteTitleTooLong  = errors.New("note title exceeds max length")
 	ErrNoteBodyRequired  = errors.New("note body is required")
+
+	ErrInventoryItemNameRequired    = errors.New("inventory item name is required")
+	ErrInventoryItemNameTooLong     = errors.New("inventory item name exceeds max length")
+	ErrInventoryItemQuantityInvalid = errors.New("inventory item quantity must be >= 1")
+	ErrInventoryItemCategoryTooLong = errors.New("inventory item category exceeds max length")
 )

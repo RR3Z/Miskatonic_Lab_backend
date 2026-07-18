@@ -39,8 +39,22 @@ func (h *CharacterHandler) characterRoutes(r chi.Router) {
 
 		h.backstoriesRoutes(r)
 		h.financesRoutes(r)
+		h.inventoryRoutes(r)
 
 		h.notesRoutes(r)
+	})
+}
+
+func (h *CharacterHandler) inventoryRoutes(r chi.Router) {
+	r.Route("/inventory", func(r chi.Router) {
+		r.Get("/", httpAdapter.AppHandler(h.getInventoryItems).ServeHTTP)
+		r.Post("/", httpAdapter.AppHandler(h.createInventoryItem).ServeHTTP)
+
+		r.Route("/{itemID}", func(r chi.Router) {
+			r.Get("/", httpAdapter.AppHandler(h.getInventoryItem).ServeHTTP)
+			r.Put("/", httpAdapter.AppHandler(h.updateInventoryItem).ServeHTTP)
+			r.Delete("/", httpAdapter.AppHandler(h.deleteInventoryItem).ServeHTTP)
+		})
 	})
 }
 

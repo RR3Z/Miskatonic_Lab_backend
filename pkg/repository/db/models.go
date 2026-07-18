@@ -40,6 +40,17 @@ type Character struct {
 	PortraitKey *string            `json:"portrait_key"`
 }
 
+type CharacterInventoryItem struct {
+	ID          pgtype.UUID        `json:"id"`
+	CharacterID pgtype.UUID        `json:"character_id"`
+	Name        string             `json:"name"`
+	Quantity    *int32             `json:"quantity"`
+	Category    *string            `json:"category"`
+	Description *string            `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Characteristic struct {
 	ID           pgtype.UUID        `json:"id"`
 	CharacterID  pgtype.UUID        `json:"character_id"`

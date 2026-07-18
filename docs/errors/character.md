@@ -38,6 +38,10 @@
 | `character.note_title_required` | 400 | Note title is missing or blank. |
 | `character.note_title_too_long` | 400 | Note title exceeds the maximum length. |
 | `character.note_body_required` | 400 | Note body is missing or blank. |
+| `character.inventory_item_name_required` | 400 | Inventory item name is missing or blank. |
+| `character.inventory_item_name_too_long` | 400 | Inventory item name exceeds the maximum length. |
+| `character.inventory_item_quantity_invalid` | 400 | Inventory quantity is zero or negative. |
+| `character.inventory_item_category_too_long` | 400 | Inventory category exceeds the maximum length. |
 
 Sources:
 

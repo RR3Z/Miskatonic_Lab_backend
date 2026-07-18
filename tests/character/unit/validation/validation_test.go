@@ -2,11 +2,13 @@ package tests
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	backstoriesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/backstories"
 	characteristicsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/characteristics"
 	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
+	inventoryDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/inventory"
 	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
 	skillsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/skills"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
@@ -101,6 +103,32 @@ func TestCreateNoteRejectsBlankBody(t *testing.T) {
 	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
 	_, err := service.CreateNote(context.Background(), notesDTO.CreateNoteInput{Title: "title", Body: "   "})
 	require.ErrorIs(t, err, characterErrors.ErrNoteBodyRequired)
+}
+
+func TestCreateInventoryItemRejectsBlankName(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
+	_, err := service.CreateInventoryItem(context.Background(), inventoryDTO.CreateInventoryItemInput{Name: "   "})
+	require.ErrorIs(t, err, characterErrors.ErrInventoryItemNameRequired)
+}
+
+func TestCreateInventoryItemRejectsTooLongName(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
+	_, err := service.CreateInventoryItem(context.Background(), inventoryDTO.CreateInventoryItemInput{Name: strings.Repeat("a", 121)})
+	require.ErrorIs(t, err, characterErrors.ErrInventoryItemNameTooLong)
+}
+
+func TestCreateInventoryItemRejectsNonPositiveQuantity(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
+	quantity := int32(0)
+	_, err := service.CreateInventoryItem(context.Background(), inventoryDTO.CreateInventoryItemInput{Name: "Flashlight", Quantity: &quantity})
+	require.ErrorIs(t, err, characterErrors.ErrInventoryItemQuantityInvalid)
+}
+
+func TestCreateInventoryItemRejectsTooLongCategory(t *testing.T) {
+	service := characterServices.NewCharacterService(&repository.Repository{}, nil, nil)
+	category := strings.Repeat("a", 81)
+	_, err := service.CreateInventoryItem(context.Background(), inventoryDTO.CreateInventoryItemInput{Name: "Flashlight", Category: &category})
+	require.ErrorIs(t, err, characterErrors.ErrInventoryItemCategoryTooLong)
 }
 
 func TestUpsertCharacteristicsRejectsNegativeValue(t *testing.T) {

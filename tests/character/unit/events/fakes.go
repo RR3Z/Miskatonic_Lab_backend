@@ -10,6 +10,7 @@ import (
 	derivedStatsDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/derivedstats"
 	financesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/finances"
 	healthDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/health"
+	inventoryDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/inventory"
 	luckDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/luck"
 	magicDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/magic"
 	notesDTO "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character/notes"
@@ -45,6 +46,8 @@ type FakeCharacterService struct {
 	Characteristics db.Characteristic
 	Notes           []db.Note
 	Note            db.Note
+	InventoryItems  []db.CharacterInventoryItem
+	InventoryItem   db.CharacterInventoryItem
 }
 
 func (f *FakeCharacterService) GetAllCharacters(context.Context, string) ([]characterDTO.CharacterSummaryModel, error) {
@@ -132,6 +135,26 @@ func (f *FakeCharacterService) UpsertFinances(context.Context, financesDTO.Upser
 }
 
 func (f *FakeCharacterService) DeleteFinances(context.Context, financesDTO.DeleteFinancesInput) error {
+	return f.Err
+}
+
+func (f *FakeCharacterService) GetInventoryItems(context.Context, inventoryDTO.GetInventoryItemsInput) ([]db.CharacterInventoryItem, error) {
+	return f.InventoryItems, f.Err
+}
+
+func (f *FakeCharacterService) GetInventoryItem(context.Context, inventoryDTO.GetInventoryItemInput) (db.CharacterInventoryItem, error) {
+	return f.InventoryItem, f.Err
+}
+
+func (f *FakeCharacterService) CreateInventoryItem(context.Context, inventoryDTO.CreateInventoryItemInput) (db.CharacterInventoryItem, error) {
+	return f.InventoryItem, f.Err
+}
+
+func (f *FakeCharacterService) UpdateInventoryItem(context.Context, inventoryDTO.UpdateInventoryItemInput) (db.CharacterInventoryItem, error) {
+	return f.InventoryItem, f.Err
+}
+
+func (f *FakeCharacterService) DeleteInventoryItem(context.Context, inventoryDTO.DeleteInventoryItemInput) error {
 	return f.Err
 }
 

@@ -42,6 +42,10 @@ func int16Ptr(value int16) *int16 {
 	return &value
 }
 
+func int32Ptr(value int32) *int32 {
+	return &value
+}
+
 func testCharacter() db.Character {
 	portraitKey := "portraits/11111111-1111-1111-1111-111111111111.webp"
 	return db.Character{

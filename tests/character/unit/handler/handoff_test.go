@@ -189,6 +189,26 @@ func TestCreateNotePassesPathAndBody(t *testing.T) {
 	require.Equal(t, "Found strange tracks.", service.createNoteInput.Body)
 }
 
+func TestCreateInventoryItemPassesPathAndBody(t *testing.T) {
+	service, router := newCharacterHandlerTestSubject(nil)
+
+	recorder := performCharacterRequest(router, http.MethodPost, "/api/characters/"+testCharacterID+"/inventory/", `{
+		"name":"Flashlight",
+		"quantity":2,
+		"category":"Tools",
+		"description":"Fresh batteries."
+	}`)
+
+	require.Equal(t, http.StatusCreated, recorder.Code)
+	require.Equal(t, 1, service.createInventoryItemCalls)
+	require.Equal(t, "user_1", service.createInventoryItemInput.UserID)
+	require.Equal(t, testCharacterUnitUUID(testCharacterID), service.createInventoryItemInput.CharacterID)
+	require.Equal(t, "Flashlight", service.createInventoryItemInput.Name)
+	require.Equal(t, int32(2), *service.createInventoryItemInput.Quantity)
+	require.Equal(t, "Tools", *service.createInventoryItemInput.Category)
+	require.Equal(t, "Fresh batteries.", *service.createInventoryItemInput.Description)
+}
+
 func TestDeleteCharacterReturnsNoContent(t *testing.T) {
 	service, router := newCharacterHandlerTestSubject(nil)
 

@@ -73,6 +73,14 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 		return badRequestError("character.note_title_too_long", "note title exceeds max length", err)
 	case errors.Is(err, characterErrors.ErrNoteBodyRequired):
 		return badRequestError("character.note_body_required", "note body is required", err)
+	case errors.Is(err, characterErrors.ErrInventoryItemNameRequired):
+		return badRequestError("character.inventory_item_name_required", "inventory item name is required", err)
+	case errors.Is(err, characterErrors.ErrInventoryItemNameTooLong):
+		return badRequestError("character.inventory_item_name_too_long", "inventory item name exceeds max length", err)
+	case errors.Is(err, characterErrors.ErrInventoryItemQuantityInvalid):
+		return badRequestError("character.inventory_item_quantity_invalid", "inventory item quantity must be >= 1", err)
+	case errors.Is(err, characterErrors.ErrInventoryItemCategoryTooLong):
+		return badRequestError("character.inventory_item_category_too_long", "inventory item category exceeds max length", err)
 	case isHealthStateValidationError(err):
 		return badRequestError("character.state_current_exceeds_max", "current_hp value cannot exceed max_hp value", err)
 	case isMagicStateValidationError(err):
