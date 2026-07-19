@@ -121,6 +121,12 @@ func NormalizeAppError(appErr *AppError) *AppError {
 		if mapped := MapPostgresError(appErr.Err); mapped != nil {
 			return mapped
 		}
+		return NewAppError(DefaultCodeForStatus(appErr.StatusCode()), appErr.Err, appErr.Details...)
+	}
+
+	if definition, ok := ErrorDefinitionFor(appErr.Code); ok {
+		appErr.Status = definition.HTTPStatus
+		appErr.Message = definition.Message
 	}
 
 	return appErr

@@ -118,6 +118,7 @@ func NewClerkAuthMiddleware(config ClerkAuthConfig) func(http.Handler) http.Hand
 	return func(next http.Handler) http.Handler {
 		protected := clerkMiddleware(next)
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r = withWebSocketAuthorization(r)
 			token := extractBearerToken(r)
 			metadata := decodeTokenMetadata(token)
 			if token == "" || metadata.KeyID == "" {
@@ -224,10 +225,38 @@ func classifyClerkVerificationError(err error) AuthFailureCategory {
 
 func extractBearerToken(r *http.Request) string {
 	authorization := strings.TrimSpace(r.Header.Get("Authorization"))
-	if !strings.HasPrefix(authorization, "Bearer ") {
+	if strings.HasPrefix(authorization, "Bearer ") {
+		return strings.TrimSpace(strings.TrimPrefix(authorization, "Bearer "))
+	}
+	return webSocketBearerToken(r)
+}
+
+func withWebSocketAuthorization(r *http.Request) *http.Request {
+	if strings.TrimSpace(r.Header.Get("Authorization")) != "" {
+		return r
+	}
+
+	token := webSocketBearerToken(r)
+	if token == "" {
+		return r
+	}
+
+	clone := r.Clone(r.Context())
+	clone.Header.Set("Authorization", "Bearer "+token)
+	return clone
+}
+
+func webSocketBearerToken(r *http.Request) string {
+	if !strings.EqualFold(strings.TrimSpace(r.Header.Get("Upgrade")), "websocket") {
 		return ""
 	}
-	return strings.TrimSpace(strings.TrimPrefix(authorization, "Bearer "))
+
+	protocols := strings.Split(r.Header.Get("Sec-WebSocket-Protocol"), ",")
+	if len(protocols) != 2 || strings.TrimSpace(protocols[0]) != "bearer" {
+		return ""
+	}
+
+	return strings.TrimSpace(protocols[1])
 }
 
 func decodeTokenMetadata(token string) tokenMetadata {

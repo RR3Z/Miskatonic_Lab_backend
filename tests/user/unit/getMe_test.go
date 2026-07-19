@@ -81,5 +81,5 @@ func TestGetMeReturnsInternalErrorWhenServiceFails(t *testing.T) {
 	router.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
-	require.JSONEq(t, `{"code":"common.internal_error","message":"failed to get user"}`, recorder.Body.String())
+	require.JSONEq(t, `{"code":"common.internal_error","message":"internal server error"}`, recorder.Body.String())
 }

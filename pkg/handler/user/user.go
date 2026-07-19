@@ -18,20 +18,12 @@ import (
 func (h *UserHandler) getMe(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
 	claims, ok := clerk.SessionClaimsFromContext(r.Context())
 	if !ok {
-		return &myErrors.AppError{
-			Status:  http.StatusUnauthorized,
-			Message: "unauthorized",
-			Err:     errors.New("failed to get clerk session claims"),
-		}
+		return myErrors.NewAppError(myErrors.CodeUnauthorized, errors.New("failed to get clerk session claims"))
 	}
 
 	userID := claims.Subject
 	if strings.TrimSpace(userID) == "" {
-		return &myErrors.AppError{
-			Status:  http.StatusUnauthorized,
-			Message: "unauthorized",
-			Err:     errors.New("clerk session claims missing subject"),
-		}
+		return myErrors.NewAppError(myErrors.CodeUnauthorized, errors.New("clerk session claims missing subject"))
 	}
 
 	user, err := h.service.GetUserByID(r.Context(), userDTO.GetUserInput{ID: userID})

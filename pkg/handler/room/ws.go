@@ -26,7 +26,9 @@ func (h *RoomHandler) serveRoomWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := websocket.Accept(w, r, nil)
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		Subprotocols: []string{"bearer"},
+	})
 	if err != nil {
 		return
 	}

@@ -2,7 +2,6 @@ package errors
 
 import (
 	stdErrors "errors"
-	"net/http"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -23,53 +22,17 @@ func MapPostgresError(err error) *AppError {
 
 	switch pgErr.Code {
 	case PostgresUniqueViolation:
-		return &AppError{
-			Status:  http.StatusConflict,
-			Code:    CodeUniqueViolation,
-			Message: "resource already exists",
-			Details: postgresErrorDetails(pgErr, "unique constraint violated"),
-			Err:     err,
-		}
+		return NewAppError(CodeUniqueViolation, err, postgresErrorDetails(pgErr, "unique constraint violated")...)
 	case PostgresForeignKeyViolation:
-		return &AppError{
-			Status:  http.StatusBadRequest,
-			Code:    CodeForeignKey,
-			Message: "referenced resource does not exist",
-			Details: postgresErrorDetails(pgErr, "foreign key constraint violated"),
-			Err:     err,
-		}
+		return NewAppError(CodeForeignKey, err, postgresErrorDetails(pgErr, "foreign key constraint violated")...)
 	case PostgresCheckViolation:
-		return &AppError{
-			Status:  http.StatusBadRequest,
-			Code:    CodeCheckViolation,
-			Message: "request violates a data constraint",
-			Details: postgresErrorDetails(pgErr, "check constraint violated"),
-			Err:     err,
-		}
+		return NewAppError(CodeCheckViolation, err, postgresErrorDetails(pgErr, "check constraint violated")...)
 	case PostgresNotNullViolation:
-		return &AppError{
-			Status:  http.StatusBadRequest,
-			Code:    CodeNotNullViolation,
-			Message: "required value is missing",
-			Details: postgresErrorDetails(pgErr, "required value is missing"),
-			Err:     err,
-		}
+		return NewAppError(CodeNotNullViolation, err, postgresErrorDetails(pgErr, "required value is missing")...)
 	case PostgresValueTooLong:
-		return &AppError{
-			Status:  http.StatusBadRequest,
-			Code:    CodeValueTooLong,
-			Message: "value is too long",
-			Details: postgresErrorDetails(pgErr, "value exceeds allowed length"),
-			Err:     err,
-		}
+		return NewAppError(CodeValueTooLong, err, postgresErrorDetails(pgErr, "value exceeds allowed length")...)
 	default:
-		return &AppError{
-			Status:  http.StatusBadRequest,
-			Code:    CodeConstraint,
-			Message: "request violates a database constraint",
-			Details: postgresErrorDetails(pgErr, "database constraint violated"),
-			Err:     err,
-		}
+		return NewAppError(CodeConstraint, err, postgresErrorDetails(pgErr, "database constraint violated")...)
 	}
 }
 

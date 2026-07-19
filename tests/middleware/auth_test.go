@@ -44,6 +44,31 @@ func TestClerkAuthMiddlewareAcceptsValidJWTAndSetsClaims(t *testing.T) {
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 }
 
+func TestClerkAuthMiddlewareAcceptsWebSocketBearerSubprotocol(t *testing.T) {
+	now := time.Date(2026, 7, 12, 20, 0, 0, 0, time.UTC)
+	token, publicKey := generateClerkToken(t, "websocket-kid", now, nil)
+	client := newTestJWKSClient(t, []jose.JSONWebKey{newTestJWK("websocket-kid", publicKey)})
+
+	handler := middleware.NewClerkAuthMiddleware(middleware.ClerkAuthConfig{
+		JWKSClient:        client,
+		AuthorizedParties: []string{testParty},
+		Clock:             clerktest.NewClockAt(now),
+	})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := clerk.SessionClaimsFromContext(r.Context())
+		require.True(t, ok)
+		require.Equal(t, "user_test", claims.Subject)
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	request := httptest.NewRequest(http.MethodGet, "/api/rooms/room-1/ws", nil)
+	request.Header.Set("Upgrade", "websocket")
+	request.Header.Set("Sec-WebSocket-Protocol", "bearer, "+token)
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusNoContent, recorder.Code)
+}
+
 func TestClerkAuthMiddlewareKeepsMissingAndMalformedTokenForbidden(t *testing.T) {
 	logs := new(bytes.Buffer)
 	handler := middleware.NewClerkAuthMiddleware(middleware.ClerkAuthConfig{

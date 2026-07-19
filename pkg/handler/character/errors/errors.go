@@ -2,7 +2,6 @@ package characterErrors
 
 import (
 	"errors"
-	"net/http"
 
 	myErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/errors"
 	characterErrors "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character/errors"
@@ -22,25 +21,17 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 	case errors.Is(err, characterErrors.ErrPatchInvalid):
 		return InvalidInputError("character patch input is invalid", err)
 	case errors.Is(err, characterErrors.ErrCharacterLimitReached):
-		return &myErrors.AppError{
-			Status:  http.StatusConflict,
-			Code:    "character.limit_reached",
-			Message: "maximum number of characters reached",
-			Details: []myErrors.ErrorDetail{
-				myErrors.ConflictDetail("characters", "limit_reached"),
-			},
-			Err: err,
-		}
+		return myErrors.NewAppError("character.limit_reached", err, myErrors.ConflictDetail("characters", "limit_reached"))
 	case errors.Is(err, characterErrors.ErrPortraitRequired):
 		return badRequestError("character.portrait_required", "portrait file is required", err)
 	case errors.Is(err, characterErrors.ErrPortraitTooLarge):
-		return &myErrors.AppError{Status: http.StatusRequestEntityTooLarge, Code: "character.portrait_too_large", Message: "portrait exceeds 5 MiB", Err: err}
+		return myErrors.NewAppError("character.portrait_too_large", err)
 	case errors.Is(err, characterErrors.ErrPortraitUnsupported):
 		return badRequestError("character.portrait_unsupported", "portrait must be JPEG, PNG, or WebP", err)
 	case errors.Is(err, characterErrors.ErrPortraitInvalid):
 		return badRequestError("character.portrait_invalid", "portrait must be a valid image up to 4096x4096", err)
 	case errors.Is(err, characterErrors.ErrPortraitStorage):
-		return &myErrors.AppError{Status: http.StatusServiceUnavailable, Code: "character.portrait_storage_unavailable", Message: "portrait storage is unavailable", Err: err}
+		return myErrors.NewAppError("character.portrait_storage_unavailable", err)
 	case errors.Is(err, characterErrors.ErrCharacteristicsNegative):
 		return badRequestError("character.characteristics_negative", "characteristic values must be >= 0", err)
 	case errors.Is(err, characterErrors.ErrDerivedStatsNegative):
@@ -64,7 +55,7 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 	case errors.Is(err, characterErrors.ErrSkillValueNegative):
 		return badRequestError("character.skill_value_negative", "skill values must be >= 0", err)
 	case errors.Is(err, characterErrors.ErrProtectedSkill):
-		return &myErrors.AppError{Status: http.StatusConflict, Code: "character.skill_protected", Message: "protected skill cannot be renamed, rebased, or deleted", Err: err}
+		return myErrors.NewAppError("character.skill_protected", err)
 	case errors.Is(err, characterErrors.ErrFinancesMoneyTooLong):
 		return badRequestError("character.finances_money_too_long", "money field exceeds max length", err)
 	case errors.Is(err, characterErrors.ErrNoteTitleRequired):
@@ -96,11 +87,8 @@ func MapServiceError(err error, fallbackMessage string) *myErrors.AppError {
 	case isSkillValidationError(err):
 		return badRequestError("character.invalid_skill", "skill payload is invalid", err)
 	default:
-		return &myErrors.AppError{
-			Status:  http.StatusInternalServerError,
-			Message: fallbackMessage,
-			Err:     err,
-		}
+		_ = fallbackMessage
+		return myErrors.NewAppError(myErrors.CodeInternalError, err)
 	}
 }
 
@@ -110,12 +98,8 @@ func PortraitManagedByServerError() *myErrors.AppError {
 
 func MapNotFoundOrServiceError(err error, notFoundMessage, fallbackMessage string) *myErrors.AppError {
 	if errors.Is(err, pgx.ErrNoRows) {
-		return &myErrors.AppError{
-			Status:  http.StatusNotFound,
-			Code:    "character.not_found",
-			Message: notFoundMessage,
-			Err:     err,
-		}
+		_ = notFoundMessage
+		return myErrors.NewAppError("character.not_found", err)
 	}
 
 	return MapServiceError(err, fallbackMessage)
@@ -125,43 +109,20 @@ func InvalidCharacterIDError(err error) *myErrors.AppError {
 	return InvalidPathIDError("invalid character id", err)
 }
 
-func InvalidPathIDError(message string, err error) *myErrors.AppError {
-	return &myErrors.AppError{
-		Status:  http.StatusBadRequest,
-		Code:    "character.invalid_id",
-		Message: message,
-		Err:     err,
-	}
+func InvalidPathIDError(_ string, err error) *myErrors.AppError {
+	return myErrors.NewAppError("character.invalid_id", err)
 }
 
-func InvalidInputError(message string, err error) *myErrors.AppError {
-	return &myErrors.AppError{
-		Status:  http.StatusBadRequest,
-		Code:    "character.invalid_input",
-		Message: message,
-		Err:     err,
-	}
+func InvalidInputError(_ string, err error) *myErrors.AppError {
+	return myErrors.NewAppError("character.invalid_input", err)
 }
 
-func badRequestError(code string, message string, err error) *myErrors.AppError {
-	return &myErrors.AppError{
-		Status:  http.StatusBadRequest,
-		Code:    code,
-		Message: message,
-		Err:     err,
-	}
+func badRequestError(code string, _ string, err error) *myErrors.AppError {
+	return myErrors.NewAppError(code, err)
 }
 
 func characterNameRequiredError(err error) *myErrors.AppError {
-	return &myErrors.AppError{
-		Status:  http.StatusBadRequest,
-		Code:    "character.name_required",
-		Message: "name is required",
-		Details: []myErrors.ErrorDetail{
-			myErrors.ValidationDetail("body.name", "required"),
-		},
-		Err: err,
-	}
+	return myErrors.NewAppError("character.name_required", err, myErrors.ValidationDetail("body.name", "required"))
 }
 
 func isHealthStateValidationError(err error) bool {

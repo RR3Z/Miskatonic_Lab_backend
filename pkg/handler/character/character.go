@@ -15,11 +15,7 @@ func (h *CharacterHandler) getAllCharacters(w http.ResponseWriter, r *http.Reque
 
 	characters, err := h.service.GetAllCharacters(r.Context(), userID)
 	if err != nil {
-		return &myErrors.AppError{
-			Status:  http.StatusInternalServerError,
-			Message: "failed to get user characters",
-			Err:     err,
-		}
+		return myErrors.NewAppError(myErrors.CodeInternalError, err)
 	}
 
 	utils.WriteJSON(w, http.StatusOK, characters)
