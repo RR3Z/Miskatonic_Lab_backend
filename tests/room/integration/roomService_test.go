@@ -25,6 +25,7 @@ func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
 
 	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{
 		OwnerID:    owner.ID,
+		Name:       "Arkham After Dark",
 		MaxPlayers: &maxPlayers,
 		Password:   "keeper-password",
 	})
@@ -32,6 +33,7 @@ func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
 	require.True(t, roomModel.ID.Valid)
 	require.Equal(t, owner.ID, roomModel.OwnerID)
 	require.Equal(t, int32(3), roomModel.MaxPlayers)
+	require.Equal(t, "Arkham After Dark", roomModel.Name)
 	require.NotEmpty(t, roomModel.InviteToken)
 	require.Len(t, roomModel.Members, 1)
 	require.Equal(t, owner.ID, roomModel.Members[0].UserID)
@@ -55,6 +57,7 @@ func TestRoomServiceCreateRoomDefaultsAndValidatesMaxPlayers(t *testing.T) {
 	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: owner.ID, Password: "keeper-password"})
 	require.NoError(t, err)
 	require.Equal(t, roomService.DEFAULT_MAX_PLAYERS, roomModel.MaxPlayers)
+	require.Equal(t, "Комната "+owner.Username, roomModel.Name)
 
 	invalidMaxPlayers := int32(0)
 	_, err = service.CreateRoom(context.Background(), model.CreateRoomInput{
@@ -69,6 +72,88 @@ func TestRoomServiceCreateRoomDefaultsAndValidatesMaxPlayers(t *testing.T) {
 
 	_, err = service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: owner.ID, Password: "   "})
 	require.ErrorIs(t, err, roomService.ErrInvalidPassword)
+}
+
+func TestRoomServiceCreatesAndUpdatesRoomNames(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{
+		OwnerID:  owner.ID,
+		Name:     "  Тени над Инсмутом  ",
+		Password: "keeper-password",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Тени над Инсмутом", roomModel.Name)
+
+	updatedName := "  Новое имя  "
+	updated, err := service.UpdateRoom(context.Background(), model.UpdateRoomInput{
+		RoomID:     roomModel.ID,
+		OwnerID:    owner.ID,
+		Name:       &updatedName,
+		MaxPlayers: roomModel.MaxPlayers,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Новое имя", updated.Name)
+
+	blankName := "   "
+	_, err = service.UpdateRoom(context.Background(), model.UpdateRoomInput{
+		RoomID:     roomModel.ID,
+		OwnerID:    owner.ID,
+		Name:       &blankName,
+		MaxPlayers: roomModel.MaxPlayers,
+	})
+	require.ErrorIs(t, err, roomService.ErrInvalidInput)
+}
+
+func TestRoomServiceListsPublicCatalogByCreationDate(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	member := createRoomTestUser(t, subject)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	oldest := createRoomTestRoom(t, subject, owner.ID)
+	middle := createRoomTestRoom(t, subject, owner.ID)
+	newest := createRoomTestRoom(t, subject, owner.ID)
+	fullRoom := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, oldest.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, middle.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, newest.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, fullRoom.ID, owner.ID, roomService.ROLE_GM)
+	addRoomTestMember(t, subject, middle.ID, member.ID, roomService.ROLE_PLAYER)
+	_, err := subject.pool.Exec(context.Background(), "UPDATE rooms SET max_players = 1 WHERE id = $1", fullRoom.ID)
+	require.NoError(t, err)
+
+	base := time.Now().UTC().Add(-time.Hour)
+	setRoomCreatedAt(t, subject, oldest.ID, base)
+	setRoomCreatedAt(t, subject, middle.ID, base.Add(time.Minute))
+	setRoomCreatedAt(t, subject, newest.ID, base.Add(2*time.Minute))
+
+	rooms, err := service.ListRooms(context.Background(), model.ListRoomsInput{UserID: member.ID})
+	require.NoError(t, err)
+
+	positions := make(map[string]int, len(rooms))
+	for index, room := range rooms {
+		positions[room.ID.String()] = index
+	}
+	require.Contains(t, positions, oldest.ID.String())
+	require.Contains(t, positions, middle.ID.String())
+	require.Contains(t, positions, newest.ID.String())
+	require.NotContains(t, positions, fullRoom.ID.String())
+	require.Less(t, positions[newest.ID.String()], positions[middle.ID.String()])
+	require.Less(t, positions[middle.ID.String()], positions[oldest.ID.String()])
+
+	for _, room := range rooms {
+		switch room.ID {
+		case middle.ID:
+			require.True(t, room.IsMember)
+			require.Equal(t, int32(2), room.MemberCount)
+		case oldest.ID, newest.ID:
+			require.False(t, room.IsMember)
+			require.Equal(t, int32(1), room.MemberCount)
+		}
+	}
 }
 
 func TestRoomServiceJoinRoomRequiresInviteOrPasswordAndCapacity(t *testing.T) {

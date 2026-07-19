@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 
 	characterModels "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/character"
 	roomModels "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
@@ -24,6 +25,37 @@ func TestCreateRoomDefaultsMaxPlayersAndPassesUserID(t *testing.T) {
 	require.Equal(t, "user_1", roomService.createInput.OwnerID)
 	require.Nil(t, roomService.createInput.MaxPlayers)
 	require.Equal(t, "keeper-password", roomService.createInput.Password)
+}
+
+func TestCreateRoomPassesOptionalName(t *testing.T) {
+	roomService := &fakeRoomHandlerService{room: roomModels.RoomModel{OwnerID: "user_1"}}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodPost, "/api/rooms/", `{"name":"  Masks of Nyarlathotep  ","password":"keeper-password"}`)
+
+	require.Equal(t, http.StatusCreated, recorder.Code)
+	require.Equal(t, "  Masks of Nyarlathotep  ", roomService.createInput.Name)
+}
+
+func TestListRoomsPassesCurrentUserAndReturnsSummaries(t *testing.T) {
+	roomService := &fakeRoomHandlerService{rooms: []roomModels.RoomSummaryModel{{
+		ID:          testRoomUnitUUID("11111111-1111-1111-1111-111111111111"),
+		Name:        "Open Table",
+		MaxPlayers:  7,
+		MemberCount: 2,
+		CreatedAt:   pgtype.Timestamptz{Time: time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC), Valid: true},
+		IsMember:    true,
+	}}}
+	router := newRoomHandlerTestRouter(roomService)
+
+	recorder := performRoomRequest(router, http.MethodGet, "/api/rooms/", "")
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, 1, roomService.listCalls)
+	require.Equal(t, "user_1", roomService.listInput.UserID)
+	require.JSONEq(t, `[{"id":"11111111-1111-1111-1111-111111111111","name":"Open Table","max_players":7,"member_count":2,"created_at":"2026-01-02T03:04:05Z","is_member":true}]`, recorder.Body.String())
+	require.NotContains(t, recorder.Body.String(), "invite_token")
+	require.NotContains(t, recorder.Body.String(), "password")
 }
 
 func TestCreateRoomRejectsInvalidBodyBeforeService(t *testing.T) {

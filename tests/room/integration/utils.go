@@ -73,6 +73,7 @@ func createRoomTestRoom(t *testing.T, subject *roomIntegrationSubject, ownerID s
 
 	room, err := subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
 		OwnerID:      ownerID,
+		Name:         "Room Test",
 		MaxPlayers:   4,
 		InviteToken:  "invite_" + uniqueRoomIntegrationSuffix(),
 		PasswordHash: "test_password_hash",
@@ -114,6 +115,18 @@ func setRoomLastActivityAt(t *testing.T, subject *roomIntegrationSubject, roomID
 		context.Background(),
 		"UPDATE rooms SET last_activity_at = $1, updated_at = $1 WHERE id = $2",
 		activityAt,
+		roomID,
+	)
+	require.NoError(t, err)
+}
+
+func setRoomCreatedAt(t *testing.T, subject *roomIntegrationSubject, roomID pgtype.UUID, createdAt time.Time) {
+	t.Helper()
+
+	_, err := subject.pool.Exec(
+		context.Background(),
+		"UPDATE rooms SET created_at = $1 WHERE id = $2",
+		createdAt,
 		roomID,
 	)
 	require.NoError(t, err)

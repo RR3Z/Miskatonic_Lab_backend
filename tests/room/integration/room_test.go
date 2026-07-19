@@ -18,6 +18,7 @@ func TestRoomCreateGetUpdateDeleteAndMemberList(t *testing.T) {
 
 	room, err := subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
 		OwnerID:      owner.ID,
+		Name:         "Room CRUD Test",
 		MaxPlayers:   3,
 		InviteToken:  "invite_" + uniqueRoomIntegrationSuffix(),
 		PasswordHash: "test_password_hash",
@@ -76,6 +77,7 @@ func TestRoomConstraintsAndInviteMetadata(t *testing.T) {
 
 	room, err := subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
 		OwnerID:      owner.ID,
+		Name:         "Room Constraints Test",
 		MaxPlayers:   2,
 		InviteToken:  inviteToken,
 		PasswordHash: "test_password_hash",
@@ -85,6 +87,7 @@ func TestRoomConstraintsAndInviteMetadata(t *testing.T) {
 
 	_, err = subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
 		OwnerID:      "missing_user",
+		Name:         "Missing Owner",
 		MaxPlayers:   2,
 		InviteToken:  "invite_" + uniqueRoomIntegrationSuffix(),
 		PasswordHash: "test_password_hash",
@@ -93,6 +96,7 @@ func TestRoomConstraintsAndInviteMetadata(t *testing.T) {
 
 	_, err = subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
 		OwnerID:      owner.ID,
+		Name:         "Invalid Capacity",
 		MaxPlayers:   0,
 		InviteToken:  "invite_" + uniqueRoomIntegrationSuffix(),
 		PasswordHash: "test_password_hash",
@@ -101,6 +105,7 @@ func TestRoomConstraintsAndInviteMetadata(t *testing.T) {
 
 	_, err = subject.queries.CreateRoom(context.Background(), db.CreateRoomParams{
 		OwnerID:      owner.ID,
+		Name:         "Duplicate Invite",
 		MaxPlayers:   2,
 		InviteToken:  inviteToken,
 		PasswordHash: "test_password_hash",

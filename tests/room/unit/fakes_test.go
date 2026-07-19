@@ -11,10 +11,14 @@ type fakeRoomHandlerService struct {
 	err error
 
 	room   roomModels.RoomModel
+	rooms  []roomModels.RoomSummaryModel
 	member roomModels.RoomMemberModel
 
 	createCalls int
 	createInput roomModels.CreateRoomInput
+
+	listCalls int
+	listInput roomModels.ListRoomsInput
 
 	getCalls int
 	getInput roomModels.GetRoomInput
@@ -61,13 +65,19 @@ type fakeRoomHandlerService struct {
 }
 
 func (f *fakeRoomHandlerService) totalCalls() int {
-	return f.createCalls + f.getCalls + f.updateCalls + f.transferCalls + f.deleteCalls + f.joinCalls + f.leaveCalls + f.kickCalls + f.selectCharacterCalls + f.changeRoleCalls + f.listSelectedCharactersCalls + f.listEventsCalls + f.createChatCalls
+	return f.createCalls + f.listCalls + f.getCalls + f.updateCalls + f.transferCalls + f.deleteCalls + f.joinCalls + f.leaveCalls + f.kickCalls + f.selectCharacterCalls + f.changeRoleCalls + f.listSelectedCharactersCalls + f.listEventsCalls + f.createChatCalls
 }
 
 func (f *fakeRoomHandlerService) CreateRoom(_ context.Context, input roomModels.CreateRoomInput) (roomModels.RoomModel, error) {
 	f.createCalls++
 	f.createInput = input
 	return f.room, f.err
+}
+
+func (f *fakeRoomHandlerService) ListRooms(_ context.Context, input roomModels.ListRoomsInput) ([]roomModels.RoomSummaryModel, error) {
+	f.listCalls++
+	f.listInput = input
+	return f.rooms, f.err
 }
 
 func (f *fakeRoomHandlerService) GetRoom(_ context.Context, input roomModels.GetRoomInput) (roomModels.RoomModel, error) {

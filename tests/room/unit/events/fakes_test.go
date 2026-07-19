@@ -20,6 +20,7 @@ func (f *fakeRoomEventPublisher) Publish(_ context.Context, event events.Event) 
 type fakeEventPublishingRoomService struct {
 	err                error
 	room               model.RoomModel
+	rooms              []model.RoomSummaryModel
 	member             model.RoomMemberModel
 	leaveResult        model.LeaveRoomResult
 	selectedCharacters []model.SelectedCharacterModel
@@ -30,6 +31,10 @@ type fakeEventPublishingRoomService struct {
 
 func (f *fakeEventPublishingRoomService) CreateRoom(_ context.Context, _ model.CreateRoomInput) (model.RoomModel, error) {
 	return f.room, f.err
+}
+
+func (f *fakeEventPublishingRoomService) ListRooms(_ context.Context, _ model.ListRoomsInput) ([]model.RoomSummaryModel, error) {
+	return f.rooms, f.err
 }
 
 func (f *fakeEventPublishingRoomService) GetRoom(_ context.Context, _ model.GetRoomInput) (model.RoomModel, error) {

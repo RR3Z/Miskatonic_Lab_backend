@@ -23,6 +23,9 @@ type fakeListenerRoomService struct {
 func (f *fakeListenerRoomService) CreateRoom(_ context.Context, _ roomModel.CreateRoomInput) (roomModel.RoomModel, error) {
 	return roomModel.RoomModel{}, nil
 }
+func (f *fakeListenerRoomService) ListRooms(_ context.Context, _ roomModel.ListRoomsInput) ([]roomModel.RoomSummaryModel, error) {
+	return nil, nil
+}
 func (f *fakeListenerRoomService) GetRoom(_ context.Context, _ roomModel.GetRoomInput) (roomModel.RoomModel, error) {
 	return roomModel.RoomModel{}, nil
 }
