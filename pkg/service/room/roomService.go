@@ -3,11 +3,13 @@ package room
 import (
 	"context"
 	"errors"
+	"fmt"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository"
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/repository/db"
 	roomHelpers "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room/helpers"
 	"github.com/jackc/pgx/v5"
+	"strings"
 )
 
 type RoomService struct {
@@ -30,6 +32,19 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 		return model.RoomModel{}, err
 	}
 
+	name := input.Name
+	if name == "" || strings.TrimSpace(name) == "" {
+		owner, err := s.repos.Queries.GetUserByClerkID(ctx, input.OwnerID)
+		if err != nil {
+			return model.RoomModel{}, err
+		}
+		name = fmt.Sprintf("Комната %s", owner.Username)
+	}
+	name, err := normalizeRoomName(name)
+	if err != nil {
+		return model.RoomModel{}, err
+	}
+
 	passwordHash, err := roomHelpers.HashPassword(input.Password)
 	if err != nil {
 		return model.RoomModel{}, err
@@ -49,6 +64,7 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 
 	room, err := queries.CreateRoom(ctx, db.CreateRoomParams{
 		OwnerID:      input.OwnerID,
+		Name:         name,
 		MaxPlayers:   maxPlayers,
 		InviteToken:  inviteToken,
 		PasswordHash: passwordHash,
@@ -71,6 +87,15 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 	}
 
 	return model.ToRoomModel(room, []db.RoomMember{member}), nil
+}
+
+func (s *RoomService) ListRooms(ctx context.Context, input model.ListRoomsInput) ([]model.RoomSummaryModel, error) {
+	rooms, err := s.repos.Queries.ListRooms(ctx, input.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return model.ToRoomSummaryModels(rooms), nil
 }
 
 func (s *RoomService) GetRoom(ctx context.Context, input model.GetRoomInput) (model.RoomModel, error) {
@@ -114,6 +139,15 @@ func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInpu
 		passwordHash = &hash
 	}
 
+	var name *string
+	if input.Name != nil {
+		normalizedName, err := normalizeRoomName(*input.Name)
+		if err != nil {
+			return model.RoomModel{}, err
+		}
+		name = &normalizedName
+	}
+
 	if err := s.EnsureOwner(ctx, input.RoomID, input.OwnerID); err != nil {
 		return model.RoomModel{}, err
 	}
@@ -127,6 +161,7 @@ func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInpu
 	}
 
 	room, err := s.repos.Queries.UpdateRoom(ctx, db.UpdateRoomParams{
+		Name:         name,
 		ID:           input.RoomID,
 		OwnerID:      input.OwnerID,
 		MaxPlayers:   input.MaxPlayers,

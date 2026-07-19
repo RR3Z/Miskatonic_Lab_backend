@@ -8,8 +8,13 @@ import (
 
 type CreateRoomInput struct {
 	OwnerID    string
+	Name       string
 	MaxPlayers *int32
 	Password   string
+}
+
+type ListRoomsInput struct {
+	UserID string
 }
 
 type GetRoomInput struct {
@@ -20,6 +25,7 @@ type GetRoomInput struct {
 type UpdateRoomInput struct {
 	RoomID     pgtype.UUID
 	OwnerID    string
+	Name       *string
 	MaxPlayers int32
 	Password   *string
 }

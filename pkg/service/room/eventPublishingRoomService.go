@@ -36,6 +36,10 @@ func (s *EventPublishingRoomService) CreateRoom(ctx context.Context, input model
 	return room, nil
 }
 
+func (s *EventPublishingRoomService) ListRooms(ctx context.Context, input model.ListRoomsInput) ([]model.RoomSummaryModel, error) {
+	return s.next.ListRooms(ctx, input)
+}
+
 func (s *EventPublishingRoomService) GetRoom(ctx context.Context, input model.GetRoomInput) (model.RoomModel, error) {
 	room, err := s.next.GetRoom(ctx, input)
 	if err != nil {

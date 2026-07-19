@@ -3,13 +3,15 @@ package roomDTO
 import "github.com/jackc/pgx/v5/pgtype"
 
 type CreateRoomRequest struct {
+	Name       string `json:"name"`
 	MaxPlayers *int32 `json:"max_players"`
 	Password   string `json:"password"`
 }
 
 type UpdateRoomRequest struct {
-	MaxPlayers int32  `json:"max_players"`
-	Password   string `json:"password,omitempty"`
+	Name       *string `json:"name"`
+	MaxPlayers int32   `json:"max_players"`
+	Password   string  `json:"password,omitempty"`
 }
 
 type SelectCharacterRequest struct {

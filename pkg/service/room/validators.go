@@ -1,6 +1,19 @@
 package room
 
-import "strings"
+import (
+	"strings"
+)
+
+const MAX_ROOM_NAME_LENGTH = 120
+
+func normalizeRoomName(name string) (string, error) {
+	normalized := strings.TrimSpace(name)
+	if normalized == "" || len([]rune(normalized)) > MAX_ROOM_NAME_LENGTH {
+		return "", ErrInvalidInput
+	}
+
+	return normalized, nil
+}
 
 func validateMaxPlayers(maxPlayers int32) error {
 	if maxPlayers < 1 {

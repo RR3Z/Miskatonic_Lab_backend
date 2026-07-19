@@ -10,6 +10,7 @@ import (
 
 type IRoom interface {
 	CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.RoomModel, error)
+	ListRooms(ctx context.Context, input model.ListRoomsInput) ([]model.RoomSummaryModel, error)
 	GetRoom(ctx context.Context, input model.GetRoomInput) (model.RoomModel, error)
 	UpdateRoom(ctx context.Context, input model.UpdateRoomInput) (model.RoomModel, error)
 	TransferOwnership(ctx context.Context, input model.TransferOwnershipInput) (model.RoomModel, error)

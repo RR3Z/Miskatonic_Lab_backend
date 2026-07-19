@@ -21,6 +21,7 @@ func (h *RoomHandler) createRoom(w http.ResponseWriter, r *http.Request) *myErro
 
 	result, err := h.service.CreateRoom(r.Context(), roomDTO.CreateRoomInput{
 		OwnerID:    userID,
+		Name:       req.Name,
 		MaxPlayers: req.MaxPlayers,
 		Password:   req.Password,
 	})
@@ -29,6 +30,18 @@ func (h *RoomHandler) createRoom(w http.ResponseWriter, r *http.Request) *myErro
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, result)
+	return nil
+}
+
+func (h *RoomHandler) listRooms(w http.ResponseWriter, r *http.Request) *myErrors.AppError {
+	userID := utils.GetUserIDFromContext(r.Context())
+
+	result, err := h.service.ListRooms(r.Context(), roomDTO.ListRoomsInput{UserID: userID})
+	if err != nil {
+		return roomErrors.MapServiceError(err, "failed to list rooms")
+	}
+
+	utils.WriteJSON(w, http.StatusOK, result)
 	return nil
 }
 
@@ -66,6 +79,7 @@ func (h *RoomHandler) updateRoom(w http.ResponseWriter, r *http.Request) *myErro
 	result, err := h.service.UpdateRoom(r.Context(), roomDTO.UpdateRoomInput{
 		RoomID:     roomID,
 		OwnerID:    userID,
+		Name:       req.Name,
 		MaxPlayers: req.MaxPlayers,
 		Password:   roomHelpers.OptionalPassword(req.Password),
 	})

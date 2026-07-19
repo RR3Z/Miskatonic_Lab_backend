@@ -8,6 +8,7 @@ import (
 type RoomModel struct {
 	ID             pgtype.UUID        `json:"id"`
 	OwnerID        string             `json:"owner_id"`
+	Name           string             `json:"name"`
 	MaxPlayers     int32              `json:"max_players"`
 	InviteToken    string             `json:"invite_token"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -25,6 +26,7 @@ func ToRoomModel(r db.Room, members []db.RoomMember) RoomModel {
 	return RoomModel{
 		ID:             r.ID,
 		OwnerID:        r.OwnerID,
+		Name:           r.Name,
 		MaxPlayers:     r.MaxPlayers,
 		InviteToken:    r.InviteToken,
 		CreatedAt:      r.CreatedAt,

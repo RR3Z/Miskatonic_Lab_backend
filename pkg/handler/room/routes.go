@@ -36,6 +36,7 @@ func (h *RoomHandler) Hub() *ws.RoomHub {
 }
 
 func (h *RoomHandler) RegisterRoutes(r chi.Router) {
+	r.Get("/", httpAdapter.AppHandler(h.listRooms).ServeHTTP)
 	r.Post("/", httpAdapter.AppHandler(h.createRoom).ServeHTTP)
 
 	r.Route("/{roomID}", func(r chi.Router) {
