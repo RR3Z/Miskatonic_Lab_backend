@@ -86,7 +86,7 @@ func (s *RoomService) CreateRoom(ctx context.Context, input model.CreateRoomInpu
 		return model.RoomModel{}, err
 	}
 
-	return model.ToRoomModel(room, []db.RoomMember{member}), nil
+	return model.ToRoomModel(room, []db.RoomMember{member}, input.OwnerID), nil
 }
 
 func (s *RoomService) ListRooms(ctx context.Context, input model.ListRoomsInput) ([]model.RoomSummaryModel, error) {
@@ -118,7 +118,7 @@ func (s *RoomService) GetRoom(ctx context.Context, input model.GetRoomInput) (mo
 		return model.RoomModel{}, err
 	}
 
-	return model.ToRoomModel(room, members), nil
+	return model.ToRoomModelWithUsernames(room, members, input.UserID), nil
 }
 
 func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInput) (model.RoomModel, error) {
@@ -174,7 +174,7 @@ func (s *RoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInpu
 		return model.RoomModel{}, err
 	}
 
-	return model.ToRoomModel(room, nil), nil
+	return model.ToRoomModel(room, nil, input.OwnerID), nil
 }
 
 func (s *RoomService) TransferOwnership(ctx context.Context, input model.TransferOwnershipInput) (model.RoomModel, error) {
@@ -209,7 +209,7 @@ func (s *RoomService) TransferOwnership(ctx context.Context, input model.Transfe
 		return model.RoomModel{}, err
 	}
 
-	return model.ToRoomModel(room, nil), nil
+	return model.ToRoomModel(room, nil, input.OwnerID), nil
 }
 
 func (s *RoomService) DeleteRoom(ctx context.Context, input model.DeleteRoomInput) error {

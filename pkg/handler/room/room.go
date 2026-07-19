@@ -87,6 +87,8 @@ func (h *RoomHandler) updateRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to update room")
 	}
 
+	h.broadcastRoomEvent(roomDTO.EventRoomUpdated, roomID, userID, nil)
+
 	utils.WriteJSON(w, http.StatusOK, result)
 	return nil
 }
@@ -111,6 +113,11 @@ func (h *RoomHandler) transferRoomOwnership(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to transfer room ownership")
 	}
+
+	h.broadcastRoomEvent(roomDTO.EventOwnerTransferred, roomID, userID, roomDTO.OwnerTransferredPayload{
+		PreviousOwnerID: userID,
+		NewOwnerID:      req.UserID,
+	})
 
 	utils.WriteJSON(w, http.StatusOK, result)
 	return nil
@@ -209,6 +216,11 @@ func (h *RoomHandler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors
 		return roomErrors.MapServiceError(err, "failed to join room")
 	}
 
+	h.broadcastRoomEvent(roomDTO.EventMemberJoined, roomID, userID, roomDTO.MemberEventPayload{
+		UserID: userID,
+		Role:   result.Role,
+	})
+
 	utils.WriteJSON(w, http.StatusOK, result)
 	return nil
 }
@@ -226,6 +238,10 @@ func (h *RoomHandler) leaveRoom(w http.ResponseWriter, r *http.Request) *myError
 	})
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to leave room")
+	}
+
+	if result.DeletedRoomID == nil {
+		h.broadcastRoomEvent(roomDTO.EventMemberLeft, roomID, userID, roomDTO.MemberEventPayload{UserID: userID})
 	}
 
 	if result.DeletedRoomID != nil {
@@ -256,6 +272,8 @@ func (h *RoomHandler) kickMember(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to kick member")
 	}
 
+	h.broadcastRoomEvent(roomDTO.EventMemberKicked, roomID, userID, roomDTO.MemberEventPayload{UserID: targetUserID})
+
 	w.WriteHeader(http.StatusNoContent)
 	return nil
 }
@@ -280,6 +298,11 @@ func (h *RoomHandler) selectCharacter(w http.ResponseWriter, r *http.Request) *m
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to select character")
 	}
+
+	h.broadcastRoomEvent(roomDTO.EventMemberCharacterSelected, roomID, userID, roomDTO.MemberEventPayload{
+		UserID:      userID,
+		CharacterID: result.CharacterID.String(),
+	})
 
 	utils.WriteJSON(w, http.StatusOK, result)
 	return nil
@@ -310,6 +333,11 @@ func (h *RoomHandler) changeRole(w http.ResponseWriter, r *http.Request) *myErro
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to change role")
 	}
+
+	h.broadcastRoomEvent(roomDTO.EventMemberRoleChanged, roomID, userID, roomDTO.MemberEventPayload{
+		UserID: targetUserID,
+		Role:   result.Role,
+	})
 
 	utils.WriteJSON(w, http.StatusOK, result)
 	return nil

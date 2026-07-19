@@ -403,7 +403,7 @@ func TestRoomHandlerErrorMappings(t *testing.T) {
 		{name: "kick not owner", err: room.ErrNotOwner, wantStatus: http.StatusForbidden, wantBody: `{"code":"room.not_owner","message":"only the room owner can perform this action"}`, method: http.MethodDelete, path: "/api/rooms/11111111-1111-1111-1111-111111111111/kick/user_2"},
 		{name: "kick owner self", err: room.ErrCannotKickOwner, wantStatus: http.StatusForbidden, wantBody: `{"code":"room.cannot_kick_owner","message":"cannot kick the room owner"}`, method: http.MethodDelete, path: "/api/rooms/11111111-1111-1111-1111-111111111111/kick/user_2"},
 		{name: "select character not owned", err: room.ErrCharacterNotOwned, wantStatus: http.StatusForbidden, wantBody: `{"code":"room.character_not_owned","message":"character does not belong to you"}`, method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/character", body: `{"character_id":"33333333-3333-3333-3333-333333333333"}`},
-		{name: "change role generic", err: errors.New("boom"), wantStatus: http.StatusInternalServerError, wantBody: `{"code":"common.internal_error","message":"failed to change role"}`, method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/members/user_2/role", body: `{"role":"gm"}`},
+		{name: "change role generic", err: errors.New("boom"), wantStatus: http.StatusInternalServerError, wantBody: `{"code":"common.internal_error","message":"internal server error"}`, method: http.MethodPut, path: "/api/rooms/11111111-1111-1111-1111-111111111111/members/user_2/role", body: `{"role":"gm"}`},
 	}
 
 	for _, tt := range tests {

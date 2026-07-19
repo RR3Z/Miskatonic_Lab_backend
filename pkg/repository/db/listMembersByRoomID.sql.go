@@ -12,7 +12,9 @@ import (
 )
 
 const listMembersByRoomID = `-- name: ListMembersByRoomID :many
-SELECT rm.id, rm.room_id, rm.user_id, rm.character_id, rm.role, rm.joined_at FROM room_members rm
+SELECT rm.id, rm.room_id, rm.user_id, rm.character_id, rm.role, rm.joined_at, u.username
+FROM room_members rm
+JOIN users u ON u.id = rm.user_id
 WHERE rm.room_id = $1
   AND EXISTS (SELECT 1 FROM room_members m WHERE m.room_id = $1 AND m.user_id = $2)
 ORDER BY rm.joined_at
@@ -23,15 +25,25 @@ type ListMembersByRoomIDParams struct {
 	UserID string      `json:"user_id"`
 }
 
-func (q *Queries) ListMembersByRoomID(ctx context.Context, arg ListMembersByRoomIDParams) ([]RoomMember, error) {
+type ListMembersByRoomIDRow struct {
+	ID          pgtype.UUID        `json:"id"`
+	RoomID      pgtype.UUID        `json:"room_id"`
+	UserID      string             `json:"user_id"`
+	CharacterID pgtype.UUID        `json:"character_id"`
+	Role        string             `json:"role"`
+	JoinedAt    pgtype.Timestamptz `json:"joined_at"`
+	Username    string             `json:"username"`
+}
+
+func (q *Queries) ListMembersByRoomID(ctx context.Context, arg ListMembersByRoomIDParams) ([]ListMembersByRoomIDRow, error) {
 	rows, err := q.db.Query(ctx, listMembersByRoomID, arg.RoomID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []RoomMember{}
+	items := []ListMembersByRoomIDRow{}
 	for rows.Next() {
-		var i RoomMember
+		var i ListMembersByRoomIDRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.RoomID,
@@ -39,6 +51,7 @@ func (q *Queries) ListMembersByRoomID(ctx context.Context, arg ListMembersByRoom
 			&i.CharacterID,
 			&i.Role,
 			&i.JoinedAt,
+			&i.Username,
 		); err != nil {
 			return nil, err
 		}

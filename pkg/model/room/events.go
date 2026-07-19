@@ -5,13 +5,17 @@ import "encoding/json"
 type EventType string
 
 const (
-	EventChatMessage      EventType = "chat.message"
-	EventCharacterChanged EventType = "character.changed"
-	EventCommandError     EventType = "command.error"
-	EventDiceRoll         EventType = "dice.roll"
-	EventMemberJoined     EventType = "member.joined"
-	EventMemberLeft       EventType = "member.left"
-	EventOwnerTransferred EventType = "owner.transferred"
+	EventChatMessage             EventType = "chat.message"
+	EventCharacterChanged        EventType = "character.changed"
+	EventCommandError            EventType = "command.error"
+	EventDiceRoll                EventType = "dice.roll"
+	EventMemberJoined            EventType = "member.joined"
+	EventMemberLeft              EventType = "member.left"
+	EventMemberKicked            EventType = "member.kicked"
+	EventMemberRoleChanged       EventType = "member.role_changed"
+	EventMemberCharacterSelected EventType = "member.character_selected"
+	EventOwnerTransferred        EventType = "owner.transferred"
+	EventRoomUpdated             EventType = "room.updated"
 )
 
 type Event struct {
@@ -36,6 +40,12 @@ type DiceRollPayload struct {
 type OwnerTransferredPayload struct {
 	PreviousOwnerID string `json:"previous_owner_id"`
 	NewOwnerID      string `json:"new_owner_id"`
+}
+
+type MemberEventPayload struct {
+	UserID      string `json:"user_id"`
+	CharacterID string `json:"character_id,omitempty"`
+	Role        string `json:"role,omitempty"`
 }
 
 type CharacterChangedPayload struct {

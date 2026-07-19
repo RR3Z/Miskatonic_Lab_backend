@@ -32,7 +32,7 @@ func TestToRoomModelMapsRoomAndMembers(t *testing.T) {
 		CharacterID: characterID,
 		Role:        "player",
 		JoinedAt:    joinedAt,
-	}})
+	}}, "owner_1")
 
 	require.Equal(t, roomID, roomModel.ID)
 	require.Equal(t, "owner_1", roomModel.OwnerID)
@@ -50,7 +50,7 @@ func TestToRoomModelMapsRoomAndMembers(t *testing.T) {
 }
 
 func TestToRoomModelMapsNilMembersToEmptySlice(t *testing.T) {
-	roomModel := model.ToRoomModel(db.Room{OwnerID: "owner_1"}, nil)
+	roomModel := model.ToRoomModel(db.Room{OwnerID: "owner_1"}, nil, "owner_1")
 
 	require.NotNil(t, roomModel.Members)
 	require.Empty(t, roomModel.Members)
@@ -73,4 +73,20 @@ func TestToRoomMemberModelPreservesInvalidCharacterID(t *testing.T) {
 	require.Equal(t, "member_1", memberModel.UserID)
 	require.False(t, memberModel.CharacterID.Valid)
 	require.Equal(t, "gm", memberModel.Role)
+}
+
+func TestToRoomModelWithUsernamesMapsMemberUsername(t *testing.T) {
+	roomID := testUUID("11111111-1111-1111-1111-111111111111")
+	memberID := testUUID("22222222-2222-2222-2222-222222222222")
+
+	roomModel := model.ToRoomModelWithUsernames(db.Room{ID: roomID}, []db.ListMembersByRoomIDRow{{
+		ID:       memberID,
+		RoomID:   roomID,
+		Role:     "player",
+		UserID:   "user_123",
+		Username: "Роберт",
+	}}, "user_123")
+
+	require.Len(t, roomModel.Members, 1)
+	require.Equal(t, "Роберт", roomModel.Members[0].Username)
 }
