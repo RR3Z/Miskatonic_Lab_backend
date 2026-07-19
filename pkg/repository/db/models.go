@@ -146,6 +146,7 @@ type Room struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 	PasswordHash   string             `json:"password_hash"`
 	LastActivityAt pgtype.Timestamptz `json:"last_activity_at"`
+	Name           string             `json:"name"`
 }
 
 type RoomEvent struct {

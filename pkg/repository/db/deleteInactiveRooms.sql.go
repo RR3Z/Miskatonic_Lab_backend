@@ -14,7 +14,7 @@ import (
 const deleteInactiveRooms = `-- name: DeleteInactiveRooms :many
 DELETE FROM rooms
 WHERE last_activity_at < $1
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name
 `
 
 func (q *Queries) DeleteInactiveRooms(ctx context.Context, inactiveBefore pgtype.Timestamptz) ([]Room, error) {
@@ -35,6 +35,7 @@ func (q *Queries) DeleteInactiveRooms(ctx context.Context, inactiveBefore pgtype
 			&i.UpdatedAt,
 			&i.PasswordHash,
 			&i.LastActivityAt,
+			&i.Name,
 		); err != nil {
 			return nil, err
 		}

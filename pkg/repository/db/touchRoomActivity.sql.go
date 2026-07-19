@@ -17,7 +17,7 @@ SET
     last_activity_at = NOW(),
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name
 `
 
 func (q *Queries) TouchRoomActivity(ctx context.Context, id pgtype.UUID) (Room, error) {
@@ -32,6 +32,7 @@ func (q *Queries) TouchRoomActivity(ctx context.Context, id pgtype.UUID) (Room, 
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.LastActivityAt,
+		&i.Name,
 	)
 	return i, err
 }

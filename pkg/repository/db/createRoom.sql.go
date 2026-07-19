@@ -10,13 +10,14 @@ import (
 )
 
 const createRoom = `-- name: CreateRoom :one
-INSERT INTO rooms (owner_id, max_players, invite_token, password_hash)
-VALUES ($1, $2, $3, $4)
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at
+INSERT INTO rooms (owner_id, name, max_players, invite_token, password_hash)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name
 `
 
 type CreateRoomParams struct {
 	OwnerID      string `json:"owner_id"`
+	Name         string `json:"name"`
 	MaxPlayers   int32  `json:"max_players"`
 	InviteToken  string `json:"invite_token"`
 	PasswordHash string `json:"password_hash"`
@@ -25,6 +26,7 @@ type CreateRoomParams struct {
 func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (Room, error) {
 	row := q.db.QueryRow(ctx, createRoom,
 		arg.OwnerID,
+		arg.Name,
 		arg.MaxPlayers,
 		arg.InviteToken,
 		arg.PasswordHash,
@@ -39,6 +41,7 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (Room, e
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.LastActivityAt,
+		&i.Name,
 	)
 	return i, err
 }

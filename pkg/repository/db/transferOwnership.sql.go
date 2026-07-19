@@ -21,7 +21,7 @@ WHERE rooms.id = $2
     FROM room_members
     WHERE room_id = $2 AND user_id = $1
   )
-RETURNING rooms.id, rooms.owner_id, rooms.max_players, rooms.invite_token, rooms.created_at, rooms.updated_at, rooms.password_hash, rooms.last_activity_at
+RETURNING rooms.id, rooms.owner_id, rooms.max_players, rooms.invite_token, rooms.created_at, rooms.updated_at, rooms.password_hash, rooms.last_activity_at, rooms.name
 `
 
 type TransferRoomOwnershipParams struct {
@@ -42,6 +42,7 @@ func (q *Queries) TransferRoomOwnership(ctx context.Context, arg TransferRoomOwn
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.LastActivityAt,
+		&i.Name,
 	)
 	return i, err
 }

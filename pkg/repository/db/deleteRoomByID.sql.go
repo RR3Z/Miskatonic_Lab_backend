@@ -14,7 +14,7 @@ import (
 const deleteRoomByID = `-- name: DeleteRoomByID :one
 DELETE FROM rooms
 WHERE id = $1
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name
 `
 
 func (q *Queries) DeleteRoomByID(ctx context.Context, id pgtype.UUID) (Room, error) {
@@ -29,6 +29,7 @@ func (q *Queries) DeleteRoomByID(ctx context.Context, id pgtype.UUID) (Room, err
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.LastActivityAt,
+		&i.Name,
 	)
 	return i, err
 }

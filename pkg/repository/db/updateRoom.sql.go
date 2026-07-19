@@ -14,14 +14,16 @@ import (
 const updateRoom = `-- name: UpdateRoom :one
 UPDATE rooms
 SET
-    max_players = $1,
-    password_hash = COALESCE($2, password_hash),
+    name = COALESCE($1, name),
+    max_players = $2,
+    password_hash = COALESCE($3, password_hash),
     updated_at = NOW()
-WHERE id = $3 AND owner_id = $4
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at
+WHERE id = $4 AND owner_id = $5
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name
 `
 
 type UpdateRoomParams struct {
+	Name         *string     `json:"name"`
 	MaxPlayers   int32       `json:"max_players"`
 	PasswordHash *string     `json:"password_hash"`
 	ID           pgtype.UUID `json:"id"`
@@ -30,6 +32,7 @@ type UpdateRoomParams struct {
 
 func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (Room, error) {
 	row := q.db.QueryRow(ctx, updateRoom,
+		arg.Name,
 		arg.MaxPlayers,
 		arg.PasswordHash,
 		arg.ID,
@@ -45,6 +48,7 @@ func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (Room, e
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.LastActivityAt,
+		&i.Name,
 	)
 	return i, err
 }
