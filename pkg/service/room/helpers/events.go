@@ -19,6 +19,18 @@ func OwnerTransferredPayload(previousOwnerID string, newOwnerID string) ([]byte,
 	})
 }
 
+func MemberEventPayload(userID, role, characterID string) ([]byte, error) {
+	return json.Marshal(roomEvents.MemberEventPayload{
+		UserID:      userID,
+		Role:        role,
+		CharacterID: characterID,
+	})
+}
+
+func EmptyEventPayload() []byte {
+	return []byte(`{}`)
+}
+
 func DiceRollPayload(rollID, characterID, expression string, result int32, details []byte) ([]byte, error) {
 	return json.Marshal(roomEvents.DiceRollPayload{
 		RollID:      rollID,

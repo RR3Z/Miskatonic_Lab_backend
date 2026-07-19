@@ -14,6 +14,8 @@ type fakeRoomHandlerService struct {
 	rooms  []roomModels.RoomSummaryModel
 	member roomModels.RoomMemberModel
 
+	mutationEvents []roomModels.RoomEventModel
+
 	createCalls int
 	createInput roomModels.CreateRoomInput
 
@@ -68,10 +70,10 @@ func (f *fakeRoomHandlerService) totalCalls() int {
 	return f.createCalls + f.listCalls + f.getCalls + f.updateCalls + f.transferCalls + f.deleteCalls + f.joinCalls + f.leaveCalls + f.kickCalls + f.selectCharacterCalls + f.changeRoleCalls + f.listSelectedCharactersCalls + f.listEventsCalls + f.createChatCalls
 }
 
-func (f *fakeRoomHandlerService) CreateRoom(_ context.Context, input roomModels.CreateRoomInput) (roomModels.RoomModel, error) {
+func (f *fakeRoomHandlerService) CreateRoom(_ context.Context, input roomModels.CreateRoomInput) (roomModels.RoomMutationResult[roomModels.RoomModel], error) {
 	f.createCalls++
 	f.createInput = input
-	return f.room, f.err
+	return roomModels.RoomMutationResult[roomModels.RoomModel]{Value: f.room, Events: f.mutationEvents}, f.err
 }
 
 func (f *fakeRoomHandlerService) ListRooms(_ context.Context, input roomModels.ListRoomsInput) ([]roomModels.RoomSummaryModel, error) {
@@ -86,52 +88,52 @@ func (f *fakeRoomHandlerService) GetRoom(_ context.Context, input roomModels.Get
 	return f.room, f.err
 }
 
-func (f *fakeRoomHandlerService) UpdateRoom(_ context.Context, input roomModels.UpdateRoomInput) (roomModels.RoomModel, error) {
+func (f *fakeRoomHandlerService) UpdateRoom(_ context.Context, input roomModels.UpdateRoomInput) (roomModels.RoomMutationResult[roomModels.RoomModel], error) {
 	f.updateCalls++
 	f.updateInput = input
-	return f.room, f.err
+	return roomModels.RoomMutationResult[roomModels.RoomModel]{Value: f.room, Events: f.mutationEvents}, f.err
 }
 
-func (f *fakeRoomHandlerService) TransferOwnership(_ context.Context, input roomModels.TransferOwnershipInput) (roomModels.RoomModel, error) {
+func (f *fakeRoomHandlerService) TransferOwnership(_ context.Context, input roomModels.TransferOwnershipInput) (roomModels.RoomMutationResult[roomModels.RoomModel], error) {
 	f.transferCalls++
 	f.transferInput = input
-	return f.room, f.err
+	return roomModels.RoomMutationResult[roomModels.RoomModel]{Value: f.room, Events: f.mutationEvents}, f.err
 }
 
-func (f *fakeRoomHandlerService) DeleteRoom(_ context.Context, input roomModels.DeleteRoomInput) error {
+func (f *fakeRoomHandlerService) DeleteRoom(_ context.Context, input roomModels.DeleteRoomInput) (roomModels.RoomMutationResult[struct{}], error) {
 	f.deleteCalls++
 	f.deleteInput = input
-	return f.err
+	return roomModels.RoomMutationResult[struct{}]{Events: f.mutationEvents}, f.err
 }
 
-func (f *fakeRoomHandlerService) JoinRoom(_ context.Context, input roomModels.JoinRoomInput) (roomModels.RoomMemberModel, error) {
+func (f *fakeRoomHandlerService) JoinRoom(_ context.Context, input roomModels.JoinRoomInput) (roomModels.RoomMutationResult[roomModels.RoomMemberModel], error) {
 	f.joinCalls++
 	f.joinInput = input
-	return f.member, f.err
+	return roomModels.RoomMutationResult[roomModels.RoomMemberModel]{Value: f.member, Events: f.mutationEvents}, f.err
 }
 
-func (f *fakeRoomHandlerService) LeaveRoom(_ context.Context, input roomModels.LeaveRoomInput) (roomModels.LeaveRoomResult, error) {
+func (f *fakeRoomHandlerService) LeaveRoom(_ context.Context, input roomModels.LeaveRoomInput) (roomModels.RoomMutationResult[roomModels.LeaveRoomResult], error) {
 	f.leaveCalls++
 	f.leaveInput = input
-	return f.leaveResult, f.err
+	return roomModels.RoomMutationResult[roomModels.LeaveRoomResult]{Value: f.leaveResult, Events: f.mutationEvents}, f.err
 }
 
-func (f *fakeRoomHandlerService) KickMember(_ context.Context, input roomModels.KickMemberInput) error {
+func (f *fakeRoomHandlerService) KickMember(_ context.Context, input roomModels.KickMemberInput) (roomModels.RoomMutationResult[struct{}], error) {
 	f.kickCalls++
 	f.kickInput = input
-	return f.err
+	return roomModels.RoomMutationResult[struct{}]{Events: f.mutationEvents}, f.err
 }
 
-func (f *fakeRoomHandlerService) SelectCharacter(_ context.Context, input roomModels.SelectCharacterInput) (roomModels.RoomMemberModel, error) {
+func (f *fakeRoomHandlerService) SelectCharacter(_ context.Context, input roomModels.SelectCharacterInput) (roomModels.RoomMutationResult[roomModels.RoomMemberModel], error) {
 	f.selectCharacterCalls++
 	f.selectCharacterInput = input
-	return f.member, f.err
+	return roomModels.RoomMutationResult[roomModels.RoomMemberModel]{Value: f.member, Events: f.mutationEvents}, f.err
 }
 
-func (f *fakeRoomHandlerService) ChangeRole(_ context.Context, input roomModels.ChangeRoleInput) (roomModels.RoomMemberModel, error) {
+func (f *fakeRoomHandlerService) ChangeRole(_ context.Context, input roomModels.ChangeRoleInput) (roomModels.RoomMutationResult[roomModels.RoomMemberModel], error) {
 	f.changeRoleCalls++
 	f.changeRoleInput = input
-	return f.member, f.err
+	return roomModels.RoomMutationResult[roomModels.RoomMemberModel]{Value: f.member, Events: f.mutationEvents}, f.err
 }
 
 func (f *fakeRoomHandlerService) ListSelectedCharacters(_ context.Context, input roomModels.ListSelectedCharactersInput) ([]roomModels.SelectedCharacterModel, error) {

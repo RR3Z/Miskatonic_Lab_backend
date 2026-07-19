@@ -20,8 +20,8 @@ type fakeListenerRoomService struct {
 	publishErr     error
 }
 
-func (f *fakeListenerRoomService) CreateRoom(_ context.Context, _ roomModel.CreateRoomInput) (roomModel.RoomModel, error) {
-	return roomModel.RoomModel{}, nil
+func (f *fakeListenerRoomService) CreateRoom(_ context.Context, _ roomModel.CreateRoomInput) (roomModel.RoomMutationResult[roomModel.RoomModel], error) {
+	return roomModel.RoomMutationResult[roomModel.RoomModel]{}, nil
 }
 func (f *fakeListenerRoomService) ListRooms(_ context.Context, _ roomModel.ListRoomsInput) ([]roomModel.RoomSummaryModel, error) {
 	return nil, nil
@@ -29,29 +29,29 @@ func (f *fakeListenerRoomService) ListRooms(_ context.Context, _ roomModel.ListR
 func (f *fakeListenerRoomService) GetRoom(_ context.Context, _ roomModel.GetRoomInput) (roomModel.RoomModel, error) {
 	return roomModel.RoomModel{}, nil
 }
-func (f *fakeListenerRoomService) UpdateRoom(_ context.Context, _ roomModel.UpdateRoomInput) (roomModel.RoomModel, error) {
-	return roomModel.RoomModel{}, nil
+func (f *fakeListenerRoomService) UpdateRoom(_ context.Context, _ roomModel.UpdateRoomInput) (roomModel.RoomMutationResult[roomModel.RoomModel], error) {
+	return roomModel.RoomMutationResult[roomModel.RoomModel]{}, nil
 }
-func (f *fakeListenerRoomService) TransferOwnership(_ context.Context, _ roomModel.TransferOwnershipInput) (roomModel.RoomModel, error) {
-	return roomModel.RoomModel{}, nil
+func (f *fakeListenerRoomService) TransferOwnership(_ context.Context, _ roomModel.TransferOwnershipInput) (roomModel.RoomMutationResult[roomModel.RoomModel], error) {
+	return roomModel.RoomMutationResult[roomModel.RoomModel]{}, nil
 }
-func (f *fakeListenerRoomService) DeleteRoom(_ context.Context, _ roomModel.DeleteRoomInput) error {
-	return nil
+func (f *fakeListenerRoomService) DeleteRoom(_ context.Context, _ roomModel.DeleteRoomInput) (roomModel.RoomMutationResult[struct{}], error) {
+	return roomModel.RoomMutationResult[struct{}]{}, nil
 }
-func (f *fakeListenerRoomService) JoinRoom(_ context.Context, _ roomModel.JoinRoomInput) (roomModel.RoomMemberModel, error) {
-	return roomModel.RoomMemberModel{}, nil
+func (f *fakeListenerRoomService) JoinRoom(_ context.Context, _ roomModel.JoinRoomInput) (roomModel.RoomMutationResult[roomModel.RoomMemberModel], error) {
+	return roomModel.RoomMutationResult[roomModel.RoomMemberModel]{}, nil
 }
-func (f *fakeListenerRoomService) LeaveRoom(_ context.Context, _ roomModel.LeaveRoomInput) (roomModel.LeaveRoomResult, error) {
-	return roomModel.LeaveRoomResult{}, nil
+func (f *fakeListenerRoomService) LeaveRoom(_ context.Context, _ roomModel.LeaveRoomInput) (roomModel.RoomMutationResult[roomModel.LeaveRoomResult], error) {
+	return roomModel.RoomMutationResult[roomModel.LeaveRoomResult]{}, nil
 }
-func (f *fakeListenerRoomService) KickMember(_ context.Context, _ roomModel.KickMemberInput) error {
-	return nil
+func (f *fakeListenerRoomService) KickMember(_ context.Context, _ roomModel.KickMemberInput) (roomModel.RoomMutationResult[struct{}], error) {
+	return roomModel.RoomMutationResult[struct{}]{}, nil
 }
-func (f *fakeListenerRoomService) SelectCharacter(_ context.Context, _ roomModel.SelectCharacterInput) (roomModel.RoomMemberModel, error) {
-	return roomModel.RoomMemberModel{}, nil
+func (f *fakeListenerRoomService) SelectCharacter(_ context.Context, _ roomModel.SelectCharacterInput) (roomModel.RoomMutationResult[roomModel.RoomMemberModel], error) {
+	return roomModel.RoomMutationResult[roomModel.RoomMemberModel]{}, nil
 }
-func (f *fakeListenerRoomService) ChangeRole(_ context.Context, _ roomModel.ChangeRoleInput) (roomModel.RoomMemberModel, error) {
-	return roomModel.RoomMemberModel{}, nil
+func (f *fakeListenerRoomService) ChangeRole(_ context.Context, _ roomModel.ChangeRoleInput) (roomModel.RoomMutationResult[roomModel.RoomMemberModel], error) {
+	return roomModel.RoomMutationResult[roomModel.RoomMemberModel]{}, nil
 }
 func (f *fakeListenerRoomService) ListSelectedCharacters(_ context.Context, _ roomModel.ListSelectedCharactersInput) ([]roomModel.SelectedCharacterModel, error) {
 	return nil, nil

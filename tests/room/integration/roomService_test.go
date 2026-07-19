@@ -30,20 +30,20 @@ func TestRoomServiceCreateRoomCreatesOwnerMemberAndInviteToken(t *testing.T) {
 		Password:   "keeper-password",
 	})
 	require.NoError(t, err)
-	require.True(t, roomModel.ID.Valid)
-	require.Equal(t, owner.ID, roomModel.OwnerID)
-	require.Equal(t, int32(3), roomModel.MaxPlayers)
-	require.Equal(t, "Arkham After Dark", roomModel.Name)
-	require.NotEmpty(t, roomModel.InviteToken)
-	require.Len(t, roomModel.Members, 1)
-	require.Equal(t, owner.ID, roomModel.Members[0].UserID)
-	require.Equal(t, "gm", roomModel.Members[0].Role)
+	require.True(t, roomModel.Value.ID.Valid)
+	require.Equal(t, owner.ID, roomModel.Value.OwnerID)
+	require.Equal(t, int32(3), roomModel.Value.MaxPlayers)
+	require.Equal(t, "Arkham After Dark", roomModel.Value.Name)
+	require.NotEmpty(t, roomModel.Value.InviteToken)
+	require.Len(t, roomModel.Value.Members, 1)
+	require.Equal(t, owner.ID, roomModel.Value.Members[0].UserID)
+	require.Equal(t, "gm", roomModel.Value.Members[0].Role)
 
-	member, err := subject.queries.GetMember(context.Background(), db.GetMemberParams{RoomID: roomModel.ID, UserID: owner.ID})
+	member, err := subject.queries.GetMember(context.Background(), db.GetMemberParams{RoomID: roomModel.Value.ID, UserID: owner.ID})
 	require.NoError(t, err)
 	require.Equal(t, "gm", member.Role)
 
-	meta, err := subject.queries.GetRoomJoinMetaData(context.Background(), roomModel.ID)
+	meta, err := subject.queries.GetRoomJoinMetaData(context.Background(), roomModel.Value.ID)
 	require.NoError(t, err)
 	require.NotEqual(t, "keeper-password", meta.PasswordHash)
 	require.NoError(t, bcrypt.CompareHashAndPassword([]byte(meta.PasswordHash), []byte("keeper-password")))
@@ -56,8 +56,8 @@ func TestRoomServiceCreateRoomDefaultsAndValidatesMaxPlayers(t *testing.T) {
 
 	roomModel, err := service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: owner.ID, Password: "keeper-password"})
 	require.NoError(t, err)
-	require.Equal(t, roomService.DEFAULT_MAX_PLAYERS, roomModel.MaxPlayers)
-	require.Equal(t, "Комната "+owner.Username, roomModel.Name)
+	require.Equal(t, roomService.DEFAULT_MAX_PLAYERS, roomModel.Value.MaxPlayers)
+	require.Equal(t, "Комната "+owner.Username, roomModel.Value.Name)
 
 	invalidMaxPlayers := int32(0)
 	_, err = service.CreateRoom(context.Background(), model.CreateRoomInput{
@@ -85,24 +85,24 @@ func TestRoomServiceCreatesAndUpdatesRoomNames(t *testing.T) {
 		Password: "keeper-password",
 	})
 	require.NoError(t, err)
-	require.Equal(t, "Тени над Инсмутом", roomModel.Name)
+	require.Equal(t, "Тени над Инсмутом", roomModel.Value.Name)
 
 	updatedName := "  Новое имя  "
 	updated, err := service.UpdateRoom(context.Background(), model.UpdateRoomInput{
-		RoomID:     roomModel.ID,
+		RoomID:     roomModel.Value.ID,
 		OwnerID:    owner.ID,
 		Name:       &updatedName,
-		MaxPlayers: roomModel.MaxPlayers,
+		MaxPlayers: roomModel.Value.MaxPlayers,
 	})
 	require.NoError(t, err)
-	require.Equal(t, "Новое имя", updated.Name)
+	require.Equal(t, "Новое имя", updated.Value.Name)
 
 	blankName := "   "
 	_, err = service.UpdateRoom(context.Background(), model.UpdateRoomInput{
-		RoomID:     roomModel.ID,
+		RoomID:     roomModel.Value.ID,
 		OwnerID:    owner.ID,
 		Name:       &blankName,
-		MaxPlayers: roomModel.MaxPlayers,
+		MaxPlayers: roomModel.Value.MaxPlayers,
 	})
 	require.ErrorIs(t, err, roomService.ErrInvalidInput)
 }
@@ -170,7 +170,7 @@ func TestRoomServiceJoinRoomRequiresInviteOrPasswordAndCapacity(t *testing.T) {
 		Password:   "keeper-password",
 	})
 	require.NoError(t, err)
-	room := db.Room{ID: roomModel.ID, InviteToken: roomModel.InviteToken}
+	room := db.Room{ID: roomModel.Value.ID, InviteToken: roomModel.Value.InviteToken}
 
 	_, err = service.JoinRoom(
 		context.Background(),
@@ -189,8 +189,8 @@ func TestRoomServiceJoinRoomRequiresInviteOrPasswordAndCapacity(t *testing.T) {
 		model.JoinRoomInput{RoomID: room.ID, InviteToken: room.InviteToken, UserID: firstPlayer.ID},
 	)
 	require.NoError(t, err)
-	require.Equal(t, firstPlayer.ID, memberModel.UserID)
-	require.Equal(t, "player", memberModel.Role)
+	require.Equal(t, firstPlayer.ID, memberModel.Value.UserID)
+	require.Equal(t, "player", memberModel.Value.Role)
 
 	_, err = service.JoinRoom(
 		context.Background(),
@@ -231,11 +231,11 @@ func TestRoomServiceJoinRoomWithPassword(t *testing.T) {
 
 	memberModel, err := service.JoinRoom(
 		context.Background(),
-		model.JoinRoomInput{RoomID: roomModel.ID, Password: "keeper-password", UserID: player.ID},
+		model.JoinRoomInput{RoomID: roomModel.Value.ID, Password: "keeper-password", UserID: player.ID},
 	)
 	require.NoError(t, err)
-	require.Equal(t, player.ID, memberModel.UserID)
-	require.Equal(t, roomService.ROLE_PLAYER, memberModel.Role)
+	require.Equal(t, player.ID, memberModel.Value.UserID)
+	require.Equal(t, roomService.ROLE_PLAYER, memberModel.Value.Role)
 }
 
 func TestRoomServiceJoinRoomAcceptsEitherValidInviteOrPassword(t *testing.T) {
@@ -252,7 +252,7 @@ func TestRoomServiceJoinRoomAcceptsEitherValidInviteOrPassword(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = service.JoinRoom(context.Background(), model.JoinRoomInput{
-		RoomID:      roomModel.ID,
+		RoomID:      roomModel.Value.ID,
 		UserID:      firstPlayer.ID,
 		InviteToken: "wrong-invite",
 		Password:    "keeper-password",
@@ -260,9 +260,9 @@ func TestRoomServiceJoinRoomAcceptsEitherValidInviteOrPassword(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = service.JoinRoom(context.Background(), model.JoinRoomInput{
-		RoomID:      roomModel.ID,
+		RoomID:      roomModel.Value.ID,
 		UserID:      secondPlayer.ID,
-		InviteToken: roomModel.InviteToken,
+		InviteToken: roomModel.Value.InviteToken,
 		Password:    "wrong-password",
 	})
 	require.NoError(t, err)
@@ -284,7 +284,7 @@ func TestRoomServiceTransferOwnershipDoesNotChangeRole(t *testing.T) {
 		NewOwnerID: memberUser.ID,
 	})
 	require.NoError(t, err)
-	require.Equal(t, memberUser.ID, transferred.OwnerID)
+	require.Equal(t, memberUser.ID, transferred.Value.OwnerID)
 
 	member, err := subject.queries.GetMember(context.Background(), db.GetMemberParams{RoomID: room.ID, UserID: memberUser.ID})
 	require.NoError(t, err)
@@ -317,27 +317,27 @@ func TestRoomServiceNonOwnerUpdateAndDeletePreserveRoom(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = service.JoinRoom(context.Background(), model.JoinRoomInput{
-		RoomID:      roomModel.ID,
+		RoomID:      roomModel.Value.ID,
 		UserID:      memberUser.ID,
-		InviteToken: roomModel.InviteToken,
+		InviteToken: roomModel.Value.InviteToken,
 	})
 	require.NoError(t, err)
 
 	_, err = service.UpdateRoom(context.Background(), model.UpdateRoomInput{
-		RoomID:     roomModel.ID,
+		RoomID:     roomModel.Value.ID,
 		OwnerID:    memberUser.ID,
 		MaxPlayers: 1,
 	})
 	require.ErrorIs(t, err, roomService.ErrNotOwner)
 
-	err = service.DeleteRoom(context.Background(), model.DeleteRoomInput{
-		RoomID:  roomModel.ID,
+	_, err = service.DeleteRoom(context.Background(), model.DeleteRoomInput{
+		RoomID:  roomModel.Value.ID,
 		OwnerID: memberUser.ID,
 	})
 	require.ErrorIs(t, err, roomService.ErrNotOwner)
 
 	persisted, err := subject.queries.GetRoomByID(context.Background(), db.GetRoomByIDParams{
-		ID:     roomModel.ID,
+		ID:     roomModel.Value.ID,
 		UserID: owner.ID,
 	})
 	require.NoError(t, err)
@@ -380,9 +380,11 @@ func TestRoomServiceOwnerLeaveTransfersOwnershipAndCreatesEvent(t *testing.T) {
 		LimitCount: 10,
 	})
 	require.NoError(t, err)
-	require.Len(t, events, 1)
+	require.Len(t, events, 2)
 	require.Equal(t, string(model.EventOwnerTransferred), events[0].EventType)
 	require.Equal(t, owner.ID, events[0].ActorID)
+	require.Equal(t, string(model.EventMemberLeft), events[1].EventType)
+	require.Equal(t, owner.ID, events[1].ActorID)
 
 	var payload model.OwnerTransferredPayload
 	require.NoError(t, json.Unmarshal(events[0].Payload, &payload))
@@ -402,8 +404,8 @@ func TestRoomServiceLastMemberLeaveDeletesRoom(t *testing.T) {
 		UserID: owner.ID,
 	})
 	require.NoError(t, err)
-	require.NotNil(t, result.DeletedRoomID)
-	require.Equal(t, room.ID, *result.DeletedRoomID)
+	require.NotNil(t, result.Value.DeletedRoomID)
+	require.Equal(t, room.ID, *result.Value.DeletedRoomID)
 
 	_, err = subject.queries.GetRoomJoinMetaData(context.Background(), room.ID)
 	require.ErrorIs(t, err, pgx.ErrNoRows)
@@ -867,7 +869,7 @@ func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
 	requireRoomLastActivityAfter(t, subject, room.ID, owner.ID, oldActivity)
 
 	setRoomLastActivityAt(t, subject, room.ID, oldActivity)
-	err = service.KickMember(context.Background(), model.KickMemberInput{
+	_, err = service.KickMember(context.Background(), model.KickMemberInput{
 		RoomID:       room.ID,
 		ActorUserID:  memberUser.ID,
 		TargetUserID: targetUser.ID,
@@ -966,7 +968,7 @@ func TestRoomServiceUpdateRoomValidatesMaxPlayersAgainstCurrentMembers(t *testin
 		MaxPlayers: 2,
 	})
 	require.NoError(t, err)
-	require.Equal(t, int32(2), updated.MaxPlayers)
+	require.Equal(t, int32(2), updated.Value.MaxPlayers)
 }
 
 func TestRoomServiceUpdateRoomCanChangePassword(t *testing.T) {
@@ -984,40 +986,40 @@ func TestRoomServiceUpdateRoomCanChangePassword(t *testing.T) {
 
 	blankPassword := "   "
 	_, err = service.UpdateRoom(context.Background(), model.UpdateRoomInput{
-		RoomID:     roomModel.ID,
+		RoomID:     roomModel.Value.ID,
 		OwnerID:    owner.ID,
-		MaxPlayers: roomModel.MaxPlayers,
+		MaxPlayers: roomModel.Value.MaxPlayers,
 		Password:   &blankPassword,
 	})
 	require.ErrorIs(t, err, roomService.ErrInvalidPassword)
 
 	_, err = service.JoinRoom(
 		context.Background(),
-		model.JoinRoomInput{RoomID: roomModel.ID, Password: "old-password", UserID: player.ID},
+		model.JoinRoomInput{RoomID: roomModel.Value.ID, Password: "old-password", UserID: player.ID},
 	)
 	require.NoError(t, err)
 
 	newPassword := "new-password"
 	_, err = service.UpdateRoom(context.Background(), model.UpdateRoomInput{
-		RoomID:     roomModel.ID,
+		RoomID:     roomModel.Value.ID,
 		OwnerID:    owner.ID,
-		MaxPlayers: roomModel.MaxPlayers,
+		MaxPlayers: roomModel.Value.MaxPlayers,
 		Password:   &newPassword,
 	})
 	require.NoError(t, err)
 
 	_, err = service.JoinRoom(
 		context.Background(),
-		model.JoinRoomInput{RoomID: roomModel.ID, Password: "old-password", UserID: player.ID},
+		model.JoinRoomInput{RoomID: roomModel.Value.ID, Password: "old-password", UserID: player.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrRoomNotFound)
 
 	memberModel, err := service.JoinRoom(
 		context.Background(),
-		model.JoinRoomInput{RoomID: roomModel.ID, Password: "new-password", UserID: secondPlayer.ID},
+		model.JoinRoomInput{RoomID: roomModel.Value.ID, Password: "new-password", UserID: secondPlayer.ID},
 	)
 	require.NoError(t, err)
-	require.Equal(t, secondPlayer.ID, memberModel.UserID)
+	require.Equal(t, secondPlayer.ID, memberModel.Value.UserID)
 }
 
 func TestRoomServiceMapsNoRowsForMembershipOperations(t *testing.T) {
@@ -1031,13 +1033,13 @@ func TestRoomServiceMapsNoRowsForMembershipOperations(t *testing.T) {
 	_, err := service.LeaveRoom(context.Background(), model.LeaveRoomInput{RoomID: room.ID, UserID: memberUser.ID})
 	require.ErrorIs(t, err, roomService.ErrNotMember)
 
-	err = service.KickMember(
+	_, err = service.KickMember(
 		context.Background(),
 		model.KickMemberInput{RoomID: room.ID, ActorUserID: memberUser.ID, TargetUserID: owner.ID},
 	)
 	require.ErrorIs(t, err, roomService.ErrNotMember)
 
-	err = service.KickMember(
+	_, err = service.KickMember(
 		context.Background(),
 		model.KickMemberInput{RoomID: room.ID, ActorUserID: owner.ID, TargetUserID: owner.ID},
 	)

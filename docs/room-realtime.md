@@ -1,6 +1,6 @@
 # Room Realtime
 
-Room realtime uses the shared `room_events` feed for persistence and the room WebSocket hub for delivery.
+Room realtime uses the shared `room_events` feed as durable source of truth and the room WebSocket hub as delivery transport. Room HTTP mutations write state and canonical events in one transaction. Only after commit does the handler broadcast those saved `RoomEventModel` values through the hub.
 
 Public room feed DTOs and payloads live under `pkg/model/room`. Internal domain events live under `pkg/events`; do not use `pkg/events/room` for WebSocket/feed payloads.
 
@@ -36,16 +36,19 @@ Persisted room events:
 - `chat.message`: room chat text.
 - `dice.roll`: dice roll notification created from successful dice make-roll events with room context.
 - `character.changed`: character invalidation notification for a selected character.
-- `owner.transferred`: ownership transfer after owner leave.
+- `member.joined`: a user entered the room.
+- `member.left`: a user left the room.
+- `member.kicked`: owner removed a member.
+- `member.role_changed`: owner changed a member role.
+- `member.character_selected`: a member chose a character.
+- `owner.transferred`: ownership transfer, including owner leave.
+- `room.updated`: owner changed room settings.
 
 Internal/realtime-only command events:
 
 - `command.error`: sender-only command failure response.
 
-Reserved event constants:
-
-- `member.joined`
-- `member.left`
+When an owner leaves, history order is `owner.transferred`, then `member.left`. Deleting a room creates no new event because its history is deleted with it.
 
 ## Character Visibility
 
@@ -90,13 +93,21 @@ Room-wide delivery:
 
 - `chat.message`
 - `dice.roll`
+- `member.joined`
+- `member.left`
+- `member.kicked`
+- `member.role_changed`
+- `member.character_selected`
 - `owner.transferred`
+- `room.updated`
 
 Targeted delivery:
 
 - `character.changed` is sent only to the selected character owner and GM members in the room.
 
 Slow WebSocket clients are dropped by non-blocking room hub sends so one connection does not block delivery to the rest of the room.
+
+`RoomHub` is in-memory and supports delivery inside one backend instance. A reconnecting client refetches the current room snapshot and event history, so missed socket messages do not leave the UI stale. Multi-instance broadcast requires a future external pub/sub layer.
 
 ## History Filtering
 

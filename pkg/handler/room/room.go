@@ -29,7 +29,7 @@ func (h *RoomHandler) createRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to create room")
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, result)
+	utils.WriteJSON(w, http.StatusCreated, result.Value)
 	return nil
 }
 
@@ -87,9 +87,9 @@ func (h *RoomHandler) updateRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to update room")
 	}
 
-	h.broadcastRoomEvent(roomDTO.EventRoomUpdated, roomID, userID, nil)
+	h.broadcastRoomEvents(result.Events)
 
-	utils.WriteJSON(w, http.StatusOK, result)
+	utils.WriteJSON(w, http.StatusOK, result.Value)
 	return nil
 }
 
@@ -114,12 +114,9 @@ func (h *RoomHandler) transferRoomOwnership(w http.ResponseWriter, r *http.Reque
 		return roomErrors.MapServiceError(err, "failed to transfer room ownership")
 	}
 
-	h.broadcastRoomEvent(roomDTO.EventOwnerTransferred, roomID, userID, roomDTO.OwnerTransferredPayload{
-		PreviousOwnerID: userID,
-		NewOwnerID:      req.UserID,
-	})
+	h.broadcastRoomEvents(result.Events)
 
-	utils.WriteJSON(w, http.StatusOK, result)
+	utils.WriteJSON(w, http.StatusOK, result.Value)
 	return nil
 }
 
@@ -130,7 +127,7 @@ func (h *RoomHandler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.InvalidIDError(err)
 	}
 
-	err = h.service.DeleteRoom(r.Context(), roomDTO.DeleteRoomInput{
+	_, err = h.service.DeleteRoom(r.Context(), roomDTO.DeleteRoomInput{
 		RoomID:  roomID,
 		OwnerID: userID,
 	})
@@ -216,12 +213,9 @@ func (h *RoomHandler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors
 		return roomErrors.MapServiceError(err, "failed to join room")
 	}
 
-	h.broadcastRoomEvent(roomDTO.EventMemberJoined, roomID, userID, roomDTO.MemberEventPayload{
-		UserID: userID,
-		Role:   result.Role,
-	})
+	h.broadcastRoomEvents(result.Events)
 
-	utils.WriteJSON(w, http.StatusOK, result)
+	utils.WriteJSON(w, http.StatusOK, result.Value)
 	return nil
 }
 
@@ -240,12 +234,10 @@ func (h *RoomHandler) leaveRoom(w http.ResponseWriter, r *http.Request) *myError
 		return roomErrors.MapServiceError(err, "failed to leave room")
 	}
 
-	if result.DeletedRoomID == nil {
-		h.broadcastRoomEvent(roomDTO.EventMemberLeft, roomID, userID, roomDTO.MemberEventPayload{UserID: userID})
-	}
+	h.broadcastRoomEvents(result.Events)
 
-	if result.DeletedRoomID != nil {
-		h.closeRoom(*result.DeletedRoomID, "room deleted")
+	if result.Value.DeletedRoomID != nil {
+		h.closeRoom(*result.Value.DeletedRoomID, "room deleted")
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -260,7 +252,7 @@ func (h *RoomHandler) kickMember(w http.ResponseWriter, r *http.Request) *myErro
 	}
 	targetUserID := chi.URLParam(r, "userID")
 
-	err = h.service.KickMember(
+	result, err := h.service.KickMember(
 		r.Context(),
 		roomDTO.KickMemberInput{
 			RoomID:       roomID,
@@ -272,7 +264,7 @@ func (h *RoomHandler) kickMember(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to kick member")
 	}
 
-	h.broadcastRoomEvent(roomDTO.EventMemberKicked, roomID, userID, roomDTO.MemberEventPayload{UserID: targetUserID})
+	h.broadcastRoomEvents(result.Events)
 
 	w.WriteHeader(http.StatusNoContent)
 	return nil
@@ -299,12 +291,9 @@ func (h *RoomHandler) selectCharacter(w http.ResponseWriter, r *http.Request) *m
 		return roomErrors.MapServiceError(err, "failed to select character")
 	}
 
-	h.broadcastRoomEvent(roomDTO.EventMemberCharacterSelected, roomID, userID, roomDTO.MemberEventPayload{
-		UserID:      userID,
-		CharacterID: result.CharacterID.String(),
-	})
+	h.broadcastRoomEvents(result.Events)
 
-	utils.WriteJSON(w, http.StatusOK, result)
+	utils.WriteJSON(w, http.StatusOK, result.Value)
 	return nil
 }
 
@@ -334,11 +323,8 @@ func (h *RoomHandler) changeRole(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to change role")
 	}
 
-	h.broadcastRoomEvent(roomDTO.EventMemberRoleChanged, roomID, userID, roomDTO.MemberEventPayload{
-		UserID: targetUserID,
-		Role:   result.Role,
-	})
+	h.broadcastRoomEvents(result.Events)
 
-	utils.WriteJSON(w, http.StatusOK, result)
+	utils.WriteJSON(w, http.StatusOK, result.Value)
 	return nil
 }

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
@@ -86,6 +87,13 @@ func TestRoomMutationsBroadcastRealtimeEvents(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.service.mutationEvents = []roomModels.RoomEventModel{{
+				ID:      testRoomUnitUUID("33333333-3333-3333-3333-333333333333"),
+				RoomID:  roomID,
+				ActorID: tt.wantActor,
+				Type:    string(tt.wantType),
+				Payload: []byte(`{"source":"saved"}`),
+			}}
 			hub := ws.NewRoomHub()
 			events := registerRoomUnitTestClient(t, hub, roomID)
 			router := newRoomHandlerTestRouterWithHub(tt.service, hub)
@@ -98,6 +106,9 @@ func TestRoomMutationsBroadcastRealtimeEvents(t *testing.T) {
 				require.Equal(t, string(tt.wantType), event.Type)
 				require.Equal(t, roomID.String(), event.RoomID)
 				require.Equal(t, tt.wantActor, event.ActorID)
+				payload, ok := event.Payload.(json.RawMessage)
+				require.True(t, ok)
+				require.JSONEq(t, `{"source":"saved"}`, string(payload))
 			case <-time.After(time.Second):
 				t.Fatal("room mutation did not broadcast a realtime event")
 			}

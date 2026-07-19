@@ -29,8 +29,8 @@ type fakeEventPublishingRoomService struct {
 	cleanupResult      model.CleanupRoomsResult
 }
 
-func (f *fakeEventPublishingRoomService) CreateRoom(_ context.Context, _ model.CreateRoomInput) (model.RoomModel, error) {
-	return f.room, f.err
+func (f *fakeEventPublishingRoomService) CreateRoom(_ context.Context, _ model.CreateRoomInput) (model.RoomMutationResult[model.RoomModel], error) {
+	return model.RoomMutationResult[model.RoomModel]{Value: f.room}, f.err
 }
 
 func (f *fakeEventPublishingRoomService) ListRooms(_ context.Context, _ model.ListRoomsInput) ([]model.RoomSummaryModel, error) {
@@ -41,36 +41,36 @@ func (f *fakeEventPublishingRoomService) GetRoom(_ context.Context, _ model.GetR
 	return f.room, f.err
 }
 
-func (f *fakeEventPublishingRoomService) UpdateRoom(_ context.Context, _ model.UpdateRoomInput) (model.RoomModel, error) {
-	return f.room, f.err
+func (f *fakeEventPublishingRoomService) UpdateRoom(_ context.Context, _ model.UpdateRoomInput) (model.RoomMutationResult[model.RoomModel], error) {
+	return model.RoomMutationResult[model.RoomModel]{Value: f.room}, f.err
 }
 
-func (f *fakeEventPublishingRoomService) TransferOwnership(_ context.Context, _ model.TransferOwnershipInput) (model.RoomModel, error) {
-	return f.room, f.err
+func (f *fakeEventPublishingRoomService) TransferOwnership(_ context.Context, _ model.TransferOwnershipInput) (model.RoomMutationResult[model.RoomModel], error) {
+	return model.RoomMutationResult[model.RoomModel]{Value: f.room}, f.err
 }
 
-func (f *fakeEventPublishingRoomService) DeleteRoom(_ context.Context, _ model.DeleteRoomInput) error {
-	return f.err
+func (f *fakeEventPublishingRoomService) DeleteRoom(_ context.Context, _ model.DeleteRoomInput) (model.RoomMutationResult[struct{}], error) {
+	return model.RoomMutationResult[struct{}]{}, f.err
 }
 
-func (f *fakeEventPublishingRoomService) JoinRoom(_ context.Context, _ model.JoinRoomInput) (model.RoomMemberModel, error) {
-	return f.member, f.err
+func (f *fakeEventPublishingRoomService) JoinRoom(_ context.Context, _ model.JoinRoomInput) (model.RoomMutationResult[model.RoomMemberModel], error) {
+	return model.RoomMutationResult[model.RoomMemberModel]{Value: f.member}, f.err
 }
 
-func (f *fakeEventPublishingRoomService) LeaveRoom(_ context.Context, _ model.LeaveRoomInput) (model.LeaveRoomResult, error) {
-	return f.leaveResult, f.err
+func (f *fakeEventPublishingRoomService) LeaveRoom(_ context.Context, _ model.LeaveRoomInput) (model.RoomMutationResult[model.LeaveRoomResult], error) {
+	return model.RoomMutationResult[model.LeaveRoomResult]{Value: f.leaveResult}, f.err
 }
 
-func (f *fakeEventPublishingRoomService) KickMember(_ context.Context, _ model.KickMemberInput) error {
-	return f.err
+func (f *fakeEventPublishingRoomService) KickMember(_ context.Context, _ model.KickMemberInput) (model.RoomMutationResult[struct{}], error) {
+	return model.RoomMutationResult[struct{}]{}, f.err
 }
 
-func (f *fakeEventPublishingRoomService) SelectCharacter(_ context.Context, _ model.SelectCharacterInput) (model.RoomMemberModel, error) {
-	return f.member, f.err
+func (f *fakeEventPublishingRoomService) SelectCharacter(_ context.Context, _ model.SelectCharacterInput) (model.RoomMutationResult[model.RoomMemberModel], error) {
+	return model.RoomMutationResult[model.RoomMemberModel]{Value: f.member}, f.err
 }
 
-func (f *fakeEventPublishingRoomService) ChangeRole(_ context.Context, _ model.ChangeRoleInput) (model.RoomMemberModel, error) {
-	return f.member, f.err
+func (f *fakeEventPublishingRoomService) ChangeRole(_ context.Context, _ model.ChangeRoleInput) (model.RoomMutationResult[model.RoomMemberModel], error) {
+	return model.RoomMutationResult[model.RoomMemberModel]{Value: f.member}, f.err
 }
 
 func (f *fakeEventPublishingRoomService) ListSelectedCharacters(_ context.Context, _ model.ListSelectedCharactersInput) ([]model.SelectedCharacterModel, error) {

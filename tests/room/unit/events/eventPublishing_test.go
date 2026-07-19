@@ -17,7 +17,7 @@ func TestEventPublishingRoomService_CreateRoom_Success(t *testing.T) {
 
 	room, err := service.CreateRoom(context.Background(), model.CreateRoomInput{OwnerID: roomEventTestOwnerID})
 	require.NoError(t, err)
-	require.Equal(t, roomEventTestRoomID, room.ID.String())
+	require.Equal(t, roomEventTestRoomID, room.Value.ID.String())
 	requireRoomPublishedEvent(t, publisher, roomEvents.RoomCreateSucceeded{
 		RoomID:  roomEventTestRoomID,
 		OwnerID: roomEventTestOwnerID,
@@ -48,7 +48,7 @@ func TestEventPublishingRoomService_JoinRoom_Success(t *testing.T) {
 		UserID: roomEventTestUserID,
 	})
 	require.NoError(t, err)
-	require.Equal(t, roomEventTestMemberID, member.ID.String())
+	require.Equal(t, roomEventTestMemberID, member.Value.ID.String())
 	requireRoomPublishedEvent(t, publisher, roomEvents.RoomMemberJoinSucceeded{
 		RoomID:   roomEventTestRoomID,
 		UserID:   roomEventTestUserID,
@@ -66,7 +66,7 @@ func TestEventPublishingRoomService_LeaveRoom_WithDeletedRoomID(t *testing.T) {
 		UserID: roomEventTestUserID,
 	})
 	require.NoError(t, err)
-	require.NotNil(t, result.DeletedRoomID)
+	require.NotNil(t, result.Value.DeletedRoomID)
 
 	expectedDeletedRoomID := roomEventTestRoomID
 	requireRoomPublishedEvent(t, publisher, roomEvents.RoomMemberLeaveSucceeded{

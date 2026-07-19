@@ -25,14 +25,14 @@ func NewEventPublishingRoomService(next IRoom, maintenance IRoomMaintenance, pub
 	}
 }
 
-func (s *EventPublishingRoomService) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.RoomModel, error) {
+func (s *EventPublishingRoomService) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.RoomMutationResult[model.RoomModel], error) {
 	room, err := s.next.CreateRoom(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomCreateFailed{OwnerID: input.OwnerID, Err: err})
-		return model.RoomModel{}, err
+		return model.RoomMutationResult[model.RoomModel]{}, err
 	}
 
-	s.publisher.Publish(ctx, roomEvents.RoomCreateSucceeded{RoomID: room.ID.String(), OwnerID: room.OwnerID})
+	s.publisher.Publish(ctx, roomEvents.RoomCreateSucceeded{RoomID: room.Value.ID.String(), OwnerID: room.Value.OwnerID})
 	return room, nil
 }
 
@@ -51,18 +51,18 @@ func (s *EventPublishingRoomService) GetRoom(ctx context.Context, input model.Ge
 	return room, nil
 }
 
-func (s *EventPublishingRoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInput) (model.RoomModel, error) {
+func (s *EventPublishingRoomService) UpdateRoom(ctx context.Context, input model.UpdateRoomInput) (model.RoomMutationResult[model.RoomModel], error) {
 	room, err := s.next.UpdateRoom(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomUpdateFailed{RoomID: input.RoomID.String(), OwnerID: input.OwnerID, Err: err})
-		return model.RoomModel{}, err
+		return model.RoomMutationResult[model.RoomModel]{}, err
 	}
 
-	s.publisher.Publish(ctx, roomEvents.RoomUpdateSucceeded{RoomID: room.ID.String(), OwnerID: input.OwnerID})
+	s.publisher.Publish(ctx, roomEvents.RoomUpdateSucceeded{RoomID: room.Value.ID.String(), OwnerID: input.OwnerID})
 	return room, nil
 }
 
-func (s *EventPublishingRoomService) TransferOwnership(ctx context.Context, input model.TransferOwnershipInput) (model.RoomModel, error) {
+func (s *EventPublishingRoomService) TransferOwnership(ctx context.Context, input model.TransferOwnershipInput) (model.RoomMutationResult[model.RoomModel], error) {
 	room, err := s.next.TransferOwnership(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomTransferOwnershipFailed{
@@ -71,66 +71,68 @@ func (s *EventPublishingRoomService) TransferOwnership(ctx context.Context, inpu
 			NewOwnerID: input.NewOwnerID,
 			Err:        err,
 		})
-		return model.RoomModel{}, err
+		return model.RoomMutationResult[model.RoomModel]{}, err
 	}
 
 	s.publisher.Publish(ctx, roomEvents.RoomTransferOwnershipSucceeded{
-		RoomID:     room.ID.String(),
+		RoomID:     room.Value.ID.String(),
 		OwnerID:    input.OwnerID,
 		NewOwnerID: input.NewOwnerID,
 	})
 	return room, nil
 }
 
-func (s *EventPublishingRoomService) DeleteRoom(ctx context.Context, input model.DeleteRoomInput) error {
-	if err := s.next.DeleteRoom(ctx, input); err != nil {
+func (s *EventPublishingRoomService) DeleteRoom(ctx context.Context, input model.DeleteRoomInput) (model.RoomMutationResult[struct{}], error) {
+	result, err := s.next.DeleteRoom(ctx, input)
+	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomDeleteFailed{RoomID: input.RoomID.String(), OwnerID: input.OwnerID, Err: err})
-		return err
+		return model.RoomMutationResult[struct{}]{}, err
 	}
 
 	s.publisher.Publish(ctx, roomEvents.RoomDeleteSucceeded{RoomID: input.RoomID.String(), OwnerID: input.OwnerID})
-	return nil
+	return result, nil
 }
 
-func (s *EventPublishingRoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMemberModel, error) {
+func (s *EventPublishingRoomService) JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMutationResult[model.RoomMemberModel], error) {
 	member, err := s.next.JoinRoom(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomMemberJoinFailed{RoomID: input.RoomID.String(), UserID: input.UserID, Err: err})
-		return model.RoomMemberModel{}, err
+		return model.RoomMutationResult[model.RoomMemberModel]{}, err
 	}
 
 	s.publisher.Publish(ctx, roomEvents.RoomMemberJoinSucceeded{
-		RoomID:   member.RoomID.String(),
-		UserID:   member.UserID,
-		MemberID: member.ID.String(),
+		RoomID:   member.Value.RoomID.String(),
+		UserID:   member.Value.UserID,
+		MemberID: member.Value.ID.String(),
 	})
 	return member, nil
 }
 
-func (s *EventPublishingRoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput) (model.LeaveRoomResult, error) {
+func (s *EventPublishingRoomService) LeaveRoom(ctx context.Context, input model.LeaveRoomInput) (model.RoomMutationResult[model.LeaveRoomResult], error) {
 	result, err := s.next.LeaveRoom(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomMemberLeaveFailed{RoomID: input.RoomID.String(), UserID: input.UserID, Err: err})
-		return model.LeaveRoomResult{}, err
+		return model.RoomMutationResult[model.LeaveRoomResult]{}, err
 	}
 
 	s.publisher.Publish(ctx, roomEvents.RoomMemberLeaveSucceeded{
 		RoomID:        input.RoomID.String(),
 		UserID:        input.UserID,
-		DeletedRoomID: uuidPtrString(result.DeletedRoomID),
+		DeletedRoomID: uuidPtrString(result.Value.DeletedRoomID),
 	})
 	return result, nil
 }
 
-func (s *EventPublishingRoomService) KickMember(ctx context.Context, input model.KickMemberInput) error {
-	if err := s.next.KickMember(ctx, input); err != nil {
+func (s *EventPublishingRoomService) KickMember(ctx context.Context, input model.KickMemberInput) (model.RoomMutationResult[struct{}], error) {
+	result, err := s.next.KickMember(ctx, input)
+	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomMemberKickFailed{
 			RoomID:       input.RoomID.String(),
 			ActorUserID:  input.ActorUserID,
 			TargetUserID: input.TargetUserID,
 			Err:          err,
 		})
-		return err
+		return model.RoomMutationResult[struct{}]{}, err
 	}
 
 	s.publisher.Publish(ctx, roomEvents.RoomMemberKickSucceeded{
@@ -138,10 +140,10 @@ func (s *EventPublishingRoomService) KickMember(ctx context.Context, input model
 		ActorUserID:  input.ActorUserID,
 		TargetUserID: input.TargetUserID,
 	})
-	return nil
+	return result, nil
 }
 
-func (s *EventPublishingRoomService) SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMemberModel, error) {
+func (s *EventPublishingRoomService) SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMutationResult[model.RoomMemberModel], error) {
 	member, err := s.next.SelectCharacter(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomMemberSelectCharacterFailed{
@@ -150,18 +152,18 @@ func (s *EventPublishingRoomService) SelectCharacter(ctx context.Context, input 
 			CharacterID: input.CharacterID.String(),
 			Err:         err,
 		})
-		return model.RoomMemberModel{}, err
+		return model.RoomMutationResult[model.RoomMemberModel]{}, err
 	}
 
 	s.publisher.Publish(ctx, roomEvents.RoomMemberSelectCharacterSucceeded{
-		RoomID:      member.RoomID.String(),
-		UserID:      member.UserID,
-		CharacterID: member.CharacterID.String(),
+		RoomID:      member.Value.RoomID.String(),
+		UserID:      member.Value.UserID,
+		CharacterID: member.Value.CharacterID.String(),
 	})
 	return member, nil
 }
 
-func (s *EventPublishingRoomService) ChangeRole(ctx context.Context, input model.ChangeRoleInput) (model.RoomMemberModel, error) {
+func (s *EventPublishingRoomService) ChangeRole(ctx context.Context, input model.ChangeRoleInput) (model.RoomMutationResult[model.RoomMemberModel], error) {
 	member, err := s.next.ChangeRole(ctx, input)
 	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomMemberChangeRoleFailed{
@@ -171,14 +173,14 @@ func (s *EventPublishingRoomService) ChangeRole(ctx context.Context, input model
 			Role:         input.Role,
 			Err:          err,
 		})
-		return model.RoomMemberModel{}, err
+		return model.RoomMutationResult[model.RoomMemberModel]{}, err
 	}
 
 	s.publisher.Publish(ctx, roomEvents.RoomMemberChangeRoleSucceeded{
-		RoomID:       member.RoomID.String(),
+		RoomID:       member.Value.RoomID.String(),
 		ActorUserID:  input.ActorUserID,
-		TargetUserID: member.UserID,
-		Role:         member.Role,
+		TargetUserID: member.Value.UserID,
+		Role:         member.Value.Role,
 	})
 	return member, nil
 }

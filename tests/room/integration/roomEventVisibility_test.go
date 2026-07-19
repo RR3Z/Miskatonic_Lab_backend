@@ -84,7 +84,7 @@ func TestRoomServiceListRoomEventsFiltersCharacterChangedByRole(t *testing.T) {
 		Limit:  10,
 	})
 	require.NoError(t, err)
-	require.Len(t, gmEvents, 4)
+	require.Len(t, gmEvents, 6)
 	require.ElementsMatch(t, []string{firstCharacter.ID.String(), secondCharacter.ID.String()}, characterChangedCharacterIDs(t, gmEvents))
 
 	firstPlayerEvents, err := service.ListRoomEvents(context.Background(), model.ListRoomEventsInput{
@@ -93,8 +93,13 @@ func TestRoomServiceListRoomEventsFiltersCharacterChangedByRole(t *testing.T) {
 		Limit:  10,
 	})
 	require.NoError(t, err)
-	require.Len(t, firstPlayerEvents, 3)
-	requireRoomEventTypes(t, firstPlayerEvents, string(model.EventChatMessage), string(model.EventDiceRoll))
+	require.Len(t, firstPlayerEvents, 5)
+	requireRoomEventTypes(t, firstPlayerEvents,
+		string(model.EventMemberCharacterSelected),
+		string(model.EventMemberCharacterSelected),
+		string(model.EventChatMessage),
+		string(model.EventDiceRoll),
+	)
 	require.Equal(t, []string{firstCharacter.ID.String()}, characterChangedCharacterIDs(t, firstPlayerEvents))
 
 	secondPlayerEvents, err := service.ListRoomEvents(context.Background(), model.ListRoomEventsInput{
@@ -103,7 +108,12 @@ func TestRoomServiceListRoomEventsFiltersCharacterChangedByRole(t *testing.T) {
 		Limit:  10,
 	})
 	require.NoError(t, err)
-	require.Len(t, secondPlayerEvents, 3)
-	requireRoomEventTypes(t, secondPlayerEvents, string(model.EventChatMessage), string(model.EventDiceRoll))
+	require.Len(t, secondPlayerEvents, 5)
+	requireRoomEventTypes(t, secondPlayerEvents,
+		string(model.EventMemberCharacterSelected),
+		string(model.EventMemberCharacterSelected),
+		string(model.EventChatMessage),
+		string(model.EventDiceRoll),
+	)
 	require.Equal(t, []string{secondCharacter.ID.String()}, characterChangedCharacterIDs(t, secondPlayerEvents))
 }

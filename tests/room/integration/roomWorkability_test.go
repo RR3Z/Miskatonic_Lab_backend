@@ -25,14 +25,14 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = service.JoinRoom(context.Background(), model.JoinRoomInput{
-		RoomID:      room.ID,
+		RoomID:      room.Value.ID,
 		UserID:      firstPlayer.ID,
-		InviteToken: room.InviteToken,
+		InviteToken: room.Value.InviteToken,
 	})
 	require.NoError(t, err)
 
 	_, err = service.JoinRoom(context.Background(), model.JoinRoomInput{
-		RoomID:   room.ID,
+		RoomID:   room.Value.ID,
 		UserID:   secondPlayer.ID,
 		Password: "keeper-password",
 	})
@@ -41,27 +41,27 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 	firstCharacter := createRoomTestCharacter(t, subject, firstPlayer.ID)
 	secondCharacter := createRoomTestCharacter(t, subject, secondPlayer.ID)
 	_, err = service.SelectCharacter(context.Background(), model.SelectCharacterInput{
-		RoomID:      room.ID,
+		RoomID:      room.Value.ID,
 		UserID:      firstPlayer.ID,
 		CharacterID: firstCharacter.ID,
 	})
 	require.NoError(t, err)
 	_, err = service.SelectCharacter(context.Background(), model.SelectCharacterInput{
-		RoomID:      room.ID,
+		RoomID:      room.Value.ID,
 		UserID:      secondPlayer.ID,
 		CharacterID: secondCharacter.ID,
 	})
 	require.NoError(t, err)
 
 	gmCharacters, err := service.ListSelectedCharacters(context.Background(), model.ListSelectedCharactersInput{
-		RoomID: room.ID,
+		RoomID: room.Value.ID,
 		UserID: gm.ID,
 	})
 	require.NoError(t, err)
 	requireSelectedCharacterUsers(t, gmCharacters, firstPlayer.ID, secondPlayer.ID)
 
 	firstPlayerCharacters, err := service.ListSelectedCharacters(context.Background(), model.ListSelectedCharactersInput{
-		RoomID: room.ID,
+		RoomID: room.Value.ID,
 		UserID: firstPlayer.ID,
 	})
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 	require.Equal(t, firstCharacter.ID, firstPlayerCharacters[0].Character.ID)
 
 	_, err = service.CreateChatMessage(context.Background(), model.CreateChatMessageInput{
-		RoomID:  room.ID,
+		RoomID:  room.Value.ID,
 		ActorID: gm.ID,
 		Text:    "the seance begins",
 	})
@@ -78,7 +78,7 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 	time.Sleep(5 * time.Millisecond)
 
 	_, err = service.CreateDiceRollRoomEvent(context.Background(), model.CreateDiceRollRoomEventInput{
-		RoomID:      room.ID,
+		RoomID:      room.Value.ID,
 		ActorID:     firstPlayer.ID,
 		RollID:      "workability-roll-1",
 		CharacterID: firstCharacter.ID.String(),
@@ -114,13 +114,17 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 	require.NoError(t, err)
 
 	gmEvents, err := service.ListRoomEvents(context.Background(), model.ListRoomEventsInput{
-		RoomID: room.ID,
+		RoomID: room.Value.ID,
 		UserID: gm.ID,
 		Limit:  10,
 	})
 	require.NoError(t, err)
-	require.Len(t, gmEvents, 4)
+	require.Len(t, gmEvents, 8)
 	require.Equal(t, []string{
+		string(model.EventMemberJoined),
+		string(model.EventMemberJoined),
+		string(model.EventMemberCharacterSelected),
+		string(model.EventMemberCharacterSelected),
 		string(model.EventChatMessage),
 		string(model.EventDiceRoll),
 		string(model.EventCharacterChanged),
@@ -129,27 +133,31 @@ func TestRoomRealtimeWorkabilityScenario(t *testing.T) {
 	require.ElementsMatch(t, []string{firstCharacter.ID.String(), secondCharacter.ID.String()}, characterChangedCharacterIDs(t, gmEvents))
 
 	firstPlayerEvents, err := service.ListRoomEvents(context.Background(), model.ListRoomEventsInput{
-		RoomID: room.ID,
+		RoomID: room.Value.ID,
 		UserID: firstPlayer.ID,
 		Limit:  10,
 	})
 	require.NoError(t, err)
-	require.Len(t, firstPlayerEvents, 3)
+	require.Len(t, firstPlayerEvents, 7)
 	require.Equal(t, []string{
+		string(model.EventMemberJoined),
+		string(model.EventMemberJoined),
+		string(model.EventMemberCharacterSelected),
+		string(model.EventMemberCharacterSelected),
 		string(model.EventChatMessage),
 		string(model.EventDiceRoll),
 		string(model.EventCharacterChanged),
 	}, roomEventTypes(firstPlayerEvents))
 	require.Equal(t, []string{firstCharacter.ID.String()}, characterChangedCharacterIDs(t, firstPlayerEvents))
-	requireDiceRollPayload(t, firstPlayerEvents[1], "workability-roll-1", firstCharacter.ID.String(), "1d20", int32(13))
+	requireDiceRollPayload(t, firstPlayerEvents[5], "workability-roll-1", firstCharacter.ID.String(), "1d20", int32(13))
 
 	secondPlayerEvents, err := service.ListRoomEvents(context.Background(), model.ListRoomEventsInput{
-		RoomID: room.ID,
+		RoomID: room.Value.ID,
 		UserID: secondPlayer.ID,
 		Limit:  10,
 	})
 	require.NoError(t, err)
-	require.Len(t, secondPlayerEvents, 3)
+	require.Len(t, secondPlayerEvents, 7)
 	require.Equal(t, []string{secondCharacter.ID.String()}, characterChangedCharacterIDs(t, secondPlayerEvents))
 }
 

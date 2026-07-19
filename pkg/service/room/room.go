@@ -9,19 +9,19 @@ import (
 )
 
 type IRoom interface {
-	CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.RoomModel, error)
+	CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.RoomMutationResult[model.RoomModel], error)
 	ListRooms(ctx context.Context, input model.ListRoomsInput) ([]model.RoomSummaryModel, error)
 	GetRoom(ctx context.Context, input model.GetRoomInput) (model.RoomModel, error)
-	UpdateRoom(ctx context.Context, input model.UpdateRoomInput) (model.RoomModel, error)
-	TransferOwnership(ctx context.Context, input model.TransferOwnershipInput) (model.RoomModel, error)
-	DeleteRoom(ctx context.Context, input model.DeleteRoomInput) error
+	UpdateRoom(ctx context.Context, input model.UpdateRoomInput) (model.RoomMutationResult[model.RoomModel], error)
+	TransferOwnership(ctx context.Context, input model.TransferOwnershipInput) (model.RoomMutationResult[model.RoomModel], error)
+	DeleteRoom(ctx context.Context, input model.DeleteRoomInput) (model.RoomMutationResult[struct{}], error)
 
-	JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMemberModel, error)
-	LeaveRoom(ctx context.Context, input model.LeaveRoomInput) (model.LeaveRoomResult, error)
-	KickMember(ctx context.Context, input model.KickMemberInput) error
+	JoinRoom(ctx context.Context, input model.JoinRoomInput) (model.RoomMutationResult[model.RoomMemberModel], error)
+	LeaveRoom(ctx context.Context, input model.LeaveRoomInput) (model.RoomMutationResult[model.LeaveRoomResult], error)
+	KickMember(ctx context.Context, input model.KickMemberInput) (model.RoomMutationResult[struct{}], error)
 
-	SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMemberModel, error)
-	ChangeRole(ctx context.Context, input model.ChangeRoleInput) (model.RoomMemberModel, error)
+	SelectCharacter(ctx context.Context, input model.SelectCharacterInput) (model.RoomMutationResult[model.RoomMemberModel], error)
+	ChangeRole(ctx context.Context, input model.ChangeRoleInput) (model.RoomMutationResult[model.RoomMemberModel], error)
 	ListSelectedCharacters(ctx context.Context, input model.ListSelectedCharactersInput) ([]model.SelectedCharacterModel, error)
 	TouchRoomActivity(ctx context.Context, input model.TouchRoomActivityInput) error
 
