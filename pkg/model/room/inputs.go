@@ -1,10 +1,6 @@
 package roomDTO
 
-import (
-	"time"
-
-	"github.com/jackc/pgx/v5/pgtype"
-)
+import "github.com/jackc/pgx/v5/pgtype"
 
 type CreateRoomInput struct {
 	OwnerID    string
@@ -72,14 +68,11 @@ type ChangeRoleInput struct {
 	Role         string
 }
 
-type CleanupRoomsInput struct {
-	Now time.Time
-}
-
 type ListRoomEventsInput struct {
-	RoomID pgtype.UUID
-	UserID string
-	Limit  int32
+	RoomID        pgtype.UUID
+	UserID        string
+	AfterSequence int64
+	Limit         int32
 }
 
 type TouchRoomActivityInput struct {

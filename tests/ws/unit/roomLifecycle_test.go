@@ -50,6 +50,28 @@ func TestRoomHubCloseRoomOnlyClosesTargetRoomAndIsRepeatSafe(t *testing.T) {
 	requireEventChannelOpen(t, roomBEvents)
 }
 
+func TestRoomHubCloseUserClosesOnlyNamedUsersConnections(t *testing.T) {
+	roomID := "11111111-1111-1111-1111-111111111111"
+	hub := ws.NewRoomHub()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go hub.Run(ctx)
+
+	firstTargetClient, firstTargetEvents := ws.NewTestClientWithUser(hub, roomID, "target")
+	secondTargetClient, secondTargetEvents := ws.NewTestClientWithUser(hub, roomID, "target")
+	otherClient, otherEvents := ws.NewTestClientWithUser(hub, roomID, "other")
+	hub.Register <- firstTargetClient
+	hub.Register <- secondTargetClient
+	hub.Register <- otherClient
+
+	hub.CloseUser(roomID, "target", "removed")
+
+	requireEventChannelClosed(t, firstTargetEvents)
+	requireEventChannelClosed(t, secondTargetEvents)
+	requireEventChannelOpen(t, otherEvents)
+}
+
 func TestRoomHubSendToUsersTargetsOnlyNamedUsers(t *testing.T) {
 	roomID := "11111111-1111-1111-1111-111111111111"
 	hub := ws.NewRoomHub()

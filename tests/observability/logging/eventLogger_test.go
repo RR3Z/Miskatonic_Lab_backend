@@ -117,18 +117,16 @@ func TestEventLoggerLogsRoomEvents(t *testing.T) {
 	logger := eventLogging.NewDefaultEventLogger(slog.New(handler))
 
 	logger.Handle(context.Background(), roomEvents.RoomCleanupSucceeded{
-		InactiveDeleted: 1,
-		InvalidDeleted:  2,
-		DeletedCount:    3,
+		InvalidDeleted: 2,
+		DeletedCount:   2,
 	})
 
 	record := requireSingleRecord(t, handler)
 	require.Equal(t, slog.LevelInfo, record.level)
 	require.Equal(t, "room", record.attrs["domain"])
 	require.Equal(t, "room_cleanup", record.attrs["resource"])
-	require.Equal(t, int64(1), record.attrs["inactive_deleted"])
 	require.Equal(t, int64(2), record.attrs["invalid_deleted"])
-	require.Equal(t, int64(3), record.attrs["deleted_count"])
+	require.Equal(t, int64(2), record.attrs["deleted_count"])
 }
 
 func TestEventLoggerIgnoresUnknownEvents(t *testing.T) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 
 	"github.com/RR3Z/Miskatonic_Lab_backend/pkg/handler"
@@ -33,6 +34,12 @@ func run() int {
 	}
 
 	services := appService.NewService(repos, eventBus, portraitModule.Store)
+	purgeResult, err := services.PurgeEphemeralRooms(ctx)
+	if err != nil {
+		slog.Error("ephemeral room purge failed", "component", "room_startup", "error", err)
+		return 1
+	}
+	slog.Info("ephemeral rooms purged", "component", "room_startup", "deleted_rooms", len(purgeResult.DeletedRoomIDs))
 
 	appHandlers := handler.NewHandler(handler.Dependencies{
 		Services:           services,

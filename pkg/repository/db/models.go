@@ -147,6 +147,7 @@ type Room struct {
 	PasswordHash   string             `json:"password_hash"`
 	LastActivityAt pgtype.Timestamptz `json:"last_activity_at"`
 	Name           string             `json:"name"`
+	EventSequence  int64              `json:"event_sequence"`
 }
 
 type RoomEvent struct {
@@ -156,6 +157,7 @@ type RoomEvent struct {
 	EventType string             `json:"event_type"`
 	Payload   []byte             `json:"payload"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	Sequence  int64              `json:"sequence"`
 }
 
 type RoomMember struct {

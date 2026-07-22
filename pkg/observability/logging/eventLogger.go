@@ -121,7 +121,6 @@ var eventFieldNames = map[string]string{
 	"DeletedRoomID":   "deleted_room_id",
 	"Err":             "error",
 	"EventID":         "event_id",
-	"InactiveDeleted": "inactive_deleted",
 	"InventoryID":     "inventory_id",
 	"InvalidDeleted":  "invalid_deleted",
 	"MemberID":        "member_id",

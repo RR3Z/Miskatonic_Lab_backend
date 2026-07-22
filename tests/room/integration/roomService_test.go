@@ -10,6 +10,7 @@ import (
 	characterService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/character"
 	roomService "github.com/RR3Z/Miskatonic_Lab_backend/pkg/service/room"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
@@ -413,6 +414,23 @@ func TestRoomServiceLastMemberLeaveDeletesRoom(t *testing.T) {
 	count, err := subject.queries.GetRoomMembersCount(context.Background(), room.ID)
 	require.NoError(t, err)
 	require.Equal(t, int32(0), count)
+}
+
+func TestRoomServicePurgeEphemeralRoomsDeletesEveryRoom(t *testing.T) {
+	subject := newRoomIntegrationSubject(t)
+	owner := createRoomTestUser(t, subject)
+	firstRoom := createRoomTestRoom(t, subject, owner.ID)
+	secondRoom := createRoomTestRoom(t, subject, owner.ID)
+	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
+
+	result, err := service.PurgeEphemeralRooms(context.Background())
+	require.NoError(t, err)
+	require.ElementsMatch(t, []pgtype.UUID{firstRoom.ID, secondRoom.ID}, result.DeletedRoomIDs)
+
+	_, err = subject.queries.GetRoomJoinMetaData(context.Background(), firstRoom.ID)
+	require.ErrorIs(t, err, pgx.ErrNoRows)
+	_, err = subject.queries.GetRoomJoinMetaData(context.Background(), secondRoom.ID)
+	require.ErrorIs(t, err, pgx.ErrNoRows)
 }
 
 func TestRoomServiceCreatesChatMessagesAndListsEventsOldToNew(t *testing.T) {
@@ -906,15 +924,15 @@ func TestRoomServiceMutationsTouchRoomActivity(t *testing.T) {
 	requireRoomLastActivityAfter(t, subject, room.ID, memberUser.ID, oldActivity)
 }
 
-func TestRoomServiceCleanupRoomsDeletesInactiveAndInvalidRooms(t *testing.T) {
+func TestRoomServiceCleanupRoomsDeletesOnlyInvalidRooms(t *testing.T) {
 	subject := newRoomIntegrationSubject(t)
 	owner := createRoomTestUser(t, subject)
 	memberUser := createRoomTestUser(t, subject)
 	service := roomService.NewRoomService(repository.NewRepository(subject.pool))
 
-	inactiveRoom := createRoomTestRoom(t, subject, owner.ID)
-	addRoomTestMember(t, subject, inactiveRoom.ID, owner.ID, roomService.ROLE_GM)
-	setRoomLastActivityAt(t, subject, inactiveRoom.ID, time.Now().UTC().Add(-13*time.Hour))
+	staleRoom := createRoomTestRoom(t, subject, owner.ID)
+	addRoomTestMember(t, subject, staleRoom.ID, owner.ID, roomService.ROLE_GM)
+	setRoomLastActivityAt(t, subject, staleRoom.ID, time.Now().UTC().Add(-13*time.Hour))
 
 	activeRoom := createRoomTestRoom(t, subject, owner.ID)
 	addRoomTestMember(t, subject, activeRoom.ID, owner.ID, roomService.ROLE_GM)
@@ -927,14 +945,13 @@ func TestRoomServiceCleanupRoomsDeletesInactiveAndInvalidRooms(t *testing.T) {
 	addRoomTestMember(t, subject, ownerNotMemberRoom.ID, memberUser.ID, roomService.ROLE_PLAYER)
 	setRoomLastActivityAt(t, subject, ownerNotMemberRoom.ID, time.Now().UTC())
 
-	result, err := service.CleanupRooms(context.Background(), model.CleanupRoomsInput{Now: time.Now().UTC()})
+	result, err := service.CleanupRooms(context.Background())
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, result.InactiveDeleted, 1)
 	require.GreaterOrEqual(t, result.InvalidDeleted, 2)
-	requireCleanupDeletedRoomIDs(t, result, inactiveRoom.ID, noMembersRoom.ID, ownerNotMemberRoom.ID)
+	requireCleanupDeletedRoomIDs(t, result, noMembersRoom.ID, ownerNotMemberRoom.ID)
 
-	_, err = subject.queries.GetRoomByID(context.Background(), db.GetRoomByIDParams{ID: inactiveRoom.ID, UserID: owner.ID})
-	require.ErrorIs(t, err, pgx.ErrNoRows)
+	_, err = subject.queries.GetRoomByID(context.Background(), db.GetRoomByIDParams{ID: staleRoom.ID, UserID: owner.ID})
+	require.NoError(t, err)
 
 	_, err = subject.queries.GetRoomJoinMetaData(context.Background(), noMembersRoom.ID)
 	require.ErrorIs(t, err, pgx.ErrNoRows)

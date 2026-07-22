@@ -27,6 +27,7 @@ type fakeEventPublishingRoomService struct {
 	roomEvents         []model.RoomEventModel
 	roomEvent          model.RoomEventModel
 	cleanupResult      model.CleanupRoomsResult
+	purgeResult        model.StartupPurgeRoomsResult
 }
 
 func (f *fakeEventPublishingRoomService) CreateRoom(_ context.Context, _ model.CreateRoomInput) (model.RoomMutationResult[model.RoomModel], error) {
@@ -109,8 +110,12 @@ func (f *fakeEventPublishingRoomService) CreateCharacterChangedRoomEvents(_ cont
 	return f.roomEvents, f.err
 }
 
-func (f *fakeEventPublishingRoomService) CleanupRooms(_ context.Context, _ model.CleanupRoomsInput) (model.CleanupRoomsResult, error) {
+func (f *fakeEventPublishingRoomService) CleanupRooms(_ context.Context) (model.CleanupRoomsResult, error) {
 	return f.cleanupResult, f.err
+}
+
+func (f *fakeEventPublishingRoomService) PurgeEphemeralRooms(_ context.Context) (model.StartupPurgeRoomsResult, error) {
+	return f.purgeResult, f.err
 }
 
 func (f *fakeEventPublishingRoomService) StartCleanupWorker(_ context.Context, _ time.Duration, _ func(model.CleanupRoomsResult)) {

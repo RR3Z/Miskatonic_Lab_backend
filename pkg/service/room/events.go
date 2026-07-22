@@ -13,15 +13,24 @@ func (s *RoomService) ListRoomEvents(ctx context.Context, input model.ListRoomEv
 	}
 
 	events, err := s.repos.Queries.ListRoomEvents(ctx, db.ListRoomEventsParams{
-		RoomID:     input.RoomID,
-		UserID:     input.UserID,
-		LimitCount: normalizeRoomEventsLimit(input.Limit),
+		RoomID:        input.RoomID,
+		UserID:        input.UserID,
+		AfterSequence: normalizeRoomEventsAfterSequence(input.AfterSequence),
+		LimitCount:    normalizeRoomEventsLimit(input.Limit),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return model.ToRoomEventModels(events), nil
+}
+
+func normalizeRoomEventsAfterSequence(sequence int64) int64 {
+	if sequence < 0 {
+		return 0
+	}
+
+	return sequence
 }
 
 func (s *RoomService) TouchRoomActivity(ctx context.Context, input model.TouchRoomActivityInput) error {

@@ -7,6 +7,7 @@ import (
 
 	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/events/room"
 	model "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
 
@@ -144,12 +145,23 @@ func TestEventPublishingRoomService_CreateCharacterChangedRoomEvents_Failure(t *
 func TestEventPublishingRoomService_CleanupRooms_Success(t *testing.T) {
 	_, publisher, service := newRoomEventPublishingTestSubject()
 
-	result, err := service.CleanupRooms(context.Background(), model.CleanupRoomsInput{})
+	result, err := service.CleanupRooms(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, 2, len(result.DeletedRoomIDs))
+	require.Equal(t, 1, len(result.DeletedRoomIDs))
 	requireRoomPublishedEvent(t, publisher, roomEvents.RoomCleanupSucceeded{
-		InactiveDeleted: 1,
-		InvalidDeleted:  1,
-		DeletedCount:    2,
+		InvalidDeleted: 1,
+		DeletedCount:   1,
 	})
+}
+
+func TestEventPublishingRoomService_PurgeEphemeralRooms_DelegatesWithoutPublishing(t *testing.T) {
+	next, publisher, service := newRoomEventPublishingTestSubject()
+	next.purgeResult = model.StartupPurgeRoomsResult{
+		DeletedRoomIDs: []pgtype.UUID{roomTestUUID(roomEventTestRoomID)},
+	}
+
+	result, err := service.PurgeEphemeralRooms(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, next.purgeResult, result)
+	require.Empty(t, publisher.events)
 }

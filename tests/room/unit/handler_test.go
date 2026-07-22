@@ -192,23 +192,25 @@ func TestListRoomEventsPassesParams(t *testing.T) {
 	eventID := testRoomUnitUUID("22222222-2222-2222-2222-222222222222")
 	roomService := &fakeRoomHandlerService{
 		events: []roomModels.RoomEventModel{{
-			ID:      eventID,
-			RoomID:  roomID,
-			ActorID: "user_2",
-			Type:    "chat.message",
-			Payload: []byte(`{"text":"hello"}`),
+			ID:       eventID,
+			RoomID:   roomID,
+			Sequence: 25,
+			ActorID:  "user_2",
+			Type:     "chat.message",
+			Payload:  []byte(`{"text":"hello"}`),
 		}},
 	}
 	router := newRoomHandlerTestRouter(roomService)
 
-	recorder := performRoomRequest(router, http.MethodGet, "/api/rooms/11111111-1111-1111-1111-111111111111/events?limit=25", "")
+	recorder := performRoomRequest(router, http.MethodGet, "/api/rooms/11111111-1111-1111-1111-111111111111/events?after=24&limit=25", "")
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, 1, roomService.listEventsCalls)
 	require.Equal(t, roomID, roomService.listEventsInput.RoomID)
 	require.Equal(t, "user_1", roomService.listEventsInput.UserID)
+	require.Equal(t, int64(24), roomService.listEventsInput.AfterSequence)
 	require.Equal(t, int32(25), roomService.listEventsInput.Limit)
-	require.JSONEq(t, `[{"id":"22222222-2222-2222-2222-222222222222","room_id":"11111111-1111-1111-1111-111111111111","actor_id":"user_2","type":"chat.message","payload":{"text":"hello"},"created_at":null}]`, recorder.Body.String())
+	require.JSONEq(t, `[{"id":"22222222-2222-2222-2222-222222222222","room_id":"11111111-1111-1111-1111-111111111111","sequence":25,"actor_id":"user_2","type":"chat.message","payload":{"text":"hello"},"created_at":null}]`, recorder.Body.String())
 }
 
 func TestListRoomEventsRejectsInvalidLimitBeforeService(t *testing.T) {
@@ -219,6 +221,21 @@ func TestListRoomEventsRejectsInvalidLimitBeforeService(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.Zero(t, roomService.listEventsCalls)
+}
+
+func TestListRoomEventsRejectsInvalidAfterCursorBeforeService(t *testing.T) {
+	tests := []string{"after=nope", "after=-1"}
+	for _, query := range tests {
+		t.Run(query, func(t *testing.T) {
+			roomService := &fakeRoomHandlerService{}
+			router := newRoomHandlerTestRouter(roomService)
+
+			recorder := performRoomRequest(router, http.MethodGet, "/api/rooms/11111111-1111-1111-1111-111111111111/events?"+query, "")
+
+			require.Equal(t, http.StatusBadRequest, recorder.Code)
+			require.Zero(t, roomService.listEventsCalls)
+		})
+	}
 }
 
 func TestListRoomEventsPassesOptionalLimitValues(t *testing.T) {

@@ -14,13 +14,14 @@ import (
 func TestRoomMutationsBroadcastRealtimeEvents(t *testing.T) {
 	roomID := testRoomUnitUUID("11111111-1111-1111-1111-111111111111")
 	tests := []struct {
-		name      string
-		method    string
-		path      string
-		body      string
-		service   *fakeRoomHandlerService
-		wantType  roomModels.EventType
-		wantActor string
+		name       string
+		method     string
+		path       string
+		body       string
+		service    *fakeRoomHandlerService
+		wantType   roomModels.EventType
+		wantActor  string
+		wantClosed bool
 	}{
 		{
 			name:      "room update",
@@ -50,12 +51,13 @@ func TestRoomMutationsBroadcastRealtimeEvents(t *testing.T) {
 			wantActor: "user_1",
 		},
 		{
-			name:      "member leave",
-			method:    http.MethodDelete,
-			path:      "/api/rooms/11111111-1111-1111-1111-111111111111/leave",
-			service:   &fakeRoomHandlerService{},
-			wantType:  roomModels.EventMemberLeft,
-			wantActor: "user_1",
+			name:       "member leave",
+			method:     http.MethodDelete,
+			path:       "/api/rooms/11111111-1111-1111-1111-111111111111/leave",
+			service:    &fakeRoomHandlerService{},
+			wantType:   roomModels.EventMemberLeft,
+			wantActor:  "user_1",
+			wantClosed: true,
 		},
 		{
 			name:      "member kick",
@@ -101,6 +103,10 @@ func TestRoomMutationsBroadcastRealtimeEvents(t *testing.T) {
 			recorder := performRoomRequest(router, tt.method, tt.path, tt.body)
 
 			require.Less(t, recorder.Code, http.StatusBadRequest)
+			if tt.wantClosed {
+				requireRoomUnitClientClosed(t, events)
+				return
+			}
 			select {
 			case event := <-events:
 				require.Equal(t, string(tt.wantType), event.Type)

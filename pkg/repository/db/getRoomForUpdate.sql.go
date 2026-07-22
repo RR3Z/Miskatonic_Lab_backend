@@ -12,7 +12,7 @@ import (
 )
 
 const getRoomForUpdate = `-- name: GetRoomForUpdate :one
-SELECT id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name
+SELECT id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name, event_sequence
 FROM rooms
 WHERE id = $1
 FOR UPDATE
@@ -31,6 +31,7 @@ func (q *Queries) GetRoomForUpdate(ctx context.Context, id pgtype.UUID) (Room, e
 		&i.PasswordHash,
 		&i.LastActivityAt,
 		&i.Name,
+		&i.EventSequence,
 	)
 	return i, err
 }

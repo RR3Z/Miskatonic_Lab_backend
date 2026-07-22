@@ -12,12 +12,13 @@ import (
 )
 
 const listRoomEvents = `-- name: ListRoomEvents :many
-SELECT re.id, re.room_id, re.actor_id, re.event_type, re.payload, re.created_at
+SELECT re.id, re.room_id, re.actor_id, re.event_type, re.payload, re.created_at, re.sequence
 FROM room_events re
 JOIN room_members requester
   ON requester.room_id = re.room_id
  AND requester.user_id = $1
 WHERE re.room_id = $2
+  AND re.sequence > $3
   AND (
       requester.role = 'gm'
       OR re.event_type <> 'character.changed'
@@ -26,18 +27,24 @@ WHERE re.room_id = $2
           AND re.payload->>'character_id' = requester.character_id::text
       )
   )
-ORDER BY re.created_at ASC, re.id ASC
-LIMIT $3
+ORDER BY re.sequence ASC
+LIMIT $4
 `
 
 type ListRoomEventsParams struct {
-	UserID     string      `json:"user_id"`
-	RoomID     pgtype.UUID `json:"room_id"`
-	LimitCount int32       `json:"limit_count"`
+	UserID        string      `json:"user_id"`
+	RoomID        pgtype.UUID `json:"room_id"`
+	AfterSequence int64       `json:"after_sequence"`
+	LimitCount    int32       `json:"limit_count"`
 }
 
 func (q *Queries) ListRoomEvents(ctx context.Context, arg ListRoomEventsParams) ([]RoomEvent, error) {
-	rows, err := q.db.Query(ctx, listRoomEvents, arg.UserID, arg.RoomID, arg.LimitCount)
+	rows, err := q.db.Query(ctx, listRoomEvents,
+		arg.UserID,
+		arg.RoomID,
+		arg.AfterSequence,
+		arg.LimitCount,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +59,7 @@ func (q *Queries) ListRoomEvents(ctx context.Context, arg ListRoomEventsParams) 
 			&i.EventType,
 			&i.Payload,
 			&i.CreatedAt,
+			&i.Sequence,
 		); err != nil {
 			return nil, err
 		}

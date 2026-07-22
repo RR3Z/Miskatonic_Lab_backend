@@ -6,9 +6,10 @@ import (
 
 func EventFromRoomEventModel(event roomModel.RoomEventModel) roomModel.Event {
 	return roomModel.Event{
-		Type:    event.Type,
-		RoomID:  event.RoomID.String(),
-		ActorID: event.ActorID,
-		Payload: event.Payload,
+		Type:     event.Type,
+		RoomID:   event.RoomID.String(),
+		Sequence: event.Sequence,
+		ActorID:  event.ActorID,
+		Payload:  event.Payload,
 	}
 }

@@ -2,6 +2,7 @@ package room
 
 import (
 	"context"
+	"time"
 
 	roomEvents "github.com/RR3Z/Miskatonic_Lab_backend/pkg/model/room"
 	wsCommands "github.com/RR3Z/Miskatonic_Lab_backend/pkg/ws/commands"
@@ -9,6 +10,11 @@ import (
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 	"github.com/jackc/pgx/v5/pgtype"
+)
+
+const (
+	clientPingInterval = 10 * time.Second
+	clientPingTimeout  = 5 * time.Second
 )
 
 type Client struct {
@@ -85,6 +91,30 @@ func (c *Client) WriteLoop(ctx context.Context) {
 			}
 
 			if err := wsjson.Write(ctx, c.conn, event); err != nil {
+				return
+			}
+		}
+	}
+}
+
+func (c *Client) PingLoop(ctx context.Context) {
+	if c.conn == nil {
+		return
+	}
+
+	ticker := time.NewTicker(clientPingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			pingCtx, cancel := context.WithTimeout(ctx, clientPingTimeout)
+			err := c.conn.Ping(pingCtx)
+			cancel()
+			if err != nil {
+				c.conn.Close(websocket.StatusGoingAway, "websocket ping failed")
 				return
 			}
 		}

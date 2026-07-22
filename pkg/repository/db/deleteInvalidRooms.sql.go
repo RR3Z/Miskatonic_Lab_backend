@@ -27,7 +27,7 @@ OR NOT EXISTS (
     WHERE owner_member.room_id = r.id
       AND owner_member.user_id = r.owner_id
 )
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name, event_sequence
 `
 
 func (q *Queries) DeleteInvalidRooms(ctx context.Context) ([]Room, error) {
@@ -49,6 +49,7 @@ func (q *Queries) DeleteInvalidRooms(ctx context.Context) ([]Room, error) {
 			&i.PasswordHash,
 			&i.LastActivityAt,
 			&i.Name,
+			&i.EventSequence,
 		); err != nil {
 			return nil, err
 		}

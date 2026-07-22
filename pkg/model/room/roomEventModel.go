@@ -10,6 +10,7 @@ import (
 type RoomEventModel struct {
 	ID            pgtype.UUID        `json:"id"`
 	RoomID        pgtype.UUID        `json:"room_id"`
+	Sequence      int64              `json:"sequence"`
 	ActorID       string             `json:"actor_id"`
 	Type          string             `json:"type"`
 	Payload       json.RawMessage    `json:"payload"`
@@ -26,6 +27,7 @@ func ToRoomEventModel(event db.RoomEvent) RoomEventModel {
 	return RoomEventModel{
 		ID:        event.ID,
 		RoomID:    event.RoomID,
+		Sequence:  event.Sequence,
 		ActorID:   event.ActorID,
 		Type:      event.EventType,
 		Payload:   payload,

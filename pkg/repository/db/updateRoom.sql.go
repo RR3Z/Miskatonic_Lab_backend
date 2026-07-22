@@ -19,7 +19,7 @@ SET
     password_hash = COALESCE($3, password_hash),
     updated_at = NOW()
 WHERE id = $4 AND owner_id = $5
-RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name
+RETURNING id, owner_id, max_players, invite_token, created_at, updated_at, password_hash, last_activity_at, name, event_sequence
 `
 
 type UpdateRoomParams struct {
@@ -49,6 +49,7 @@ func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (Room, e
 		&i.PasswordHash,
 		&i.LastActivityAt,
 		&i.Name,
+		&i.EventSequence,
 	)
 	return i, err
 }

@@ -1,16 +1,22 @@
 # Room Realtime
 
-Room realtime uses the shared `room_events` feed as durable source of truth and the room WebSocket hub as delivery transport. Room HTTP mutations write state and canonical events in one transaction. Only after commit does the handler broadcast those saved `RoomEventModel` values through the hub.
+Room realtime uses the shared `room_events` feed as durable source of truth and the room WebSocket hub as delivery transport. Room HTTP mutations write state and canonical events in one transaction. Each saved event receives the next room-local sequence atomically with its write. Only after commit does the handler broadcast that saved `RoomEventModel` through the hub.
 
 Public room feed DTOs and payloads live under `pkg/model/room`. Internal domain events live under `pkg/events`; do not use `pkg/events/room` for WebSocket/feed payloads.
 
 ## HTTP Surface
 
-- `GET /api/rooms/{roomID}/events` returns persisted room events old-to-new for room members.
+- `GET /api/rooms/{roomID}/events?after=<sequence>&limit=<1..200>` returns persisted room events after the optional cursor, old-to-new, for room members. Every persisted event has a room-local monotonically increasing `sequence`; clients page from their last applied sequence until the response is empty.
 - `GET /api/rooms/{roomID}/characters` returns selected room characters with role-aware visibility.
 - `GET /api/rooms/{roomID}/ws` upgrades an authenticated room member to a room WebSocket connection.
 
 The WebSocket route checks room membership by touching room activity before accepting the connection. A failed membership/activity check returns HTTP 403 and does not upgrade.
+
+## Presence
+
+Room membership is tied to WebSocket presence. Creating or joining a room starts a 30-second first-connection deadline. A user with no active room sockets after that deadline is removed through the normal leave flow. Closing one of several tabs does not remove the user; the deadline starts only after their last socket closes and a reconnect cancels it.
+
+The server sends WebSocket ping frames every 10 seconds. A failed ping closes the socket and follows the same disconnect deadline. Explicit leave and kick close every active room socket for the affected user before further room-wide delivery.
 
 ## WebSocket Commands
 
@@ -121,10 +127,16 @@ Room event history follows the same privacy rule as realtime:
 
 Deleted rooms close active WebSocket clients through `RoomHub.CloseRoom(roomID, reason)`.
 
+Rooms are ephemeral across backend restarts. Before HTTP routes start, the backend deletes every
+existing room. Database cascades remove its members and room-event history with it. If this purge
+fails, startup stops: serving stale rooms is worse than an unavailable backend.
+
 Room sockets are closed after:
 
-- cleanup deletes inactive or invalid rooms;
+- cleanup removes only structurally invalid rooms (for example, a room without members);
 - owner `DELETE /api/rooms/{roomID}` succeeds;
 - last-member leave deletes the room.
+
+Individual user sockets are also closed after explicit leave or kick.
 
 Closing is routed through the hub command channel and is safe to repeat.

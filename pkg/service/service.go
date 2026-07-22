@@ -43,3 +43,7 @@ func NewService(repos *repository.Repository, publisher events.EventPublisher, p
 func (s *Service) StartBackgroundWorkers(ctx context.Context, hooks BackgroundWorkerHooks) {
 	s.roomMaintenance.StartCleanupWorker(ctx, room.DEFAULT_ROOM_CLEANUP_INTERVAL, hooks.RoomCleanup)
 }
+
+func (s *Service) PurgeEphemeralRooms(ctx context.Context) (roomModel.StartupPurgeRoomsResult, error) {
+	return s.roomMaintenance.PurgeEphemeralRooms(ctx)
+}

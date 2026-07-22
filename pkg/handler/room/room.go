@@ -28,6 +28,7 @@ func (h *RoomHandler) createRoom(w http.ResponseWriter, r *http.Request) *myErro
 	if err != nil {
 		return roomErrors.MapServiceError(err, "failed to create room")
 	}
+	h.presence.AwaitFirstConnection(result.Value.ID, userID)
 
 	utils.WriteJSON(w, http.StatusCreated, result.Value)
 	return nil
@@ -135,6 +136,7 @@ func (h *RoomHandler) deleteRoom(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to delete room")
 	}
 
+	h.presence.ForgetRoom(roomID)
 	h.closeRoom(roomID, "room deleted")
 	w.WriteHeader(http.StatusNoContent)
 	return nil
@@ -170,6 +172,10 @@ func (h *RoomHandler) listRoomEvents(w http.ResponseWriter, r *http.Request) *my
 	if err != nil {
 		return roomErrors.InvalidInputError("invalid events limit", err)
 	}
+	afterSequence, err := roomHelpers.OptionalInt64Query(r, "after")
+	if err != nil || (afterSequence != nil && *afterSequence < 0) {
+		return roomErrors.InvalidInputError("invalid events cursor", err)
+	}
 
 	input := roomDTO.ListRoomEventsInput{
 		RoomID: roomID,
@@ -177,6 +183,9 @@ func (h *RoomHandler) listRoomEvents(w http.ResponseWriter, r *http.Request) *my
 	}
 	if limit != nil {
 		input.Limit = *limit
+	}
+	if afterSequence != nil {
+		input.AfterSequence = *afterSequence
 	}
 
 	result, err := h.service.ListRoomEvents(r.Context(), input)
@@ -213,6 +222,7 @@ func (h *RoomHandler) joinRoom(w http.ResponseWriter, r *http.Request) *myErrors
 		return roomErrors.MapServiceError(err, "failed to join room")
 	}
 
+	h.presence.AwaitFirstConnection(roomID, userID)
 	h.broadcastRoomEvents(result.Events)
 
 	utils.WriteJSON(w, http.StatusOK, result.Value)
@@ -234,6 +244,8 @@ func (h *RoomHandler) leaveRoom(w http.ResponseWriter, r *http.Request) *myError
 		return roomErrors.MapServiceError(err, "failed to leave room")
 	}
 
+	h.presence.Forget(roomID, userID)
+	h.closeUser(roomID, userID, "room left")
 	h.broadcastRoomEvents(result.Events)
 
 	if result.Value.DeletedRoomID != nil {
@@ -264,6 +276,8 @@ func (h *RoomHandler) kickMember(w http.ResponseWriter, r *http.Request) *myErro
 		return roomErrors.MapServiceError(err, "failed to kick member")
 	}
 
+	h.presence.Forget(roomID, targetUserID)
+	h.closeUser(roomID, targetUserID, "removed from room")
 	h.broadcastRoomEvents(result.Events)
 
 	w.WriteHeader(http.StatusNoContent)

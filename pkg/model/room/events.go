@@ -19,10 +19,11 @@ const (
 )
 
 type Event struct {
-	Type    string `json:"type"`
-	RoomID  string `json:"room_id"`
-	ActorID string `json:"actor_id"`
-	Payload any    `json:"payload,omitempty"`
+	Type     string `json:"type"`
+	RoomID   string `json:"room_id"`
+	Sequence int64  `json:"sequence,omitempty"`
+	ActorID  string `json:"actor_id"`
+	Payload  any    `json:"payload,omitempty"`
 }
 
 type ChatMessagePayload struct {

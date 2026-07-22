@@ -36,6 +36,7 @@ type IRoom interface {
 }
 
 type IRoomMaintenance interface {
-	CleanupRooms(ctx context.Context, input model.CleanupRoomsInput) (model.CleanupRoomsResult, error)
+	PurgeEphemeralRooms(ctx context.Context) (model.StartupPurgeRoomsResult, error)
+	CleanupRooms(ctx context.Context) (model.CleanupRoomsResult, error)
 	StartCleanupWorker(ctx context.Context, interval time.Duration, afterCleanup func(model.CleanupRoomsResult))
 }

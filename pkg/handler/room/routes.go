@@ -14,6 +14,7 @@ type RoomHandler struct {
 	service    roomService.IRoom
 	hub        *ws.RoomHub
 	dispatcher *wsCommands.CommandDispatcher
+	presence   *roomPresenceCoordinator
 }
 
 func New(service roomService.IRoom) *RoomHandler {
@@ -24,11 +25,17 @@ func New(service roomService.IRoom) *RoomHandler {
 }
 
 func NewWithHub(service roomService.IRoom, hub *ws.RoomHub) *RoomHandler {
-	return &RoomHandler{
+	return NewWithHubAndPresence(service, hub, PresenceConfig{})
+}
+
+func NewWithHubAndPresence(service roomService.IRoom, hub *ws.RoomHub, config PresenceConfig) *RoomHandler {
+	handler := &RoomHandler{
 		service:    service,
 		hub:        hub,
 		dispatcher: wsCommands.NewCommandDispatcher(service),
 	}
+	handler.presence = newRoomPresenceCoordinator(service, config, handler.handleAutomaticLeave)
+	return handler
 }
 
 func (h *RoomHandler) Hub() *ws.RoomHub {

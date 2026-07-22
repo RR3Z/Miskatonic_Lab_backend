@@ -12,9 +12,16 @@ import (
 )
 
 const createRoomEvent = `-- name: CreateRoomEvent :one
-INSERT INTO room_events (room_id, actor_id, event_type, payload)
-VALUES ($1, $2, $3, $4)
-RETURNING id, room_id, actor_id, event_type, payload, created_at
+WITH next_sequence AS (
+    UPDATE rooms
+    SET event_sequence = event_sequence + 1
+    WHERE id = $1
+    RETURNING event_sequence
+)
+INSERT INTO room_events (room_id, actor_id, event_type, payload, sequence)
+SELECT $1, $2, $3, $4, event_sequence
+FROM next_sequence
+RETURNING id, room_id, actor_id, event_type, payload, created_at, sequence
 `
 
 type CreateRoomEventParams struct {
@@ -39,6 +46,7 @@ func (q *Queries) CreateRoomEvent(ctx context.Context, arg CreateRoomEventParams
 		&i.EventType,
 		&i.Payload,
 		&i.CreatedAt,
+		&i.Sequence,
 	)
 	return i, err
 }

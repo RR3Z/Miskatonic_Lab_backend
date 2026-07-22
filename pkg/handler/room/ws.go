@@ -34,8 +34,14 @@ func (h *RoomHandler) serveRoomWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := ws.NewClient(h.hub, h.dispatcher, roomID, userID, conn)
+	if !h.presence.Connected(roomID, userID) {
+		conn.Close(websocket.StatusPolicyViolation, "room membership is closing")
+		return
+	}
 	h.hub.Register <- client
+	defer h.presence.Disconnected(roomID, userID)
 
 	go client.WriteLoop(r.Context())
+	go client.PingLoop(r.Context())
 	client.ReadLoop(r.Context())
 }

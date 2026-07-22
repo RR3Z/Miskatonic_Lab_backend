@@ -11,13 +11,10 @@ import (
 func requireCleanupDeletedRoomIDs(
 	t *testing.T,
 	result model.CleanupRoomsResult,
-	inactiveRoomID pgtype.UUID,
 	invalidRoomIDs ...pgtype.UUID,
 ) {
 	t.Helper()
 
-	require.Contains(t, result.InactiveDeletedRoomIDs, inactiveRoomID)
-	require.Contains(t, result.DeletedRoomIDs, inactiveRoomID)
 	for _, roomID := range invalidRoomIDs {
 		require.Contains(t, result.InvalidDeletedRoomIDs, roomID)
 		require.Contains(t, result.DeletedRoomIDs, roomID)

@@ -43,10 +43,8 @@ func newRoomEventPublishingTestSubject() (*fakeEventPublishingRoomService, *fake
 			{ID: roomTestUUID(roomEventTestMemberID), RoomID: roomTestUUID(roomEventTestRoomID), ActorID: roomEventTestOwnerID},
 		},
 		cleanupResult: model.CleanupRoomsResult{
-			InactiveDeleted: 1,
-			InvalidDeleted:  1,
+			InvalidDeleted: 1,
 			DeletedRoomIDs: []pgtype.UUID{
-				roomTestUUID(roomEventTestRoomID),
 				roomTestUUID(roomEventTestMemberID),
 			},
 		},

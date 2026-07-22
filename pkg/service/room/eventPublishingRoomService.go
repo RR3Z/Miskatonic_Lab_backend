@@ -312,17 +312,20 @@ func (s *EventPublishingRoomService) CreateCharacterChangedRoomEvents(ctx contex
 	return createdEvents, nil
 }
 
-func (s *EventPublishingRoomService) CleanupRooms(ctx context.Context, input model.CleanupRoomsInput) (model.CleanupRoomsResult, error) {
-	result, err := s.maintenance.CleanupRooms(ctx, input)
+func (s *EventPublishingRoomService) PurgeEphemeralRooms(ctx context.Context) (model.StartupPurgeRoomsResult, error) {
+	return s.maintenance.PurgeEphemeralRooms(ctx)
+}
+
+func (s *EventPublishingRoomService) CleanupRooms(ctx context.Context) (model.CleanupRoomsResult, error) {
+	result, err := s.maintenance.CleanupRooms(ctx)
 	if err != nil {
 		s.publisher.Publish(ctx, roomEvents.RoomCleanupFailed{Err: err})
 		return model.CleanupRoomsResult{}, err
 	}
 
 	s.publisher.Publish(ctx, roomEvents.RoomCleanupSucceeded{
-		InactiveDeleted: result.InactiveDeleted,
-		InvalidDeleted:  result.InvalidDeleted,
-		DeletedCount:    len(result.DeletedRoomIDs),
+		InvalidDeleted: result.InvalidDeleted,
+		DeletedCount:   len(result.DeletedRoomIDs),
 	})
 	return result, nil
 }
@@ -341,16 +344,15 @@ func (s *EventPublishingRoomService) StartCleanupWorker(ctx context.Context, int
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				result, err := s.CleanupRooms(ctx, model.CleanupRoomsInput{})
+				result, err := s.CleanupRooms(ctx)
 				if err != nil {
 					slog.Warn("room cleanup failed", "component", "room_cleanup", "error", err)
 					continue
 				}
-				if result.InactiveDeleted > 0 || result.InvalidDeleted > 0 {
+				if result.InvalidDeleted > 0 {
 					slog.Info(
 						"room cleanup deleted rooms",
 						"component", "room_cleanup",
-						"inactive_deleted", result.InactiveDeleted,
 						"invalid_deleted", result.InvalidDeleted,
 					)
 				}

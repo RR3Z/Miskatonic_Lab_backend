@@ -17,7 +17,11 @@ import (
 )
 
 func newRoomHandlerTestRouterWithHub(roomService room.IRoom, hub *ws.RoomHub) http.Handler {
-	handler := roomHandler.NewWithHub(roomService, hub)
+	return newRoomHandlerTestRouterWithHubAndPresence(roomService, hub, roomHandler.PresenceConfig{})
+}
+
+func newRoomHandlerTestRouterWithHubAndPresence(roomService room.IRoom, hub *ws.RoomHub, config roomHandler.PresenceConfig) http.Handler {
+	handler := roomHandler.NewWithHubAndPresence(roomService, hub, config)
 	router := chi.NewRouter()
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

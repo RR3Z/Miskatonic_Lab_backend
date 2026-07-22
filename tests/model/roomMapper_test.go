@@ -75,6 +75,24 @@ func TestToRoomMemberModelPreservesInvalidCharacterID(t *testing.T) {
 	require.Equal(t, "gm", memberModel.Role)
 }
 
+func TestToRoomEventModelMapsSequence(t *testing.T) {
+	roomID := testUUID("11111111-1111-1111-1111-111111111111")
+	eventID := testUUID("22222222-2222-2222-2222-222222222222")
+
+	eventModel := model.ToRoomEventModel(db.RoomEvent{
+		ID:        eventID,
+		RoomID:    roomID,
+		Sequence:  17,
+		ActorID:   "user_1",
+		EventType: string(model.EventChatMessage),
+		Payload:   []byte(`{"text":"hello"}`),
+	})
+
+	require.Equal(t, int64(17), eventModel.Sequence)
+	require.Equal(t, eventID, eventModel.ID)
+	require.Equal(t, roomID, eventModel.RoomID)
+}
+
 func TestToRoomModelWithUsernamesMapsMemberUsername(t *testing.T) {
 	roomID := testUUID("11111111-1111-1111-1111-111111111111")
 	memberID := testUUID("22222222-2222-2222-2222-222222222222")
