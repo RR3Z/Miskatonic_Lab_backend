@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"testing"
 	"time"
 
@@ -207,4 +208,13 @@ func (s *e2eSubject) waitForRoomEvents(t *testing.T, roomID string, eventType st
 
 	t.Fatalf("timed out waiting for room event type %q", eventType)
 	return nil
+}
+
+func (s *e2eSubject) listRoomEventsAfter(t *testing.T, roomID string, sequence int64) []e2eRoomEventResponse {
+	t.Helper()
+
+	var events []e2eRoomEventResponse
+	eventsURL := "/api/rooms/" + url.PathEscape(roomID) + "/events?limit=200&after=" + strconv.FormatInt(sequence, 10)
+	s.doJSON(t, http.MethodGet, eventsURL, nil, http.StatusOK, &events)
+	return events
 }
